@@ -91,7 +91,7 @@ strong {
 
 #subcontractorEmailInput {
     width: auto;                /* Allow auto-width */
-    min-width: 150px;           /* Minimum width */
+    min-width: 250px;           /* Minimum width */
     max-width: 100%;            /* Limit width to prevent overflow */
     padding: 2px 4px;           /* Some padding for readability */
     white-space: nowrap;        /* Prevent wrapping */

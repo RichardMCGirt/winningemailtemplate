@@ -144,7 +144,7 @@ function updateTemplateText(subdivision, builder, gmEmail) {
 // Display the email content immediately
 function displayEmailContent() {
     const emailContent = `
-        <h2>To: <span class="gmEmailContainer">Branch Staff@Vanir.com</span>, purchasing@vanirinstalledsales.com, hunter@vanirinstalledsales.com</h2>
+        <h2>To: <span class="gmEmailContainer"></span>, purchasing@vanirinstalledsales.com, hunter@vanirinstalledsales.com</h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
@@ -166,6 +166,85 @@ function displayEmailContent() {
     const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", [], fetchDetailsByBidName);
     emailContainer.prepend(subdivisionInputWrapper);
 }
+
+async function sendEmail() {
+    const emailContent = document.getElementById('emailTemplate').innerHTML; // HTML content from the template
+    const recipientEmail = document.getElementById('subcontractorEmailInput').value;
+
+    try {
+        const response = await fetch('http://localhost:5001/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: recipientEmail,
+                subject: 'Your Email Subject Here',
+                htmlContent: emailContent,
+            }),
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        console.error('Error sending email:', error);
+        alert('Failed to send email');
+    }
+}
+
+document.getElementById('sendEmailButton').addEventListener('click', sendEmail);
+
+function generateMailtoLink() {
+    const emailContent = document.getElementById('emailTemplate').innerHTML;
+
+    // Split content at <hr> or provide fallback
+    const contentParts = emailContent.split('<hr>');
+    const managementContent = contentParts[0] ? contentParts[0] : "Management email content missing";
+    const subcontractorContent = contentParts[1] ? contentParts[1] : "Subcontractor email content missing";
+
+    // Management team email details
+    const gmEmail = document.querySelector('.gmEmailContainer').textContent.trim() || "purchasing@vanirinstalledsales.com";
+    const ccEmails = "purchasing@vanirinstalledsales.com,hunter@vanirinstalledsales.com";
+    const subdivision = document.querySelector('.subdivisionContainer').textContent.trim();
+    const builder = document.querySelector('.builderContainer').textContent.trim();
+    const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
+    
+    // Subcontractor email details
+    const subcontractorEmail = document.getElementById('subcontractorEmailInput').value || "purchasing@vanirinstalledsales.com";
+    const subcontractorSubject = `New Community | ${builder} | ${subdivision}`;
+
+    // Format content for each email, using clear headings and paragraphs for a professional look
+    const managementBody = `
+    Dear Team,
+
+    We are excited to announce that we have won a new project in ${subdivision} for ${builder}. 
+
+    Let's coordinate with the relevant vendors and ensure a smooth project initiation.
+
+    Best regards,
+    
+    Vanir Installed Sales Team
+    `.replace(/\n\s+/g, '\n\n');  // This replaces unnecessary spaces with clean paragraphs
+
+    const subcontractorBody = `
+    We are thrilled to inform you that we have been awarded a new community, ${subdivision}, in collaboration with ${builder}. 
+
+    We look forward to working together and maintaining high standards for this project.
+
+    Best regards,
+    
+    Vanir Installed Sales Team
+    `.replace(/\n\s+/g, '\n\n');  // Clean up spaces for professional paragraph structure
+
+    // Construct mailto links without encoding for a professional, readable email format
+    const managementMailtoLink = `mailto:${gmEmail}?cc=${ccEmails}&subject=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
+    const subcontractorMailtoLink = `mailto:${subcontractorEmail}?subject=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+
+    // Open two mail windows
+    window.open(managementMailtoLink);
+    setTimeout(() => window.open(subcontractorMailtoLink), 1000); // Small delay for user experience
+}
+
+document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
+
+
 
 
 
