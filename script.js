@@ -5,6 +5,9 @@ const bidTableName = 'tblQo2148s04gVPq1';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
 
+
+
+
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 
@@ -164,6 +167,8 @@ function displayEmailContent() {
     const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", [], fetchDetailsByBidName);
     emailContainer.prepend(subdivisionInputWrapper);
 }
+
+
 
 // Fetch bid names and subcontractor suggestions, then update autocomplete inputs
 async function fetchAndUpdateAutocomplete() {

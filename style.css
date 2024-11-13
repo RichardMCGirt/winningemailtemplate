@@ -87,3 +87,13 @@ strong {
     cursor: not-allowed;
     opacity: 0.6; /* Optional: makes the input look grayed out */
 }
+
+
+#subcontractorEmailInput {
+    width: auto;                /* Allow auto-width */
+    min-width: 150px;           /* Minimum width */
+    max-width: 100%;            /* Limit width to prevent overflow */
+    padding: 2px 4px;           /* Some padding for readability */
+    white-space: nowrap;        /* Prevent wrapping */
+    overflow: hidden;           /* Hide overflow text */
+}
