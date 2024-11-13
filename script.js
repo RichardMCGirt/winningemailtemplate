@@ -210,7 +210,7 @@ function generateMailtoLink() {
     const subcontractorEmail = document.getElementById('subcontractorEmailInput').value || "purchasing@vanirinstalledsales.com";
     const subcontractorSubject = `New Community | ${builder} | ${subdivision}`;
 
-    // Format content for each email, using clear headings and paragraphs for a professional look
+    // Format content for each email
     const managementBody = `
     Dear Team,
 
@@ -221,7 +221,7 @@ function generateMailtoLink() {
     Best regards,
     
     Vanir Installed Sales Team
-    `.replace(/\n\s+/g, '\n\n');  // This replaces unnecessary spaces with clean paragraphs
+    `.replace(/\n\s+/g, '\n\n'); 
 
     const subcontractorBody = `
     We are thrilled to inform you that we have been awarded a new community, ${subdivision}, in collaboration with ${builder}. 
@@ -231,15 +231,15 @@ function generateMailtoLink() {
     Best regards,
     
     Vanir Installed Sales Team
-    `.replace(/\n\s+/g, '\n\n');  // Clean up spaces for professional paragraph structure
+    `.replace(/\n\s+/g, '\n\n'); 
 
-    // Construct mailto links without encoding for a professional, readable email format
-    const managementMailtoLink = `mailto:${gmEmail}?cc=${ccEmails}&subject=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-    const subcontractorMailtoLink = `mailto:${subcontractorEmail}?subject=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+    // Construct Gmail URLs
+    const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
+    const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmail)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
-    // Open two mail windows
-    window.open(managementMailtoLink);
-    setTimeout(() => window.open(subcontractorMailtoLink), 1000); // Small delay for user experience
+    // Open two Gmail windows
+    window.open(managementGmailLink);
+    setTimeout(() => window.open(subcontractorGmailLink), 1000); // Small delay for user experience
 }
 
 document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
