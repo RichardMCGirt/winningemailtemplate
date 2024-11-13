@@ -4,33 +4,8 @@ const airtableBaseId = 'appi4QZE0SrWI6tt2';
 const airtableTableName = 'tblQo2148s04gVPq1';
 let bidNameSuggestions = [];
 
-// Helper function to encode JSON as Base64 (handles UTF-8 characters)
-function encodeBase64(data) {
-    const jsonString = JSON.stringify(data);
-    const utf8Bytes = new TextEncoder().encode(jsonString); // Encode to UTF-8
-    const binaryString = Array.from(utf8Bytes).map(byte => String.fromCharCode(byte)).join('');
-    return btoa(binaryString);
-}
-
-// Helper function to decode Base64 JSON
-function decodeBase64(data) {
-    const binaryString = atob(data);
-    const utf8Bytes = new Uint8Array([...binaryString].map(char => char.charCodeAt(0)));
-    const jsonString = new TextDecoder().decode(utf8Bytes); // Decode from UTF-8
-    return JSON.parse(jsonString);
-}
-
-
-
-// Fetch and cache data from Airtable with encoding
-async function fetchAirtableDataWithCache(fieldName, filterFormula = '') {
-    const cacheKey = filterFormula ? `airtable_${fieldName}_${filterFormula}` : `airtable_${fieldName}`;
-    const cachedData = localStorage.getItem(cacheKey);
-
-    if (cachedData) {
-        return JSON.parse(atob(cachedData));
-    }
-
+// Fetch data from Airtable without caching
+async function fetchAirtableData(fieldName, filterFormula = '') {
     let allRecords = [];
     let offset = null;
     do {
@@ -49,20 +24,19 @@ async function fetchAirtableDataWithCache(fieldName, filterFormula = '') {
         }
     } while (offset);
 
-    localStorage.setItem(cacheKey, btoa(JSON.stringify(allRecords)));
     return allRecords;
 }
 
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
-    const records = await fetchAirtableDataWithCache('Bid Name', "NOT({Outcome}='Win')");
+    const records = await fetchAirtableData('Bid Name', "NOT({Outcome}='Win')");
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
 }
 
 // Fetch builder by "Bid Name"
 async function fetchBuilderByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
-    const records = await fetchAirtableDataWithCache('Builder', filterFormula);
+    const records = await fetchAirtableData('Builder', filterFormula);
     return records.length ? records[0].fields['Builder'] : '';
 }
 
@@ -126,8 +100,8 @@ async function populateEmailTemplate() {
         <p>Dear Team,</p>
         <p>We are excited to announce that we have won a new project in <strong><span class="subdivisionContainer"></span></strong> for <strong><span class="builderContainer"></span></strong>. Let's coordinate with the relevant vendors and ensure a smooth project initiation.</p><br>
         
-        <!--  Subcontractors@example.com  -->
-        <h2>To: Subcontractors</h2>
+        <!--  Subcontractors  -->
+        <h2>To: Subcontractors@example.com</h2>
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
         
