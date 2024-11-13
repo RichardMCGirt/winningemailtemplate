@@ -102,7 +102,7 @@ async function populateEmailTemplate() {
     const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, fetchBuilderByBidName);
 
     const emailContent = `
-        <h2>To: Branch Staff</h2>
+        <h2>To: Branch Staff@Vanir.com</h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
