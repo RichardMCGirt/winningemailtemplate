@@ -158,7 +158,6 @@ function displayEmailContent() {
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
         
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
-        <img src="/Logo.jpg" alt="Vanir Installed Sales Logo" style="width: 150px; margin-top: 10px;">
     `;
 
     const emailContainer = document.getElementById('emailTemplate');
