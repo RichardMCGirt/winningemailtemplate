@@ -105,16 +105,17 @@ async function populateEmailTemplate() {
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
         
+<!-- Spanish -->
+        <p><strong>Asunto:</strong> Nueva Comunidad | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
+        <p>Nos complace informarles que hemos sido galardonados con una nueva comunidad, <strong><span class="subdivisionContainer"></span></strong>, en colaboración con <strong><span class="builderContainer"></span></strong>. Esperamos trabajar juntos y mantener altos estándares para este proyecto.</p>
+        
+
         <!-- Portuguese -->
         <p><strong>Assunto:</strong> Nova Comunidade | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>Estamos entusiasmados em informar que fomos premiados com uma nova comunidade, <strong><span class="subdivisionContainer"></span></strong>, em colaboração com <strong><span class="builderContainer"></span></strong>. Esperamos trabalhar juntos e manter altos padrões para este projeto.</p>
         
-        <!-- Spanish -->
-        <p><strong>Asunto:</strong> Nueva Comunidad | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
-        <p>Nos complace informarles que hemos sido galardonados con una nueva comunidad, <strong><span class="subdivisionContainer"></span></strong>, en colaboración con <strong><span class="builderContainer"></span></strong>. Esperamos trabajar juntos y mantener altos estándares para este proyecto.</p>
         
        <p>Kind regards,<br>Vanir Installed Sales Team</p>
-    <img src="/Logo.jpg" alt="Vanir Installed Sales Logo" style="width: 150px; margin-top: 10px;">
 `;
 
     const emailContainer = document.getElementById('emailTemplate');
