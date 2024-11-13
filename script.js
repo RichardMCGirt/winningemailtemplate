@@ -2,60 +2,112 @@ const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d6
 const airtableBaseId = 'appi4QZE0SrWI6tt2';
 const airtableTableName = 'tblQo2148s04gVPq1';
 let bidNameSuggestions = [];
+let builderCache = {}; // Cache for subdivision-to-builder mappings
 
-// Fetch data from Airtable with a filter and pagination
-async function fetchAirtableData(fieldName, filterFormula = '') {
+// Helper functions for Base64 encoding and decoding
+function encodeBase64(data) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+
+function decodeBase64(data) {
+    return JSON.parse(decodeURIComponent(escape(atob(data))));
+}
+
+// Fetch data from Airtable with caching and compression
+async function fetchAirtableDataWithCache(fieldName, filterFormula = '') {
+    const cacheKey = filterFormula ? `airtable_${fieldName}_${filterFormula}` : `airtable_${fieldName}`;
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (cachedData) {
+        console.log(`Loading ${fieldName} data from localStorage cache.`);
+        return decodeBase64(cachedData);
+    }
+
+    // Fetch from Airtable if not cached
     let allRecords = [];
     let offset = null;
 
+    console.log(`Fetching ${fieldName} data from Airtable with filter: ${filterFormula}`);
     do {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
         if (filterFormula) url += `?filterByFormula=${encodeURIComponent(filterFormula)}`;
         if (offset) url += `${filterFormula ? '&' : '?'}offset=${offset}`;
 
+        console.log(`Fetching data from URL: ${url}`);
         try {
             const response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`
-                }
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-            
             if (!response.ok) {
                 console.error(`Error fetching data: ${response.status} ${response.statusText}`);
                 return [];
             }
-
             const data = await response.json();
             if (data.records && data.records.length > 0) {
-                allRecords = allRecords.concat(data.records);
+                const filteredRecords = data.records.map(record => ({
+                    id: record.id,
+                    fields: {
+                        [fieldName]: record.fields[fieldName],
+                        Builder: record.fields['Builder'],
+                        Subdivision: record.fields['Subdivision'] // Include Subdivision in cache
+                    }
+                }));
+                allRecords = allRecords.concat(filteredRecords);
             }
-
-            offset = data.offset; // Set offset for next batch (if exists)
+            offset = data.offset;
         } catch (error) {
             console.error("Error during fetch operation:", error);
             return [];
         }
     } while (offset);
 
+    // Cache and compress data in localStorage
+    const compressedData = encodeBase64(allRecords);
+    try {
+        localStorage.setItem(cacheKey, compressedData);
+        console.log(`Cached ${fieldName} data in localStorage under key: ${cacheKey}`);
+    } catch (e) {
+        console.error("Failed to cache data due to storage limit:", e);
+    }
+    
     return allRecords;
 }
 
-// Fetch bid names for autocomplete suggestions
+// Fetch bid name suggestions
 async function fetchBidNameSuggestions() {
-    const records = await fetchAirtableData('Bid Name', "NOT({Outcome}='Win')");
+    console.log("Fetching bid name suggestions...");
+    const records = await fetchAirtableDataWithCache('Bid Name', "NOT({Outcome}='Win')");
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
+    console.log("Bid name suggestions fetched:", bidNameSuggestions);
 }
 
-// Function to fetch the builder based on the selected subdivision
-async function fetchBuilderBySubdivision(subdivision) {
-    const sanitizedSubdivision = subdivision.replace(/"/g, '\\"');
-    const filterFormula = `{Subdivision}="${sanitizedSubdivision}"`;
+async function fetchBuilderByBidName(bidName) {
+    console.log(`Fetching builder for bid name: ${bidName}`);
+    
+    // Escape any double quotes within the bid name and surround with double quotes in the filter formula
+    const sanitizedBidName = bidName.replace(/"/g, '\\"');
+    
+    // Construct the filter formula to search by Bid Name
+    const filterFormula = `{Bid Name} = "${sanitizedBidName}"`;
+    console.log(`Generated Filter Formula: ${filterFormula}`);
+    
+    const encodedFormula = encodeURIComponent(filterFormula);
+    console.log(`Encoded Filter Formula: ${encodedFormula}`);
 
-    const records = await fetchAirtableData('Builder', filterFormula);
-    return records.length > 0 ? records[0].fields['Builder'] : '';
+    // Fetch builder from Airtable using the encoded filter formula
+    const records = await fetchAirtableDataWithCache('Builder', filterFormula);
+    if (records.length > 0) {
+        console.log(`Builder found for bid name '${bidName}': ${records[0].fields['Builder']}`);
+        return records[0].fields['Builder'];
+    } else {
+        console.log(`No builder found for bid name '${bidName}'`);
+        return '';
+    }
 }
 
-// Function to create an autocomplete input box with dropdown suggestions
+
+
+// Function to create autocomplete input with dropdown suggestions
 function createAutocompleteInput(placeholder, suggestions, onSubdivisionSelect = null) {
     const wrapper = document.createElement("div");
     wrapper.classList.add("autocomplete-wrapper");
@@ -79,11 +131,12 @@ function createAutocompleteInput(placeholder, suggestions, onSubdivisionSelect =
                 option.classList.add("autocomplete-option");
                 option.textContent = suggestion;
                 option.onclick = async () => {
-                    input.value = suggestion; // Populate the input field with the clicked suggestion
+                    input.value = suggestion;
                     dropdown.innerHTML = ''; // Clear suggestions after selection
                     if (onSubdivisionSelect) {
-                        const builder = await onSubdivisionSelect(suggestion); // Fetch builder based on subdivision
-                        document.getElementById('builderInput').value = builder; // Update the Builder input
+                        console.log(`Selected subdivision: ${suggestion}`);
+                        const builder = await onSubdivisionSelect(suggestion);
+                        document.getElementById('builderInput').value = builder;
                     }
                 };
                 dropdown.appendChild(option);
@@ -97,11 +150,12 @@ function createAutocompleteInput(placeholder, suggestions, onSubdivisionSelect =
     return wrapper;
 }
 
-// Populate email template with data in sections to allow lazy loading
+// Populate email template
 async function populateEmailTemplate() {
-    await fetchBidNameSuggestions(); // Fetch bid name suggestions before populating template
+    console.log("Starting email template population...");
+    await fetchBidNameSuggestions();
 
-    const subdivisionInputWrapper = createAutocompleteInput("Enter Subdivision", bidNameSuggestions, fetchBuilderBySubdivision);
+    const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, fetchBuilderByBidName);
 
     // Create Builder input field
     const builderInput = document.createElement("input");
@@ -110,7 +164,6 @@ async function populateEmailTemplate() {
     builderInput.id = "builderInput";
     builderInput.classList.add("autocomplete-input");
 
-    // Split the email content into sections
     const emailContent = `
         <h2>To: Branch Staff</h2>
         <p>CC: Vendor</p>
@@ -124,22 +177,11 @@ async function populateEmailTemplate() {
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
 
-    // Display email content in HTML
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
 
-    // Insert the subdivision and builder input boxes in appropriate locations within the template
     document.getElementById('subdivisionContainer').appendChild(subdivisionInputWrapper);
-    document.getElementById('subdivisionContainer2').appendChild(createAutocompleteInput("Enter Subdivision", bidNameSuggestions, fetchBuilderBySubdivision));
-    document.getElementById('subdivisionContainer3').appendChild(createAutocompleteInput("Enter Subdivision", bidNameSuggestions, fetchBuilderBySubdivision));
-    document.getElementById('subdivisionContainer4').appendChild(createAutocompleteInput("Enter Subdivision", bidNameSuggestions, fetchBuilderBySubdivision));
-
-    // Insert builder input in the relevant places
     document.getElementById('builderContainer').appendChild(builderInput);
-    document.getElementById('builderContainer2').appendChild(builderInput.cloneNode(true));
-    document.getElementById('builderContainer3').appendChild(builderInput.cloneNode(true));
-    document.getElementById('builderContainer4').appendChild(builderInput.cloneNode(true));
 }
 
-// Initialize email template generation
 document.addEventListener('DOMContentLoaded', populateEmailTemplate);
