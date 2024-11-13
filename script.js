@@ -139,8 +139,9 @@ async function populateEmailTemplate() {
         <p><strong>Asunto:</strong> Nueva Comunidad | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>Nos complace informarles que hemos sido galardonados con una nueva comunidad, <strong><span class="subdivisionContainer"></span></strong>, en colaboración con <strong><span class="builderContainer"></span></strong>. Esperamos trabajar juntos y mantener altos estándares para este proyecto.</p>
         
-        <p>Kind regards,<br>Vanir Installed Sales Team</p>
-    `;
+       <p>Kind regards,<br>Vanir Installed Sales Team</p>
+    <img src="/Logo.jpg" alt="Vanir Installed Sales Logo" style="width: 150px; margin-top: 10px;">
+`;
 
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
