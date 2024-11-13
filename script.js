@@ -165,15 +165,31 @@ async function populateEmailTemplate() {
     builderInput.classList.add("autocomplete-input");
 
     const emailContent = `
+ <span id="subdivisionContainer"></span>
+<span id="builderContainer"></span>
+ 
+
         <h2>To: Branch Staff</h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span id="subdivisionContainer"></span> | <span id="builderContainer"></span></p>
         <p>Dear Team,</p>
         <p>We are excited to announce that we have won a new project in <strong><span id="subdivisionContainer2"></span></strong> for <strong><span id="builderContainer2"></span></strong>. Let's coordinate with the relevant vendors and ensure a smooth project initiation.</p><br>
+          <!-- To: Subcontractors -->
+        <!-- English -->
         <h2>To: Subcontractors</h2>
-        <p><strong>Subject:</strong> New Community / Nueva Colonia | <span id="builderContainer3"></span> | <span id="subdivisionContainer3"></span></p>
-        <p>Good morning/afternoon,</p>
-        <p>We are thrilled to inform you that we have been awarded a new community, <strong><span id="subdivisionContainer4"></span></strong>, in collaboration with <strong><span id="builderContainer4"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+        <p><strong>Subject:</strong> New Community | <span id="builderContainer3"></span> | <span id="bidNameContainer3"></span></p>
+        <p>We are thrilled to inform you that we have been awarded a new community, <strong><span id="bidNameContainer4"></span></strong>, in collaboration with <strong><span id="builderContainer4"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+        
+        <!-- Portuguese -->
+        <h2>Para: Subcontratados</h2>
+        <p><strong>Assunto:</strong> Nova Comunidade | <span id="builderContainerPt3"></span> | <span id="bidNameContainerPt3"></span></p>
+        <p>Estamos entusiasmados em informar que fomos premiados com uma nova comunidade, <strong><span id="bidNameContainerPt4"></span></strong>, em colaboração com <strong><span id="builderContainerPt4"></span></strong>. Esperamos trabalhar juntos e manter altos padrões para este projeto.</p>
+        
+        <!-- Spanish -->
+        <h2>Para: Subcontratistas</h2>
+        <p><strong>Asunto:</strong> Nueva Comunidad | <span id="builderContainerEs3"></span> | <span id="bidNameContainerEs3"></span></p>
+        <p>Nos complace informarles que hemos sido galardonados con una nueva comunidad, <strong><span id="bidNameContainerEs4"></span></strong>, en colaboración con <strong><span id="builderContainerEs4"></span></strong>. Esperamos trabajar juntos y mantener altos estándares para este proyecto.</p>
+        
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
 
