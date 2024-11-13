@@ -82,3 +82,8 @@ strong {
 #emailTemplate p {
     margin-bottom: 1em;
 }
+
+.autocomplete-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.6; /* Optional: makes the input look grayed out */
+}
