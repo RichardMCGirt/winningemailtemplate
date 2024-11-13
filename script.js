@@ -4,6 +4,24 @@ const airtableBaseId = 'appi4QZE0SrWI6tt2';
 const airtableTableName = 'tblQo2148s04gVPq1';
 let bidNameSuggestions = [];
 
+// Helper function to encode JSON as Base64 (handles UTF-8 characters)
+function encodeBase64(data) {
+    const jsonString = JSON.stringify(data);
+    const utf8Bytes = new TextEncoder().encode(jsonString); // Encode to UTF-8
+    const binaryString = Array.from(utf8Bytes).map(byte => String.fromCharCode(byte)).join('');
+    return btoa(binaryString);
+}
+
+// Helper function to decode Base64 JSON
+function decodeBase64(data) {
+    const binaryString = atob(data);
+    const utf8Bytes = new Uint8Array([...binaryString].map(char => char.charCodeAt(0)));
+    const jsonString = new TextDecoder().decode(utf8Bytes); // Decode from UTF-8
+    return JSON.parse(jsonString);
+}
+
+
+
 // Fetch and cache data from Airtable with encoding
 async function fetchAirtableDataWithCache(fieldName, filterFormula = '') {
     const cacheKey = filterFormula ? `airtable_${fieldName}_${filterFormula}` : `airtable_${fieldName}`;
@@ -102,24 +120,22 @@ async function populateEmailTemplate() {
     const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, fetchBuilderByBidName);
 
     const emailContent = `
-        <h2>To: Branch Staff@Vanir.com</h2>
+        <h2> Branch Staff@Vanir.com</h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
         <p>We are excited to announce that we have won a new project in <strong><span class="subdivisionContainer"></span></strong> for <strong><span class="builderContainer"></span></strong>. Let's coordinate with the relevant vendors and ensure a smooth project initiation.</p><br>
         
-        <!-- To: Subcontractors -->
+        <!--  Subcontractors@example.com  -->
         <h2>To: Subcontractors</h2>
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
         
         <!-- Portuguese -->
-        <h2>Para: Subcontratados</h2>
         <p><strong>Assunto:</strong> Nova Comunidade | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>Estamos entusiasmados em informar que fomos premiados com uma nova comunidade, <strong><span class="subdivisionContainer"></span></strong>, em colaboração com <strong><span class="builderContainer"></span></strong>. Esperamos trabalhar juntos e manter altos padrões para este projeto.</p>
         
         <!-- Spanish -->
-        <h2>Para: Subcontratistas</h2>
         <p><strong>Asunto:</strong> Nueva Comunidad | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>Nos complace informarles que hemos sido galardonados con una nueva comunidad, <strong><span class="subdivisionContainer"></span></strong>, en colaboración con <strong><span class="builderContainer"></span></strong>. Esperamos trabajar juntos y mantener altos estándares para este proyecto.</p>
         
