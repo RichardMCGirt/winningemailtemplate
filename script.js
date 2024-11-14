@@ -177,18 +177,19 @@ function updateTemplateText(subdivision, builder, gmEmail) {
 // Display the email content immediately
 function displayEmailContent() {
     const emailContent = `
-        <h2>To: <span class="gmEmailContainer"></span>, purchasing@vanirinstalledsales.com, hunter@vanirinstalledsales.com</h2>
+        <h2>To:  purchasing@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
         <p>We are excited to announce that we have won a new project in <strong><span class="subdivisionContainer"></span></strong> for <strong><span class="builderContainer"></span></strong>. Let's coordinate with the relevant vendors and ensure a smooth project initiation.</p><br>
         <hr>
+
+                <div id="subcontractorCompanyContainer"></div>
+
 <div class="email-row">
     <h2>To:</h2>
-    <h2 id="subcontractorEmailInput" class="autocomplete-input">Subcontractor Email</h2>
+    <h2 id="subcontractorEmailInput" class="autocomplete-input">Subcontractor's Email</h2>
 </div>
-
-        <div id="subcontractorCompanyContainer"></div>
         
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
