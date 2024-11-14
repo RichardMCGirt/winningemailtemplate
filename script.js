@@ -96,7 +96,13 @@ async function fetchDetailsByBidName(bidName) {
     }
 }
 
-// Function to create autocomplete input with Enter and Click options
+// Update function for handling selection of company name and displaying the corresponding email
+function updateSubcontractorEmail(companyName) {
+    const subcontractor = subcontractorSuggestions.find(sub => sub.companyName.toLowerCase() === companyName.toLowerCase());
+    document.getElementById('subcontractorEmailInput').textContent = subcontractor ? subcontractor.email : "Email not found";
+}
+
+// Modified createAutocompleteInput function to use the new update function
 function createAutocompleteInput(placeholder, suggestions, onSelection) {
     const wrapper = document.createElement("div");
     wrapper.classList.add("autocomplete-wrapper");
@@ -117,7 +123,6 @@ function createAutocompleteInput(placeholder, suggestions, onSelection) {
 
         if (inputValue) {
             const filteredSuggestions = suggestions.filter(item => {
-                // Check if item is an object (subcontractor suggestion) or a string (bid name suggestion)
                 const text = typeof item === 'string' ? item : item.companyName;
                 return text.toLowerCase().includes(inputValue);
             });
@@ -127,17 +132,16 @@ function createAutocompleteInput(placeholder, suggestions, onSelection) {
                 option.classList.add("autocomplete-option");
                 option.textContent = typeof suggestion === 'string' ? suggestion : suggestion.companyName;
 
-                // On click, select suggestion
+                // On click, select suggestion and update the email display
                 option.onclick = async () => {
                     input.value = option.textContent; // Set input value to selected suggestion
                     dropdown.innerHTML = ''; // Clear dropdown
 
-                    // For subcontractor suggestions, populate email field
                     if (typeof suggestion !== 'string') {
-                        document.getElementById('subcontractorEmailInput').value = suggestion.email;
+                        updateSubcontractorEmail(option.textContent); // Populate email in the h2 tag
                     }
 
-                    // For bid name suggestions, fetch and update additional details
+                    // Fetch and update additional details for bid name suggestions
                     if (onSelection && typeof suggestion === 'string') {
                         const details = await onSelection(suggestion);
                         updateTemplateText(suggestion, details.builder, details.gmEmail);
@@ -179,9 +183,12 @@ function displayEmailContent() {
         <p>Dear Team,</p>
         <p>We are excited to announce that we have won a new project in <strong><span class="subdivisionContainer"></span></strong> for <strong><span class="builderContainer"></span></strong>. Let's coordinate with the relevant vendors and ensure a smooth project initiation.</p><br>
         
-        <h2> To: Subcontractors email</h2>
+<div class="email-row">
+    <h2>To:</h2>
+    <h2 id="subcontractorEmailInput" class="autocomplete-input">Subcontractor Email</h2>
+</div>
+
         <div id="subcontractorCompanyContainer"></div>
-        <input type="text" id="subcontractorEmailInput" placeholder="Subcontractor Email" readonly class="autocomplete-input"/><br><br>
         
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>

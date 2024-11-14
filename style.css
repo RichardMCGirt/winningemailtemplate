@@ -88,6 +88,19 @@ strong {
     opacity: 0.6; /* Optional: makes the input look grayed out */
 }
 
+.email-row {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Adjust the gap size as needed */
+}
+
+.email-row h2 {
+    margin: 0;
+    padding: 0;
+    font-weight: normal; /* Optional: to keep text styling subtle */
+}
+
+
 
 #subcontractorEmailInput {
     width: auto;                /* Allow auto-width */
