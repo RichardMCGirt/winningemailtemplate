@@ -71,9 +71,10 @@ async function fetchBidNameSuggestions() {
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
 }
 
-// Fetch "Subcontractor Company Name" and "Subcontractor Email" suggestions
-async function fetchSubcontractorSuggestions() {
-    const records = await fetchAirtableData(subcontractorBaseName, subcontractorTableName, 'Subcontractor Company Name');
+// Modify fetchSubcontractorSuggestions to accept a branch filter
+async function fetchSubcontractorSuggestions(branchFilter) {
+    const filterFormula = `{Branch} = "${branchFilter}"`;
+    const records = await fetchAirtableData(subcontractorBaseName, subcontractorTableName, 'Subcontractor Company Name', filterFormula);
     subcontractorSuggestions = records
         .map(record => ({
             companyName: record.fields['Subcontractor Company Name'],
@@ -82,25 +83,26 @@ async function fetchSubcontractorSuggestions() {
         .filter(suggestion => suggestion.companyName && suggestion.email);
 }
 
-// Fetch builder, GM Email, Branch, and Briq Project Type by "Bid Name"
+
+// Modify fetchDetailsByBidName to fetch subcontractors after getting bid details
 async function fetchDetailsByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Builder', filterFormula);
 
     if (records.length) {
         const fields = records[0].fields;
-        
-        // Ensure correct field names and handle arrays if necessary
         const builder = fields['Builder'] || 'Unknown Builder';
-        const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com"; // Extract first email
+        const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
         const branch = fields['Branch'] || fields['Vanir Offices copy'] || 'Unknown Branch';
         const briqProjectType = fields['Project Type'] ? fields['Project Type'][0] : 'Single Family';
 
-        console.log("Fetched Details:", { builder, gmEmail, branch, briqProjectType }); // Debugging log
-
-        // Update the email template text with the new fields
+        // Update the email template text with bid details
         updateTemplateText(bidName, builder, gmEmail, branch, briqProjectType);
-        
+
+        // Fetch subcontractors based on the branch and update the subcontractor autocomplete
+        await fetchSubcontractorSuggestions(branch);
+        updateSubcontractorAutocomplete(); // Update input with new subcontractor suggestions
+
         return { builder, gmEmail, branch, briqProjectType };
     } else {
         return { builder: '', gmEmail: 'Branch Staff@Vanir.com', branch: 'Unknown Branch', briqProjectType: 'Single Family' };
@@ -108,10 +110,17 @@ async function fetchDetailsByBidName(bidName) {
 }
 
 
-// Update function for handling selection of company name and displaying the corresponding email
-function updateSubcontractorEmail(companyName) {
-    const subcontractor = subcontractorSuggestions.find(sub => sub.companyName.toLowerCase() === companyName.toLowerCase());
-    document.getElementById('subcontractorEmailInput').textContent = subcontractor ? subcontractor.email : "Email not found";
+
+// Function to update subcontractor autocomplete input with new suggestions
+function updateSubcontractorAutocomplete() {
+    const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
+    subcontractorContainer.innerHTML = ''; // Clear previous content
+
+    const subcontractorAutocompleteInput = createAutocompleteInput("Enter Subcontractor Company Name", subcontractorSuggestions, () => {});
+    subcontractorContainer.appendChild(subcontractorAutocompleteInput);
+
+    // Enable the subcontractor input field
+    subcontractorAutocompleteInput.querySelector('input').disabled = false;
 }
 
 // Modified createAutocompleteInput function to use the new update function
@@ -229,13 +238,8 @@ function displayEmailContent() {
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
 
-    // Call updateTemplateText after the email content is set in the DOM
-    const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", [], async (bidName) => {
-        const { builder, gmEmail, branch, briqProjectType } = await fetchDetailsByBidName(bidName);
-        updateTemplateText(bidName, builder, gmEmail, branch, briqProjectType);
-    });
+
     
-    emailContainer.prepend(subdivisionInputWrapper);
 }
 
 async function sendEmail() {
@@ -316,38 +320,26 @@ function generateMailtoLink() {
 document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
 
 
-// Fetch all data concurrently and update autocomplete inputs with a single loading bar
+// Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
     showLoadingAnimation();
 
-    // Fetch both bid names and subcontractors concurrently
-    const fetchTasks = [fetchBidNameSuggestions(), fetchSubcontractorSuggestions()];
+    // Fetch bid names only (no subcontractors yet)
+    await fetchBidNameSuggestions();
+    updateLoadingProgress(50);
 
-    // Update loading progress as each fetch completes (50% on each)
-    await Promise.all(fetchTasks.map((task, index) =>
-        task.then(() => {
-            const percentage = (index + 1) * 50;
-            updateLoadingProgress(percentage);
-        })
-    ));
-
-    hideLoadingAnimation(); // Hide loading animation after data is fetched
+    hideLoadingAnimation();
 
     const emailContainer = document.getElementById('emailTemplate');
-
     const bidAutocompleteInput = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, fetchDetailsByBidName);
-    emailContainer.replaceChild(bidAutocompleteInput, emailContainer.firstChild);
+    emailContainer.prepend(bidAutocompleteInput);
 
-    const subcontractorAutocompleteInput = createAutocompleteInput("Enter Subcontractor Company Name", subcontractorSuggestions, () => {});
-    document.getElementById("subcontractorCompanyContainer").appendChild(subcontractorAutocompleteInput);
-
-    // Enable both inputs after data is fetched
+    // Enable bid name input after loading
     bidAutocompleteInput.querySelector('input').disabled = false;
-    subcontractorAutocompleteInput.querySelector('input').disabled = false;
 }
 
 
-// Load the email content and start fetching data with loading animation on page load
+// Load the email content and start fetching bid name suggestions on page load
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     fetchAndUpdateAutocomplete();
