@@ -1,7 +1,7 @@
 // Required constants and helper functions
 const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
-const bidBaseName = 'appX1Saz7wMYh4hhm';
-const bidTableName = 'tblfCPX293KlcKsdp';
+const bidBaseName = 'appi4QZE0SrWI6tt2';
+const bidTableName = 'tblQo2148s04gVPq1';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
 
@@ -82,19 +82,31 @@ async function fetchSubcontractorSuggestions() {
         .filter(suggestion => suggestion.companyName && suggestion.email);
 }
 
-// Fetch builder and GM Email by "Bid Name"
+// Fetch builder, GM Email, Branch, and Briq Project Type by "Bid Name"
 async function fetchDetailsByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Builder', filterFormula);
 
     if (records.length) {
-        const builder = records[0].fields['Builder'];
-        const gmEmail = records[0].fields['GM Email'] || "Branch Staff@Vanir.com";
-        return { builder, gmEmail };
+        const fields = records[0].fields;
+        
+        // Ensure correct field names and handle arrays if necessary
+        const builder = fields['Builder'] || 'Unknown Builder';
+        const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com"; // Extract first email
+        const branch = fields['Branch'] || fields['Vanir Offices copy'] || 'Unknown Branch';
+        const briqProjectType = fields['Project Type'] ? fields['Project Type'][0] : 'Single Family';
+
+        console.log("Fetched Details:", { builder, gmEmail, branch, briqProjectType }); // Debugging log
+
+        // Update the email template text with the new fields
+        updateTemplateText(bidName, builder, gmEmail, branch, briqProjectType);
+        
+        return { builder, gmEmail, branch, briqProjectType };
     } else {
-        return { builder: '', gmEmail: 'Branch Staff@Vanir.com' };
+        return { builder: '', gmEmail: 'Branch Staff@Vanir.com', branch: 'Unknown Branch', briqProjectType: 'Single Family' };
     }
 }
+
 
 // Update function for handling selection of company name and displaying the corresponding email
 function updateSubcontractorEmail(companyName) {
@@ -166,41 +178,63 @@ function selectSuggestion(suggestion, input, dropdown) {
     dropdown.innerHTML = ''; // Clear dropdown after selection
 }
 
-// Function to update "Subdivision", "Builder", and "GM Email" in the template
-function updateTemplateText(subdivision, builder, gmEmail) {
-    document.querySelectorAll('.subdivisionContainer').forEach(el => (el.textContent = subdivision));
-    document.querySelectorAll('.builderContainer').forEach(el => (el.textContent = builder));
-    document.querySelectorAll('.gmEmailContainer').forEach(el => (el.textContent = gmEmail));
+// In the updateTemplateText function:
+function updateTemplateText(subdivision, builder, gmEmail, branch, briqProjectType) {
+    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, briqProjectType }); // Debugging log
+    
+    if (subdivision) {
+        document.querySelectorAll('.subdivisionContainer').forEach(el => el.textContent = subdivision);
+    }
+    if (builder) {
+        document.querySelectorAll('.builderContainer').forEach(el => el.textContent = builder);
+    }
+    if (gmEmail) {
+        document.querySelectorAll('.gmEmailContainer').forEach(el => el.textContent = gmEmail);
+    }
+    if (branch) {
+        document.querySelectorAll('.branchContainer').forEach(el => el.textContent = branch);
+    }
+    if (briqProjectType) {
+        document.querySelectorAll('.briqProjectTypeContainer').forEach(el => el.textContent = briqProjectType);
+    }
+
+    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, briqProjectType });
 }
 
 
-// Display the email content immediately
+// Updated email content display function
 function displayEmailContent() {
     const emailContent = `
         <h2>To:  purchasing@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
-        <p>We are excited to announce that we have won a new project in <strong><span class="subdivisionContainer"></span></strong> for <strong><span class="builderContainer"></span></strong>. Let's coordinate with the relevant vendors and ensure a smooth project initiation.</p><br>
+        <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
+        <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong></p>
         <hr>
 
-                <div id="subcontractorCompanyContainer"></div>
+        <div id="subcontractorCompanyContainer"></div>
 
-<div class="email-row">
-    <h2>To:</h2>
-    <h2 id="subcontractorEmailInput" class="autocomplete-input">Subcontractor's Email</h2>
-</div>
-        
+        <div class="email-row">
+            <h2>To:</h2>
+            <h2 id="subcontractorEmailInput" class="autocomplete-input">Subcontractor's Email</h2>
+        </div>
+
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
-        <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-        
+        <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
 
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
 
-    const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", [], fetchDetailsByBidName);
+    // Call updateTemplateText after the email content is set in the DOM
+    const subdivisionInputWrapper = createAutocompleteInput("Enter Bid Name", [], async (bidName) => {
+        const { builder, gmEmail, branch, briqProjectType } = await fetchDetailsByBidName(bidName);
+        updateTemplateText(bidName, builder, gmEmail, branch, briqProjectType);
+    });
+    
     emailContainer.prepend(subdivisionInputWrapper);
 }
 
