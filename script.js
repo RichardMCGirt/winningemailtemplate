@@ -138,8 +138,6 @@ function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
 
-    const subcontractorAutocompleteInput = createAutocompleteInput("Enter Subcontractor Company Name", subcontractorSuggestions, () => {});
-    subcontractorContainer.appendChild(subcontractorAutocompleteInput);
 
     // Display all subcontractor emails in a formatted list
     const emailList = document.createElement("ul");
@@ -162,9 +160,7 @@ function updateSubcontractorAutocomplete() {
     subcontractorContainer.appendChild(emailList);
 
     // Enable the subcontractor input field
-    subcontractorAutocompleteInput.querySelector('input').disabled = false;
 }
-
 // Modified createAutocompleteInput function to use the new update function
 function createAutocompleteInput(placeholder, suggestions, onSelection) {
     const wrapper = document.createElement("div");
@@ -312,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Updated email content display function
 function displayEmailContent() {
     const emailContent = `
-        <h2>To:  purchasing@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
+        <h2>To:  purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
