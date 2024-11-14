@@ -5,16 +5,47 @@ const bidTableName = 'tblQo2148s04gVPq1';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
 
-
-
-
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 
-// Fetch data from Airtable without caching, with specified base and table
+
+// Display Loading Animation
+function showLoadingAnimation() {
+    const loadingOverlay = document.createElement("div");
+    loadingOverlay.id = "loadingOverlay";
+    loadingOverlay.innerHTML = `
+        <div class="loading-content">
+            <p>Loading... </p>
+            <p id="loadingPercentage">0%</p>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loadingProgress"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+}
+
+// Update Loading Progress
+function updateLoadingProgress(percentage) {
+    const loadingPercentage = document.getElementById("loadingPercentage");
+    const loadingProgress = document.getElementById("loadingProgress");
+    loadingPercentage.textContent = `${percentage}%`;
+    loadingProgress.style.width = `${percentage}%`;
+}
+
+// Hide Loading Animation
+function hideLoadingAnimation() {
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+    }
+}
+
+// Fetch data from Airtable with loading progress
 async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '') {
     let allRecords = [];
     let offset = null;
+
     do {
         let url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
         if (filterFormula) url += `?filterByFormula=${encodeURIComponent(filterFormula)}`;
@@ -38,9 +69,7 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
 async function fetchBidNameSuggestions() {
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "NOT({Outcome}='Win')");
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
-    console.log("Bid Name Suggestions:", bidNameSuggestions); // Check if populated
 }
-
 
 // Fetch "Subcontractor Company Name" and "Subcontractor Email" suggestions
 async function fetchSubcontractorSuggestions() {
@@ -245,14 +274,23 @@ function generateMailtoLink() {
 document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
 
 
-
-
-
-// Fetch bid names and subcontractor suggestions, then update autocomplete inputs
+// Fetch all data concurrently and update autocomplete inputs with a single loading bar
 async function fetchAndUpdateAutocomplete() {
-    await fetchBidNameSuggestions();
-    await fetchSubcontractorSuggestions();
-    
+    showLoadingAnimation();
+
+    // Fetch both bid names and subcontractors concurrently
+    const fetchTasks = [fetchBidNameSuggestions(), fetchSubcontractorSuggestions()];
+
+    // Update loading progress as each fetch completes (50% on each)
+    await Promise.all(fetchTasks.map((task, index) =>
+        task.then(() => {
+            const percentage = (index + 1) * 50;
+            updateLoadingProgress(percentage);
+        })
+    ));
+
+    hideLoadingAnimation(); // Hide loading animation after data is fetched
+
     const emailContainer = document.getElementById('emailTemplate');
 
     const bidAutocompleteInput = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, fetchDetailsByBidName);
@@ -267,8 +305,43 @@ async function fetchAndUpdateAutocomplete() {
 }
 
 
-// On DOMContentLoaded, display email content first, then fetch data in the background
+// Load the email content and start fetching data with loading animation on page load
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     fetchAndUpdateAutocomplete();
 });
+
+// Styles for the loading animation
+const style = document.createElement("style");
+style.innerHTML = `
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .loading-content {
+        text-align: center;
+        font-size: 18px;
+    }
+    .loading-bar {
+        width: 100%;
+        height: 10px;
+        background: #ddd;
+        margin-top: 10px;
+        border-radius: 5px;
+    }
+    .loading-progress {
+        height: 100%;
+        background: #4caf50;
+        width: 0;
+        border-radius: 5px;
+    }
+`;
+document.head.appendChild(style);
