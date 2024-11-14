@@ -210,7 +210,7 @@ function displayEmailContent() {
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
-        <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong></p>
+        <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
         <hr>
 
         <div id="subcontractorCompanyContainer"></div>
