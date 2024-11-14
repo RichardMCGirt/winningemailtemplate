@@ -1,7 +1,7 @@
 // Required constants and helper functions
 const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
-const bidBaseName = 'appi4QZE0SrWI6tt2';
-const bidTableName = 'tblQo2148s04gVPq1';
+const bidBaseName = 'appX1Saz7wMYh4hhm';
+const bidTableName = 'tblfCPX293KlcKsdp';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
 
@@ -67,7 +67,7 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
 
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
-    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "NOT({Outcome}='Win')");
+    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
 }
 
