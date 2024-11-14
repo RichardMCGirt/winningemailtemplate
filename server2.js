@@ -11,7 +11,7 @@ app.use(cors());
 app.get('/api/placeSearch', async (req, res) => {
     try {
         const query = req.query.query;
-        const googleApiKey = "AIzaSyAe4p3dK30Kb3YHK5cnz8CQMS18wKeCOeM"; // Replace with your Google API Key
+        const googleApiKey = "AIzaSyAe4p3dK30Kb3YHK5cnz8CQMS18wKeCOeM"; 
         const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${googleApiKey}`;
         const response = await axios.get(url);
         const data = response.data;

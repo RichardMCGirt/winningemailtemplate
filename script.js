@@ -4,10 +4,13 @@ const bidBaseName = 'appi4QZE0SrWI6tt2';
 const bidTableName = 'tblQo2148s04gVPq1';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
+const VendorBaseName = 'appeNSp44fJ8QYeY5';
+const VendorTableName = 'tblLEYdDi0hfD9fT3';
 // Google API Key
 const googleApiKey = "AIzaSyAe4p3dK30Kb3YHK5cnz8CQMS18wKeCOeM";
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
+let vendorSuggestions = []; // Store vendor names
 
 
 // Display Loading Animation
@@ -41,6 +44,109 @@ function hideLoadingAnimation() {
         loadingOverlay.remove();
     }
 }
+
+// Fetch "Vendor Name" suggestions
+async function fetchVendorSuggestions() {
+    console.log("Starting fetch for vendor suggestions...");
+    
+    try {
+        const records = await fetchAirtableData(VendorBaseName, VendorTableName, 'Name');
+        console.log("Fetched records from Airtable:", records);
+        
+        vendorSuggestions = records.map(record => record.fields['Name']).filter(Boolean);
+        console.log("Extracted vendor names:", vendorSuggestions);
+        
+    } catch (error) {
+        console.error("Error fetching vendor suggestions:", error);
+    }
+    
+    console.log("Vendor suggestions fetch complete.");
+}
+
+// Function to create an autocomplete input with dropdown suggestions for vendor names
+function createVendorAutocompleteInput() {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("vendor-input-wrapper");
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Enter Vendor Name";
+    input.classList.add("vendor-input");
+
+    const dropdown = document.createElement("div");
+    dropdown.classList.add("autocomplete-dropdown");
+
+    // Event listener to show suggestions in the dropdown as user types
+    input.addEventListener("input", function () {
+        const inputValue = input.value.toLowerCase();
+        dropdown.innerHTML = ''; // Clear previous suggestions
+
+        if (inputValue) {
+            const filteredSuggestions = vendorSuggestions.filter(vendor =>
+                vendor.toLowerCase().includes(inputValue)
+            );
+
+            // Display each filtered suggestion as a dropdown item
+            filteredSuggestions.forEach(suggestion => {
+                const option = document.createElement("div");
+                option.classList.add("autocomplete-option");
+                option.textContent = suggestion;
+
+                // Set selected suggestion to input and add to container on click
+                option.onclick = () => {
+                    input.value = suggestion;
+                    dropdown.innerHTML = ''; // Clear dropdown after selection
+                    addVendorToContainer(suggestion); // Add selected vendor to container
+                    input.value = ''; // Clear input for additional entries
+                };
+
+                dropdown.appendChild(option);
+            });
+
+            // Show dropdown if suggestions are available, otherwise hide it
+            dropdown.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(dropdown);
+    return wrapper;
+}
+
+
+// Function to add the selected vendor to the display container
+function addVendorToContainer(vendorName) {
+    const vendorContainer = document.querySelector('.VendoeContainer');
+    const vendorEntry = document.createElement("p");
+    vendorEntry.classList.add("vendor-entry");
+    vendorEntry.textContent = vendorName;
+    vendorContainer.appendChild(vendorEntry);
+
+    // Add a new input field for additional vendors
+    const newInputWrapper = createVendorAutocompleteInput();
+    document.getElementById('vendorInputContainer').appendChild(newInputWrapper);
+}
+
+// Initialize vendor input area with one input field and a button to add more
+function initializeVendorInputArea() {
+    const vendorContainer = document.getElementById('vendorInputContainer');
+    vendorContainer.appendChild(createVendorAutocompleteInput());
+
+    const addButton = document.createElement("button");
+    addButton.textContent = "Add Another Vendor";
+    addButton.onclick = () => vendorContainer.appendChild(createVendorAutocompleteInput());
+    vendorContainer.appendChild(addButton);
+}
+
 
 // Fetch data from Airtable with loading progress
 async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '') {
@@ -101,6 +207,7 @@ async function updateCityForSubdivision() {
         }
     }
 }
+
 
 
 // Fetch bid details and update city based on subdivision
@@ -314,6 +421,17 @@ function displayEmailContent() {
         <p>Dear Team,</p>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
+        <h3>Here's the breakdown: </h3>
+
+<div id="vendorInputContainer">
+    <!-- Initial vendor input will be added here dynamically -->
+</div>
+
+<strong><span class="VendoeContainer"></span></strong> <!-- Container to display selected vendors -->
+
+
+
+        
         <hr>
 
         <div id="subcontractorCompanyContainer"></div>
@@ -431,11 +549,17 @@ async function fetchAndUpdateAutocomplete() {
     bidAutocompleteInput.querySelector('input').disabled = false;
 }
 
+// Fetch vendors on page load and initialize input area
+document.addEventListener('DOMContentLoaded', async () => {
+    await fetchVendorSuggestions(); // Fetch vendor suggestions from Airtable
+    initializeVendorInputArea(); // Set up initial input area
+});
 
 // Load the email content and start fetching bid name suggestions on page load
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     fetchAndUpdateAutocomplete();
+    
 });
 
 // Styles for the loading animation
