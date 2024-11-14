@@ -4,7 +4,8 @@ const bidBaseName = 'appi4QZE0SrWI6tt2';
 const bidTableName = 'tblQo2148s04gVPq1';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
-
+// Google API Key
+const googleApiKey = "AIzaSyAe4p3dK30Kb3YHK5cnz8CQMS18wKeCOeM";
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 
@@ -83,8 +84,26 @@ async function fetchSubcontractorSuggestions(branchFilter) {
         .filter(suggestion => suggestion.companyName && suggestion.email);
 }
 
+// Function to update the city in the branchContainer after subdivision changes
+async function updateCityForSubdivision() {
+    const subdivisionElement = document.querySelector('.subdivisionContainer');
+    const subdivisionName = subdivisionElement ? subdivisionElement.textContent.trim() : "";
 
-// Modify fetchDetailsByBidName to fetch subcontractors after getting bid details
+    if (subdivisionName) {
+        const city = await fetchCityBySubdivision(subdivisionName);
+        const branchContainer = document.querySelector('.branchContainer');
+        
+        if (branchContainer) {
+            branchContainer.textContent = city;
+            console.log("Branch container updated with city:", city); // For debugging
+        } else {
+            console.error("Branch container element not found.");
+        }
+    }
+}
+
+
+// Fetch bid details and update city based on subdivision
 async function fetchDetailsByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Builder', filterFormula);
@@ -96,12 +115,15 @@ async function fetchDetailsByBidName(bidName) {
         const branch = fields['Branch'] || fields['Vanir Offices copy'] || 'Unknown Branch';
         const briqProjectType = fields['Project Type'] ? fields['Project Type'][0] : 'Single Family';
 
-        // Update the email template text with bid details
+        // Update email template with bid details
         updateTemplateText(bidName, builder, gmEmail, branch, briqProjectType);
 
-        // Fetch subcontractors based on the branch and update the subcontractor autocomplete
+        // Fetch subcontractors based on branch and update suggestions
         await fetchSubcontractorSuggestions(branch);
-        updateSubcontractorAutocomplete(); // Update input with new subcontractor suggestions
+        updateSubcontractorAutocomplete();
+
+        // Update city in branchContainer
+        await updateCityForSubdivision();
 
         return { builder, gmEmail, branch, briqProjectType };
     } else {
@@ -142,8 +164,6 @@ function updateSubcontractorAutocomplete() {
     // Enable the subcontractor input field
     subcontractorAutocompleteInput.querySelector('input').disabled = false;
 }
-
-
 
 // Modified createAutocompleteInput function to use the new update function
 function createAutocompleteInput(placeholder, suggestions, onSelection) {
@@ -222,15 +242,71 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, briqProjectTy
     if (gmEmail) {
         document.querySelectorAll('.gmEmailContainer').forEach(el => el.textContent = gmEmail);
     }
-    if (branch) {
-        document.querySelectorAll('.branchContainer').forEach(el => el.textContent = branch);
-    }
+  
     if (briqProjectType) {
         document.querySelectorAll('.briqProjectTypeContainer').forEach(el => el.textContent = briqProjectType);
     }
 
     console.log('Template updated with:', { subdivision, builder, gmEmail, branch, briqProjectType });
 }
+
+async function fetchCityBySubdivision(subdivisionName) {
+    try {
+        const response = await fetch(`http://localhost:6005/api/placeSearch?query=${encodeURIComponent(subdivisionName)}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Google Places API response:", data); // For debugging
+            
+            if (data.results && data.results.length > 0) {
+                // Extract city from the formatted address
+                const formattedAddress = data.results[0].formatted_address;
+                const addressComponents = formattedAddress.split(", ");
+                const city = addressComponents.length >= 2 ? addressComponents[1] : "Unknown City";
+                
+                console.log("City extracted:", city); // For debugging
+                return city;
+            } else {
+                console.warn("No results found for subdivision:", subdivisionName);
+                return "Unknown City";
+            }
+        } else {
+            console.error("Error fetching city:", response.statusText);
+            return "Unknown City";
+        }
+    } catch (error) {
+        console.error("Error fetching city:", error);
+        return "Unknown City";
+    }
+}
+
+
+
+
+
+// Monitor subdivisionContainer for changes and trigger city lookup
+function monitorSubdivisionChanges() {
+    const subdivisionElement = document.querySelector('.subdivisionContainer');
+    
+    // Check if subdivisionElement exists before setting up observer
+    if (subdivisionElement) {
+        const observer = new MutationObserver(async () => {
+            await updateCityForSubdivision();
+        });
+        
+        observer.observe(subdivisionElement, { childList: true, characterData: true, subtree: true });
+    } else {
+        console.error("Element '.subdivisionContainer' not found. Cannot observe changes.");
+    }
+}
+
+// Initialize monitoring on page load
+document.addEventListener('DOMContentLoaded', () => {
+    displayEmailContent();
+    monitorSubdivisionChanges();
+});
+
+
 
 
 // Updated email content display function
