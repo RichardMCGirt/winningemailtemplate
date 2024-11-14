@@ -197,13 +197,35 @@ strong {
     border-radius: 5px;
     background-color: #f9f9f9;
     max-width: 550px;
-    display: flex; /* Use flexbox for layout */
-    flex-wrap: wrap; /* Allow wrapping to the next row */
-    gap: 10px; /* Space between items */
+    text-align: left; /* Align text to the left */
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Space between rows */
+}
+
+#subcontractorCompanyContainer ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
 }
 
 #subcontractorCompanyContainer li {
-    flex: 1 1 45%; /* Each item takes about 45% width to fit two per row */
-    list-style: none; /* Remove bullet points */
+    display: grid;
+    grid-template-columns: max-content 1fr; /* Dynamic width for name, flexible space for email */
+    gap: 10px; /* Space between columns */
+    align-items: start;
+    padding: 5px 0;
+    word-wrap: break-word; /* Allow email to wrap */
 }
+
+.name-colon {
+    white-space: nowrap; /* Prevent line breaks in name/colon section */
+    text-align: left;
+}
+
+.email {
+    text-align: left; /* Align email addresses to the left */
+    overflow-wrap: break-word; /* Ensure email text wraps within available space */
+}
+
 

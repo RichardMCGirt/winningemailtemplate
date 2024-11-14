@@ -116,17 +116,34 @@ function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
 
-   
-    // Display all subcontractor emails in a list
+    const subcontractorAutocompleteInput = createAutocompleteInput("Enter Subcontractor Company Name", subcontractorSuggestions, () => {});
+    subcontractorContainer.appendChild(subcontractorAutocompleteInput);
+
+    // Display all subcontractor emails in a formatted list
     const emailList = document.createElement("ul");
     subcontractorSuggestions.forEach(sub => {
         const emailItem = document.createElement("li");
-        emailItem.textContent = `${sub.companyName}: ${sub.email}`;
+
+        // Create separate spans for alignment
+        const nameColonSpan = document.createElement("span");
+        nameColonSpan.classList.add("name-colon");
+        nameColonSpan.textContent = `${sub.companyName} :`;
+
+        const emailSpan = document.createElement("span");
+        emailSpan.classList.add("email");
+        emailSpan.textContent = sub.email;
+
+        emailItem.appendChild(nameColonSpan);
+        emailItem.appendChild(emailSpan);
         emailList.appendChild(emailItem);
     });
     subcontractorContainer.appendChild(emailList);
 
+    // Enable the subcontractor input field
+    subcontractorAutocompleteInput.querySelector('input').disabled = false;
 }
+
+
 
 // Modified createAutocompleteInput function to use the new update function
 function createAutocompleteInput(placeholder, suggestions, onSelection) {
