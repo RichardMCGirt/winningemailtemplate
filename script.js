@@ -182,7 +182,7 @@ function displayEmailContent() {
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
         <p>We are excited to announce that we have won a new project in <strong><span class="subdivisionContainer"></span></strong> for <strong><span class="builderContainer"></span></strong>. Let's coordinate with the relevant vendors and ensure a smooth project initiation.</p><br>
-        
+        <hr>
 <div class="email-row">
     <h2>To:</h2>
     <h2 id="subcontractorEmailInput" class="autocomplete-input">Subcontractor Email</h2>

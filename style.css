@@ -153,3 +153,39 @@ strong {
     width: 0%;
     transition: width 0.3s;
 }
+
+/* Centering the button */
+#sendEmailButtonContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Button styling */
+#sendEmailButton2 {
+    background-color: #004080; /* Primary color */
+    color: #fff; /* Text color */
+    font-size: 1em;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s ease-in-out;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#sendEmailButton2:hover {
+    background-color: #00274d; /* Darker shade on hover */
+}
+
+#sendEmailButton2:active {
+    background-color: #003366;
+    transform: scale(0.98); /* Slight press effect */
+}
+
+#sendEmailButton2:focus {
+    outline: 2px solid #80bfff; /* Light blue outline for accessibility */
+    outline-offset: 2px;
+}
+
