@@ -189,3 +189,21 @@ strong {
     outline-offset: 2px;
 }
 
+#subcontractorCompanyContainer {
+    max-height: 200px; /* Set a fixed height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 10px;
+    border: 1px solid #ddd; /* Optional: add a border */
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    max-width: 550px;
+    display: flex; /* Use flexbox for layout */
+    flex-wrap: wrap; /* Allow wrapping to the next row */
+    gap: 10px; /* Space between items */
+}
+
+#subcontractorCompanyContainer li {
+    flex: 1 1 45%; /* Each item takes about 45% width to fit two per row */
+    list-style: none; /* Remove bullet points */
+}
+

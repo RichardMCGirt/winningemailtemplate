@@ -111,16 +111,21 @@ async function fetchDetailsByBidName(bidName) {
 
 
 
-// Function to update subcontractor autocomplete input with new suggestions
+// Function to update subcontractor autocomplete input and display all emails in UI
 function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
 
-    const subcontractorAutocompleteInput = createAutocompleteInput("Enter Subcontractor Company Name", subcontractorSuggestions, () => {});
-    subcontractorContainer.appendChild(subcontractorAutocompleteInput);
+   
+    // Display all subcontractor emails in a list
+    const emailList = document.createElement("ul");
+    subcontractorSuggestions.forEach(sub => {
+        const emailItem = document.createElement("li");
+        emailItem.textContent = `${sub.companyName}: ${sub.email}`;
+        emailList.appendChild(emailItem);
+    });
+    subcontractorContainer.appendChild(emailList);
 
-    // Enable the subcontractor input field
-    subcontractorAutocompleteInput.querySelector('input').disabled = false;
 }
 
 // Modified createAutocompleteInput function to use the new update function
@@ -224,10 +229,7 @@ function displayEmailContent() {
 
         <div id="subcontractorCompanyContainer"></div>
 
-        <div class="email-row">
-            <h2>To:</h2>
-            <h2 id="subcontractorEmailInput" class="autocomplete-input">Subcontractor's Email</h2>
-        </div>
+      
 
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
@@ -269,6 +271,9 @@ document.getElementById('sendEmailButton').addEventListener('click', sendEmail);
 function generateMailtoLink() {
     const emailContent = document.getElementById('emailTemplate').innerHTML;
 
+    // Gather all subcontractor emails
+    const subcontractorEmails = subcontractorSuggestions.map(suggestion => suggestion.email).join(',');
+
     // Split content at <hr> or provide fallback
     const contentParts = emailContent.split('<hr>');
     const managementContent = contentParts[0] ? contentParts[0] : "Management email content missing";
@@ -282,7 +287,6 @@ function generateMailtoLink() {
     const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
     
     // Subcontractor email details
-    const subcontractorEmail = document.getElementById('subcontractorEmailInput').value || "purchasing@vanirinstalledsales.com";
     const subcontractorSubject = `New Community | ${builder} | ${subdivision}`;
 
     // Format content for each email
@@ -310,7 +314,7 @@ function generateMailtoLink() {
 
     // Construct Gmail URLs
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-    const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmail)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+    const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
     // Open two Gmail windows
     window.open(managementGmailLink);
