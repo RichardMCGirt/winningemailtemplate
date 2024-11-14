@@ -3,6 +3,7 @@ body {
     font-family: Arial, sans-serif;
     color: #333;
     line-height: 1.6;
+    padding-left: 20px; /* Adds margin on the left */
 }
 
 h2 {
@@ -20,12 +21,13 @@ strong {
     color: #004080;
 }
 
-/* Autocomplete input wrapper */
+/* Autocomplete wrapper with left margin */
 .autocomplete-wrapper {
     position: relative;
     width: 100%;
     max-width: 400px;
     margin: 1em 0;
+    margin-left: 20px; /* Adds margin on the left */
 }
 
 /* Autocomplete input styling */
@@ -72,10 +74,14 @@ strong {
     font-weight: bold;
 }
 
+#sendEmailButton {
+    display: none;
+}
+
 /* Email footer styling */
 #emailTemplate {
     border-top: 2px solid #004080;
-    padding-top: 1em;
+    padding: 1em 0 0 20px; /* Adds padding to the top and left */
     margin-top: 2em;
 }
 
@@ -83,30 +89,67 @@ strong {
     margin-bottom: 1em;
 }
 
+/* Disabled input styling */
 .autocomplete-input:disabled {
     cursor: not-allowed;
-    opacity: 0.6; /* Optional: makes the input look grayed out */
+    opacity: 0.6;
 }
 
+/* Email row styling with left margin for alignment */
 .email-row {
     display: flex;
     align-items: center;
-    gap: 10px; /* Adjust the gap size as needed */
+    gap: 10px;
+    margin-left: 20px; /* Adds left margin */
 }
 
 .email-row h2 {
     margin: 0;
     padding: 0;
-    font-weight: normal; /* Optional: to keep text styling subtle */
+    font-weight: normal;
 }
 
-
-
 #subcontractorEmailInput {
-    width: auto;                /* Allow auto-width */
-    min-width: 250px;           /* Minimum width */
-    max-width: 100%;            /* Limit width to prevent overflow */
-    padding: 2px 4px;           /* Some padding for readability */
-    white-space: nowrap;        /* Prevent wrapping */
-    overflow: hidden;           /* Hide overflow text */
+    width: auto;
+    min-width: 250px;
+    max-width: 100%;
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Loading overlay styles */
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-content {
+    text-align: center;
+    color: #333;
+    font-size: 1.2em;
+}
+
+.loading-bar {
+    background-color: #ccc;
+    border-radius: 4px;
+    width: 100px;
+    height: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.loading-progress {
+    background-color: #004080;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
 }
