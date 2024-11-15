@@ -29,13 +29,22 @@ function showLoadingAnimation() {
     document.body.appendChild(loadingOverlay);
 }
 
+
 // Update Loading Progress
 function updateLoadingProgress(percentage) {
     const loadingPercentage = document.getElementById("loadingPercentage");
     const loadingProgress = document.getElementById("loadingProgress");
-    loadingPercentage.textContent = `${percentage}%`;
-    loadingProgress.style.width = `${percentage}%`;
+
+    // Update the text and width dynamically
+    if (loadingPercentage) {
+        loadingPercentage.textContent = `${percentage}%`; // Use backticks for template literals
+    }
+
+    if (loadingProgress) {
+        loadingProgress.style.width = `${percentage}%`; // Use backticks for template literals
+    }
 }
+
 
 // Hide Loading Animation
 function hideLoadingAnimation() {
@@ -171,10 +180,20 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
         if (offset) url += `${filterFormula ? '&' : '?'}offset=${offset}`;
 
         try {
-            const response = await fetch(url, { headers: { Authorization: `Bearer ${airtableApiKey}` } });
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                },
+            });
+
+            if (!response.ok) {
+                console.error(`Error: ${response.status} - ${response.statusText}`);
+                return [];
+            }
+
             const data = await response.json();
             allRecords = allRecords.concat(data.records);
-            offset = data.offset;
+            offset = data.offset; // Continue pagination if offset exists
         } catch (error) {
             console.error("Error fetching data:", error);
             return [];
@@ -184,6 +203,7 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     return allRecords;
 }
 
+
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
@@ -192,7 +212,7 @@ async function fetchBidNameSuggestions() {
 
 // Modify fetchSubcontractorSuggestions to accept a branch filter
 async function fetchSubcontractorSuggestions(branchFilter) {
-    const filterFormula = `{Branch} = "${branchFilter}"`;
+    const filterFormula = {Branch} = "${branchFilter}";
     const records = await fetchAirtableData(subcontractorBaseName, subcontractorTableName, 'Subcontractor Company Name', filterFormula);
     subcontractorSuggestions = records
         .map(record => ({
@@ -227,26 +247,32 @@ async function fetchDetailsByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Builder', filterFormula);
 
-    if (records.length) {
+    if (records.length > 0) {
         const fields = records[0].fields;
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
         const branch = fields['Branch'] || fields['Vanir Offices copy'] || 'Unknown Branch';
         const briqProjectType = fields['Project Type'] ? fields['Project Type'][0] : 'Single Family';
 
-        // Update email template with bid details
+        // Update the email template
         updateTemplateText(bidName, builder, gmEmail, branch, briqProjectType);
 
-        // Fetch subcontractors based on branch and update suggestions
+        // Fetch and update subcontractor suggestions
         await fetchSubcontractorSuggestions(branch);
         updateSubcontractorAutocomplete();
 
-        // Update city in branchContainer
+        // Update city information
         await updateCityForSubdivision();
 
         return { builder, gmEmail, branch, briqProjectType };
     } else {
-        return { builder: '', gmEmail: 'Branch Staff@Vanir.com', branch: 'Unknown Branch', briqProjectType: 'Single Family' };
+        console.warn("No records found for bid:", bidName);
+        return {
+            builder: 'Unknown Builder',
+            gmEmail: 'Branch Staff@Vanir.com',
+            branch: 'Unknown Branch',
+            briqProjectType: 'Single Family'
+        };
     }
 }
 
@@ -257,7 +283,6 @@ function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
 
-
     // Display all subcontractor emails in a formatted list
     const emailList = document.createElement("ul");
     subcontractorSuggestions.forEach(sub => {
@@ -266,20 +291,24 @@ function updateSubcontractorAutocomplete() {
         // Create separate spans for alignment
         const nameColonSpan = document.createElement("span");
         nameColonSpan.classList.add("name-colon");
-        nameColonSpan.textContent = `${sub.companyName} :`;
+        nameColonSpan.textContent = `${sub.companyName} : `;
 
         const emailSpan = document.createElement("span");
         emailSpan.classList.add("email");
         emailSpan.textContent = sub.email;
 
+        // Append the spans to the list item
         emailItem.appendChild(nameColonSpan);
         emailItem.appendChild(emailSpan);
+
+        // Append the list item to the email list
         emailList.appendChild(emailItem);
     });
-    subcontractorContainer.appendChild(emailList);
 
-    // Enable the subcontractor input field
+    // Append the complete email list to the container
+    subcontractorContainer.appendChild(emailList);
 }
+
 // Modified createAutocompleteInput function to use the new update function
 function createAutocompleteInput(placeholder, suggestions, onSelection) {
     const wrapper = document.createElement("div");
@@ -368,18 +397,12 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, briqProjectTy
 async function fetchCityBySubdivision(subdivisionName) {
     try {
         const response = await fetch(`http://localhost:6005/api/placeSearch?query=${encodeURIComponent(subdivisionName)}`);
-        
         if (response.ok) {
             const data = await response.json();
-            console.log("Google Places API response:", data); // For debugging
-            
             if (data.results && data.results.length > 0) {
-                // Extract city from the formatted address
                 const formattedAddress = data.results[0].formatted_address;
-                const addressComponents = formattedAddress.split(", ");
-                const city = addressComponents.length >= 2 ? addressComponents[1] : "Unknown City";
-                
-                console.log("City extracted:", city); // For debugging
+                const city = formattedAddress.split(", ")[1] || "Unknown City";
+                console.log("City extracted:", city);
                 return city;
             } else {
                 console.warn("No results found for subdivision:", subdivisionName);
@@ -394,10 +417,6 @@ async function fetchCityBySubdivision(subdivisionName) {
         return "Unknown City";
     }
 }
-
-
-
-
 
 // Monitor subdivisionContainer for changes and trigger city lookup
 function monitorSubdivisionChanges() {
@@ -424,42 +443,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// Updated email content display function
 function displayEmailContent() {
     const emailContent = `
-        <h2>To:  purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
+        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
         <p>CC: Vendor</p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
-        <h3>Here's the breakdown: </h3>
-
-<div id="vendorInputContainer"></div>
-<div class="VendoeContainer"></div>
-
-
-
-
-        
+        <h3>Here's the breakdown:</h3>
+        <div id="vendorInputContainer"></div>
+        <div class="VendoeContainer"></div>
         <hr>
-
         <div id="subcontractorCompanyContainer"></div>
-
-      
-
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
 
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
-
-
-    
 }
+
 
 async function sendEmail() {
     const emailContent = document.getElementById('emailTemplate').innerHTML; // HTML content from the template
@@ -488,25 +493,16 @@ document.getElementById('sendEmailButton').addEventListener('click', sendEmail);
 function generateMailtoLink() {
     const emailContent = document.getElementById('emailTemplate').innerHTML;
 
-    // Gather all subcontractor emails
     const subcontractorEmails = subcontractorSuggestions.map(suggestion => suggestion.email).join(',');
 
-    // Split content at <hr> or provide fallback
-    const contentParts = emailContent.split('<hr>');
-    const managementContent = contentParts[0] ? contentParts[0] : "Management email content missing";
-    const subcontractorContent = contentParts[1] ? contentParts[1] : "Subcontractor email content missing";
-
-    // Management team email details
-    const gmEmail = document.querySelector('.gmEmailContainer').textContent.trim() || "purchasing@vanirinstalledsales.com";
-    const ccEmails = "purchasing@vanirinstalledsales.com,hunter@vanirinstalledsales.com";
     const subdivision = document.querySelector('.subdivisionContainer').textContent.trim();
     const builder = document.querySelector('.builderContainer').textContent.trim();
+    const gmEmail = document.querySelector('.gmEmailContainer').textContent.trim() || "purchasing@vanirinstalledsales.com";
+    const ccEmails = "purchasing@vanirinstalledsales.com,hunter@vanirinstalledsales.com";
+
     const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
-    
-    // Subcontractor email details
     const subcontractorSubject = `New Community | ${builder} | ${subdivision}`;
 
-    // Format content for each email
     const managementBody = `
     Dear Team,
 
@@ -517,7 +513,7 @@ function generateMailtoLink() {
     Best regards,
     
     Vanir Installed Sales Team
-    `.replace(/\n\s+/g, '\n\n'); 
+    `.trim();
 
     const subcontractorBody = `
     We are thrilled to inform you that we have been awarded a new community, ${subdivision}, in collaboration with ${builder}. 
@@ -527,18 +523,17 @@ function generateMailtoLink() {
     Best regards,
     
     Vanir Installed Sales Team
-    `.replace(/\n\s+/g, '\n\n'); 
+    `.trim();
 
-    // Construct Gmail URLs
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
     const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
-    // Open two Gmail windows
     window.open(managementGmailLink);
-    setTimeout(() => window.open(subcontractorGmailLink), 1000); // Small delay for user experience
+    setTimeout(() => window.open(subcontractorGmailLink), 1000);
 }
 
 document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
+
 
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
@@ -572,37 +567,3 @@ document.addEventListener('DOMContentLoaded', () => {
     
 });
 
-// Styles for the loading animation
-const style = document.createElement("style");
-style.innerHTML = `
-    #loadingOverlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-    .loading-content {
-        text-align: center;
-        font-size: 18px;
-    }
-    .loading-bar {
-        width: 100%;
-        height: 10px;
-        background: #ddd;
-        margin-top: 10px;
-        border-radius: 5px;
-    }
-    .loading-progress {
-        height: 100%;
-        background: #4caf50;
-        width: 0;
-        border-radius: 5px;
-    }
-`;
-document.head.appendChild(style);

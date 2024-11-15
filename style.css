@@ -189,30 +189,32 @@ strong {
     outline-offset: 2px;
 }
 
-.vendor-input-wrapper {
-    overflow: visible; /* Ensure dropdown is not clipped */
-    position: relative; /* Required for absolute positioning of child elements */
-}
-
-.autocomplete-dropdown {
-    position: absolute;
-    top: 100%; /* Below input */
+#loadingOverlay {
+    position: fixed;
+    top: 0;
     left: 0;
-    width: auto; /* Match input width */
-    background: #fff; /* White background */
-    border: 1px solid #ccc; /* Border for visibility */
-    border-radius: 4px;
-    z-index: 1000; /* Ensure it is above other elements */
-    max-height: 200px; /* Limit dropdown height */
-    overflow-y: auto; /* Enable scrolling for long lists */
-    display: none; /* Initially hidden */
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
-
-.autocomplete-dropdown .autocomplete-option {
-    padding: 10px;
-    cursor: pointer;
+.loading-content {
+    text-align: center;
+    font-size: 18px;
 }
-
-.autocomplete-dropdown .autocomplete-option:hover {
-    background-color: #f0f0f0; /* Highlight on hover */
+.loading-bar {
+    width: 100%;
+    height: 10px;
+    background: #ddd;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+.loading-progress {
+    height: 100%;
+    background: #4caf50;
+    width: 0;
+    border-radius: 5px;
 }
