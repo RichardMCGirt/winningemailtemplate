@@ -188,3 +188,31 @@ strong {
     outline: 2px solid #80bfff; /* Light blue outline for accessibility */
     outline-offset: 2px;
 }
+
+.vendor-input-wrapper {
+    overflow: visible; /* Ensure dropdown is not clipped */
+    position: relative; /* Required for absolute positioning of child elements */
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%; /* Below input */
+    left: 0;
+    width: auto; /* Match input width */
+    background: #fff; /* White background */
+    border: 1px solid #ccc; /* Border for visibility */
+    border-radius: 4px;
+    z-index: 1000; /* Ensure it is above other elements */
+    max-height: 200px; /* Limit dropdown height */
+    overflow-y: auto; /* Enable scrolling for long lists */
+    display: none; /* Initially hidden */
+}
+
+.autocomplete-dropdown .autocomplete-option {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.autocomplete-dropdown .autocomplete-option:hover {
+    background-color: #f0f0f0; /* Highlight on hover */
+}
