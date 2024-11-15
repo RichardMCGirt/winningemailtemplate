@@ -189,6 +189,11 @@ strong {
     outline-offset: 2px;
 }
 
+.vendor-input-wrapper {
+    display: none;
+}
+
+
 #loadingOverlay {
     position: fixed;
     top: 0;

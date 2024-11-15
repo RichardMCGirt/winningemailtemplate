@@ -85,15 +85,6 @@ function createVendorAutocompleteInput() {
     const dropdown = document.createElement("div");
     dropdown.classList.add("autocomplete-dropdown");
 
-    // Delete button for the input box
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
-    deleteButton.classList.add("delete-button");
-    deleteButton.onclick = () => {
-        wrapper.remove();
-        console.log("Vendor input box removed.");
-    };
-
     // Event listener to show suggestions in the dropdown as user types
     input.addEventListener("input", function () {
         const inputValue = input.value.toLowerCase();
@@ -141,31 +132,52 @@ function createVendorAutocompleteInput() {
 
     wrapper.appendChild(input);
     wrapper.appendChild(dropdown);
-    wrapper.appendChild(deleteButton);
     return wrapper;
 }
 
-
-// Function to add the selected vendor to the display container
+// Function to add the selected vendor to the display container with a delete button
 function addVendorToContainer(vendorName) {
     const vendorContainer = document.querySelector('.VendoeContainer');
+
+    if (!vendorContainer) {
+        console.error("Vendor container not found in the DOM.");
+        return;
+    }
+
+    // Create a container for each vendor entry
+    const vendorEntryWrapper = document.createElement("div");
+    vendorEntryWrapper.classList.add("vendor-entry-wrapper");
+
+    // Create a paragraph for the vendor name
     const vendorEntry = document.createElement("p");
     vendorEntry.classList.add("vendor-entry");
     vendorEntry.textContent = vendorName;
-    vendorContainer.appendChild(vendorEntry);
 
-    console.log("Vendor added to container:", vendorName); // Debugging added vendor
+    // Create a delete button
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.classList.add("delete-vendor-button");
+    deleteButton.onclick = () => {
+        vendorEntryWrapper.remove();
+        console.log(`Vendor "${vendorName}" removed.`);
+    };
+
+    // Append the vendor entry and delete button to the wrapper
+    vendorEntryWrapper.appendChild(vendorEntry);
+    vendorEntryWrapper.appendChild(deleteButton);
+
+    // Append the wrapper to the main vendor container
+    vendorContainer.appendChild(vendorEntryWrapper);
+
+    console.log(`Vendor "${vendorName}" added to container.`);
 }
+
 
 // Initialize vendor input area with one input field and a button to add more
 function initializeVendorInputArea() {
     const vendorContainer = document.getElementById('vendorInputContainer');
     vendorContainer.appendChild(createVendorAutocompleteInput());
 
-    const addButton = document.createElement("button");
-    addButton.textContent = "Add Another Vendor";
-    addButton.onclick = () => vendorContainer.appendChild(createVendorAutocompleteInput());
-    vendorContainer.appendChild(addButton);
 }
 
 
