@@ -330,55 +330,49 @@ function updateSubcontractorAutocomplete() {
     subcontractorContainer.appendChild(emailList);
 }
 
-// Modified createAutocompleteInput function to use the new update function
-function createAutocompleteInput(placeholder, suggestions, onSelection) {
+// Function to create a unified autocomplete input
+function createAutocompleteInput(placeholder, suggestions, type, onSelection) {
+    // Check if type is valid
+    if (typeof type !== "string" || !type.trim()) {
+        console.error("Invalid type provided for createAutocompleteInput:", type);
+        return null;
+    }
+
     const wrapper = document.createElement("div");
-    wrapper.classList.add("autocomplete-wrapper");
+    wrapper.classList.add(`${type}-autocomplete-wrapper`, "autocomplete-wrapper");
 
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = placeholder;
-    input.classList.add("autocomplete-input");
-    input.disabled = true; // Disable initially, enabled later
+    input.classList.add(`${type}-autocomplete-input`, "autocomplete-input");
 
     const dropdown = document.createElement("div");
-    dropdown.classList.add("autocomplete-dropdown");
+    dropdown.classList.add(`${type}-autocomplete-dropdown`, "autocomplete-dropdown");
 
-    // Display dropdown suggestions on input
     input.addEventListener("input", function () {
         const inputValue = input.value.toLowerCase();
         dropdown.innerHTML = ''; // Clear previous suggestions
 
-        if (inputValue) {
-            const filteredSuggestions = suggestions.filter(item => {
-                const text = typeof item === 'string' ? item : item.companyName;
-                return text.toLowerCase().includes(inputValue);
-            });
+        const filteredSuggestions = suggestions.filter(item => {
+            const text = typeof item === 'string' ? item : item.companyName;
+            return text.toLowerCase().includes(inputValue);
+        });
 
-            filteredSuggestions.forEach(suggestion => {
-                const option = document.createElement("div");
-                option.classList.add("autocomplete-option");
-                option.textContent = typeof suggestion === 'string' ? suggestion : suggestion.companyName;
+        filteredSuggestions.forEach(suggestion => {
+            const option = document.createElement("div");
+            option.classList.add(`${type}-autocomplete-option`, "autocomplete-option");
+            option.textContent = typeof suggestion === 'string' ? suggestion : suggestion.companyName;
 
-                // On click, select suggestion and update the email display
-                option.onclick = async () => {
-                    input.value = option.textContent; // Set input value to selected suggestion
-                    dropdown.innerHTML = ''; // Clear dropdown
+            option.onclick = () => {
+                input.value = option.textContent;
+                dropdown.innerHTML = '';
+                if (onSelection) onSelection(suggestion);
+            };
 
-                    if (typeof suggestion !== 'string') {
-                        updateSubcontractorEmail(option.textContent); // Populate email in the h2 tag
-                    }
+            dropdown.appendChild(option);
+        });
 
-                    // Fetch and update additional details for bid name suggestions
-                    if (onSelection && typeof suggestion === 'string') {
-                        const details = await onSelection(suggestion);
-                        updateTemplateText(suggestion, details.builder, details.gmEmail);
-                    }
-                };
-
-                dropdown.appendChild(option);
-            });
-        }
+        dropdown.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
     });
 
     wrapper.appendChild(input);
@@ -568,16 +562,50 @@ async function fetchAndUpdateAutocomplete() {
     hideLoadingAnimation();
 
     const emailContainer = document.getElementById('emailTemplate');
-    const bidAutocompleteInput = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, fetchDetailsByBidName);
+
+    // Correctly pass "bid" as the type
+    const bidAutocompleteInput = createAutocompleteInput(
+        "Enter Bid Name",
+        bidNameSuggestions,
+        "bid", // Pass a string as type
+        fetchDetailsByBidName
+    );
     emailContainer.prepend(bidAutocompleteInput);
 
     // Enable bid name input after loading
     bidAutocompleteInput.querySelector('input').disabled = false;
 }
 
+
+// Initialize bid and vendor autocomplete
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch suggestions
+    await fetchBidNameSuggestions();
+    await fetchVendorSuggestions();
+        initializeVendorInputArea(); // Set up initial input area
+
+
+    // Initialize autocomplete for bid names
+    const bidContainer = document.getElementById('bidInputContainer');
+    if (bidContainer) {
+        const bidInput = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, "bid", fetchDetailsByBidName);
+        bidContainer.appendChild(bidInput);
+    } else {
+        console.error("Bid container not found.");
+    }
+
+    // Initialize autocomplete for vendor names
+    const vendorContainer = document.getElementById('vendorInputContainer');
+    if (vendorContainer) {
+        const vendorInput = createAutocompleteInput("Enter Vendor Name", vendorSuggestions, "vendor", addVendorToContainer);
+        vendorContainer.appendChild(vendorInput);
+    } else {
+        console.error("Vendor container not found.");
+    }
+});
+
 // Fetch vendors on page load and initialize input area
 document.addEventListener('DOMContentLoaded', async () => {
-    await fetchVendorSuggestions(); // Fetch vendor suggestions from Airtable
     initializeVendorInputArea(); // Set up initial input area
 });
 
