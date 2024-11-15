@@ -76,17 +76,29 @@ function createVendorAutocompleteInput() {
     const dropdown = document.createElement("div");
     dropdown.classList.add("autocomplete-dropdown");
 
+    // Delete button for the input box
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.classList.add("delete-button");
+    deleteButton.onclick = () => {
+        wrapper.remove();
+        console.log("Vendor input box removed.");
+    };
+
     // Event listener to show suggestions in the dropdown as user types
     input.addEventListener("input", function () {
         const inputValue = input.value.toLowerCase();
         dropdown.innerHTML = ''; // Clear previous suggestions
+
+        console.log("User input:", inputValue); // Debugging input value
 
         if (inputValue) {
             const filteredSuggestions = vendorSuggestions.filter(vendor =>
                 vendor.toLowerCase().includes(inputValue)
             );
 
-            // Display each filtered suggestion as a dropdown item
+            console.log("Filtered suggestions:", filteredSuggestions); // Debugging filtered suggestions
+
             filteredSuggestions.forEach(suggestion => {
                 const option = document.createElement("div");
                 option.classList.add("autocomplete-option");
@@ -94,7 +106,8 @@ function createVendorAutocompleteInput() {
 
                 // Set selected suggestion to input and add to container on click
                 option.onclick = () => {
-                    input.value = suggestion;
+                    input.value = suggestion; // Set input value to selected suggestion
+                    console.log("Selected suggestion:", suggestion); // Debugging selected suggestion
                     dropdown.innerHTML = ''; // Clear dropdown after selection
                     addVendorToContainer(suggestion); // Add selected vendor to container
                     input.value = ''; // Clear input for additional entries
@@ -119,6 +132,7 @@ function createVendorAutocompleteInput() {
 
     wrapper.appendChild(input);
     wrapper.appendChild(dropdown);
+    wrapper.appendChild(deleteButton);
     return wrapper;
 }
 
@@ -131,9 +145,7 @@ function addVendorToContainer(vendorName) {
     vendorEntry.textContent = vendorName;
     vendorContainer.appendChild(vendorEntry);
 
-    // Add a new input field for additional vendors
-    const newInputWrapper = createVendorAutocompleteInput();
-    document.getElementById('vendorInputContainer').appendChild(newInputWrapper);
+    console.log("Vendor added to container:", vendorName); // Debugging added vendor
 }
 
 // Initialize vendor input area with one input field and a button to add more
@@ -423,11 +435,9 @@ function displayEmailContent() {
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
         <h3>Here's the breakdown: </h3>
 
-<div id="vendorInputContainer">
-    <!-- Initial vendor input will be added here dynamically -->
-</div>
+<div id="vendorInputContainer"></div>
+<div class="VendoeContainer"></div>
 
-<strong><span class="VendoeContainer"></span></strong> <!-- Container to display selected vendors -->
 
 
 
