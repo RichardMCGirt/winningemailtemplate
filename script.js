@@ -154,6 +154,8 @@ function createVendorAutocompleteInput() {
 
                         // Clear the input field
                         clearVendorInput(input);
+                        refreshPage();
+
                     } else {
                         alert("This vendor is already added.");
                     }
@@ -161,7 +163,7 @@ function createVendorAutocompleteInput() {
                     // Save data to localStorage and refresh the page
                     saveDataToLocalStorage();
                     // Optionally you can trigger a page refresh here if needed
-                    // refreshPage();
+                     refreshPage();
                 };
 
                 dropdown.appendChild(option);
@@ -185,11 +187,16 @@ function createVendorAutocompleteInput() {
     return wrapper;
 }
 
-
+// Trigger a page refresh after adding a vendor
+function refreshPage() {
+    location.reload(); // Reload the page to clear input fields and restore saved data
+}
 
 
 // Add the selected vendor to the container and clear the input
 function addVendorToContainer(vendorName) {
+    console.log("Adding vendor:", vendorName);
+
     const vendorContainer = document.querySelector('.VendoeContainer');
 
     // Check if the container exists
@@ -197,6 +204,8 @@ function addVendorToContainer(vendorName) {
         console.error("Vendor container not found.");
         return;
     }
+
+    console.log("Vendor container found:", vendorContainer);
 
     // Create a container for the vendor entry
     const vendorEntryWrapper = document.createElement("div");
@@ -207,24 +216,34 @@ function addVendorToContainer(vendorName) {
     vendorEntry.classList.add("vendor-entry");
     vendorEntry.textContent = vendorName;
 
+    console.log("Created vendor entry element:", vendorEntry);
+
     // Create a delete button for the vendor entry
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
     deleteButton.classList.add("delete-vendor-button");
     deleteButton.onclick = () => {
+        console.log("Delete button clicked for vendor:", vendorName);
+
         // Remove the vendor entry
         vendorEntryWrapper.remove();
 
         // Add the vendor back to suggestions list (if needed)
         vendorSuggestions.push(vendorName);
 
+        console.log("Vendor added back to suggestions:", vendorName);
+
         // Save updated data to localStorage
         saveDataToLocalStorage();
     };
 
+    console.log("Delete button created:", deleteButton);
+
     // Append vendor entry and delete button
     vendorEntryWrapper.appendChild(vendorEntry);
     vendorEntryWrapper.appendChild(deleteButton);
+
+    console.log("Appended vendor entry and delete button to wrapper:", vendorEntryWrapper);
 
     // Append to vendor container
     vendorContainer.appendChild(vendorEntryWrapper);
@@ -233,10 +252,50 @@ function addVendorToContainer(vendorName) {
     // Save data to localStorage after adding the vendor
     saveDataToLocalStorage();
 
-    // Clear the input field and reset
+    // Select the correct input field to clear (ensure we are targeting the right element)
     const inputField = document.querySelector('.vendor-autocomplete-input');
-    clearVendorInput(inputField);
+
+    if (inputField) {
+        console.log("Input field value before clearing:", inputField.value);
+
+        // Clear the input field
+        inputField.value = '';
+
+        // Log after clearing to confirm input value is reset
+        console.log("Input field value after clearing:", inputField.value);
+
+        // Reset the placeholder
+        inputField.placeholder = 'Enter Vendor Name';
+
+        // Log the placeholder value
+        console.log("Input field placeholder after reset:", inputField.placeholder);
+    } else {
+        console.error("Input field not found for clearing.");
+    }
+
+    // Check if the input field is still holding the old value and log it after a delay
+    setTimeout(() => {
+        const postClearInputField = document.querySelector('.vendor-autocomplete-input');
+        console.log("After clearing input, current value (after delay):", postClearInputField ? postClearInputField.value : "Input field not found");
+    }, 100);
 }
+
+
+
+
+// Function to clear vendor input field
+function clearVendorInput(inputField) {
+    if (inputField) {
+        inputField.value = ''; // Clear the input field
+        inputField.placeholder = 'Enter Vendor Name'; // Reset the placeholder
+        console.log("Vendor input field cleared successfully.");
+    } else {
+        console.error("Input field is null or undefined, cannot clear.");
+    }
+}
+
+
+
 
 
 
@@ -265,11 +324,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Initialize the vendor input area with a new input field
 function initializeVendorInputArea() {
-    const vendorContainer = document.getElementById('vendorInputContainer');
     
     // Add the new input element for vendor name
     const vendorInputField = createVendorAutocompleteInput();
-    vendorContainer.appendChild(vendorInputField);
 }
 
 // Save bid name and added vendors to localStorage
@@ -304,16 +361,7 @@ function loadDataFromLocalStorage() {
     });
 }
 
-// Clear vendor input field and reset placeholder
-function clearVendorInput(inputField) {
-    inputField.value = ''; // Clear the input field
-    inputField.placeholder = 'Enter Vendor Name'; // Reset the placeholder
-}
 
-// Call this function when the page is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    loadDataFromLocalStorage();  // Load stored bid and vendor data on page load
-});
 
 
 // Clear input boxes and load new data
