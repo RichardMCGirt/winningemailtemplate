@@ -12,6 +12,11 @@ let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 let vendorSuggestions = []; // Store vendor names
 
+let bidLoadingProgress = 0;
+let vendorLoadingProgress = 0;
+let totalLoadingProgress = 0;
+
+const MAX_PROGRESS = 100;
 
 // Display Loading Animation
 function showLoadingAnimation() {
@@ -29,22 +34,19 @@ function showLoadingAnimation() {
     document.body.appendChild(loadingOverlay);
 }
 
-
 // Update Loading Progress
 function updateLoadingProgress(percentage) {
     const loadingPercentage = document.getElementById("loadingPercentage");
     const loadingProgress = document.getElementById("loadingProgress");
 
-    // Update the text and width dynamically
     if (loadingPercentage) {
-        loadingPercentage.textContent = `${percentage}%`; // Use backticks for template literals
+        loadingPercentage.textContent = `${percentage}%`;
     }
 
     if (loadingProgress) {
-        loadingProgress.style.width = `${percentage}%`; // Use backticks for template literals
+        loadingProgress.style.width = `${percentage}%`;
     }
 }
-
 
 // Hide Loading Animation
 function hideLoadingAnimation() {
@@ -54,22 +56,60 @@ function hideLoadingAnimation() {
     }
 }
 
+// Simulate Live Progress Updates (e.g., for data loading)
+function simulateLiveProgressUpdates() {
+    let percentage = 0;
+
+    const interval = setInterval(() => {
+        percentage += 10; // Increase progress by 5%
+        
+        // Update loading progress
+        updateLoadingProgress(percentage);
+
+        // If the progress reaches 100%, stop the interval and hide the loading overlay
+        if (percentage >= 100) {
+            clearInterval(interval);
+            hideLoadingAnimation();
+        }
+    }, 500); // Update every 500ms
+}
+
+// Start the process on page load or when you want to trigger it
+document.addEventListener('DOMContentLoaded', () => {
+    showLoadingAnimation();  // Show the loading animation
+    simulateLiveProgressUpdates();  // Start live progress updates
+});
+
+// Fetch "Bid Name" suggestions
+async function fetchBidSuggestions() {
+    try {
+        const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
+        bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
+        
+        // Simulate progress update for bid fetching
+        bidLoadingProgress = 55;
+        totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average of both progress
+        updateLoadingProgress(totalLoadingProgress);
+        console.log("Bid suggestions fetched", bidNameSuggestions);
+    } catch (error) {
+        console.error("Error fetching bid suggestions:", error);
+    }
+}
+
 // Fetch "Vendor Name" suggestions
 async function fetchVendorSuggestions() {
-    console.log("Starting fetch for vendor suggestions...");
-    
     try {
         const records = await fetchAirtableData(VendorBaseName, VendorTableName, 'Name');
-        console.log("Fetched records from Airtable:", records);
-        
         vendorSuggestions = records.map(record => record.fields['Name']).filter(Boolean);
-        console.log("Extracted vendor names:", vendorSuggestions);
         
+        // Simulate progress update for vendor fetching
+        vendorLoadingProgress = 45;  // After fetching bids, vendor progress is set to 45%
+        totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average progress
+        updateLoadingProgress(totalLoadingProgress);
+        console.log("Vendor suggestions fetched", vendorSuggestions);
     } catch (error) {
         console.error("Error fetching vendor suggestions:", error);
     }
-    
-    console.log("Vendor suggestions fetch complete.");
 }
 
 // Function to create an autocomplete input with dropdown suggestions for vendor names
@@ -104,24 +144,35 @@ function createVendorAutocompleteInput() {
                 option.onclick = () => {
                     // Check if the vendor is already in the container
                     const existingVendor = document.querySelectorAll('.vendor-entry').some(entry => entry.textContent === suggestion);
+                
+                    // Log the current state before taking action
+                    console.log('Checking if vendor already exists:', suggestion);
+                
                     if (!existingVendor) {
                         // Add selected vendor to container
                         addVendorToContainer(suggestion);
-
+                
                         // Remove the selected vendor from the suggestions list
                         vendorSuggestions = vendorSuggestions.filter(vendor => vendor !== suggestion);
-
-                        // Reset input value and clear the placeholder
-                        input.value = '';
-                        input.placeholder = 'Enter Vendor Name';
-
-                        // Clear the dropdown after selection
-                        dropdown.innerHTML = '';
+                
+                        // Log that the vendor was added
+                        console.log('Vendor added to container:', suggestion);
                     } else {
                         alert("This vendor is already added.");
+                        console.log('Vendor already exists in the container:', suggestion);
                     }
+                
+                    // Clear the input field after vendor is either added or if the vendor already exists
+                    const vendorInput = document.querySelector('.vendor-input');
+                    if (vendorInput) {
+                        vendorInput.value = '';  // Clear input field automatically
+                        vendorInput.placeholder = 'Enter Vendor Name';  // Reset placeholder text
+                    }
+                
+                    // Clear the dropdown after selection
+                    dropdown.innerHTML = '';
                 };
-
+                          
                 dropdown.appendChild(option);
             });
 
@@ -143,6 +194,8 @@ function createVendorAutocompleteInput() {
     wrapper.appendChild(dropdown);
     return wrapper;
 }
+
+
 
 // Function to add the selected vendor to the display container with a delete button
 function addVendorToContainer(vendorName) {
@@ -183,15 +236,42 @@ function addVendorToContainer(vendorName) {
     console.log(`Vendor "${vendorName}" added to container.`);
 }
 
+// Simulate loading step by step, showing progress incrementally
+async function startLoadingProcess() {
 
+    // Step 1: Load bids
+    await fetchBidSuggestions();
+    
+    // Step 2: Load vendors (after bids are loaded)
+    await fetchVendorSuggestions();
 
-// Initialize vendor input area with one input field and a button to add more
-function initializeVendorInputArea() {
-    const vendorContainer = document.getElementById('vendorInputContainer');
-    vendorContainer.appendChild(createVendorAutocompleteInput());
+    // Once everything is loaded, we can enable the vendor input
+    const vendorInput = document.querySelector('.vendor-input');
+    if (vendorInput) {
+        vendorInput.disabled = false;  // Enable vendor input after all data is loaded
+    }
 
+    // Complete loading and hide the loading animation
+    hideLoadingAnimation();
 }
 
+document.addEventListener('DOMContentLoaded', async () => {
+    startLoadingProcess();  // Trigger loading process after page load
+});
+
+// Initialize the vendor input field and disable until all data is loaded
+function initializeVendorInputArea() {
+    const vendorContainer = document.getElementById('vendorInputContainer');
+    
+    // Disable vendor input until vendors are fully loaded
+    const vendorInput = document.createElement("input");
+    vendorInput.type = "text";
+    vendorInput.placeholder = "Enter Vendor Name";
+    vendorInput.classList.add("vendor-input");
+    vendorInput.disabled = true;  // Disable input until vendor suggestions are ready
+
+    vendorContainer.appendChild(vendorInput);
+}
 
 // Fetch data from Airtable with detailed logging and loading progress
 async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '') {
@@ -605,11 +685,10 @@ document.getElementById('sendEmailButton2').addEventListener('click', generateMa
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
-    showLoadingAnimation();
+
 
     // Fetch bid names only (no subcontractors yet)
     await fetchBidNameSuggestions();
-    updateLoadingProgress(50);
 
     hideLoadingAnimation();
 

@@ -45,7 +45,6 @@ strong {
 .VendoeContainer {
     max-height: 150px; /* Set a max height for the container */
     overflow-y: auto;  /* Enable vertical scrolling when content overflows */
-    border: 1px solid #ccc; /* Optional: border around the container */
     padding: 10px;  /* Optional: padding inside the container */
     margin-top: 10px; /* Optional: margin to create space from other elements */
     width: auto;
