@@ -76,6 +76,7 @@ strong {
     left: 0;
     width: auto;
     border-top: none;
+    color: #121212;
     max-height: 200px;
     overflow-y: auto;
     z-index: 1000;
@@ -87,7 +88,7 @@ strong {
     padding: 12px;
     cursor: pointer;
     font-size: 1em;
-    color: #333;
+    color: black;
     transition: background-color 0.3s ease;
 }
 
@@ -368,4 +369,238 @@ strong {
 
 #subcontractorCompanyContainer::-webkit-scrollbar-thumb:hover {
     background-color: #555; /* Darker color when hovering over the scrollbar thumb */
+}
+
+/* The switch container */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+/* Hide the checkbox input (it will be controlled by the label) */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+/* The circle inside the slider */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+/* When the checkbox is checked, change the background and circle position */
+input:checked + .slider {
+    background-color: #4caf50; /* Green color for the switch when on */
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px); /* Move the circle to the right */
+}
+
+/* When the switch is hovered */
+.slider:hover {
+    background-color: #bbb;
+}
+
+
+/* Dark mode
+
+/* Global Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212; /* Dark background */
+    color: #ddd; /* Light text */
+    font-family: Arial, sans-serif; /* Set a consistent font */
+}
+
+/* Add some padding for the email template */
+/* Email Template Styling in Dark Mode */
+body.dark-mode #emailTemplate {
+    padding: 20px;
+    background-color: #333; /* Dark background for email template */
+    color: #ddd; /* Lighter text color for readability */
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Darker shadow for better contrast */
+}
+
+/* Adjust text color within email template in dark mode */
+body.dark-mode #emailTemplate h2, 
+body.dark-mode #emailTemplate p, 
+body.dark-mode #emailTemplate strong {
+    color: #ddd; /* Light text color for headings and body */
+}
+
+/* Add link styling in dark mode */
+body.dark-mode #emailTemplate a {
+    color: #00bcd4; /* Light blue color for links */
+}
+
+body.dark-mode #emailTemplate a:hover {
+    color: #fff; /* White text for links on hover */
+}
+
+body.dark-mode .autocomplete-option {
+    padding: 12px;
+    cursor: pointer;
+    font-size: 1em;
+    color: white;
+    transition: background-color 0.3s ease;
+}
+
+/* Headings */
+body.dark-mode h2, body.dark-mode h3 {
+    color: #fff; /* White text for headings */
+}
+
+/* Inputs and Autocomplete */
+body.dark-mode .autocomplete-input {
+    background-color: black; /* Dark background for inputs */
+    color: #fff; /* White text */
+    border: 1px solid #444; /* Border color */
+}
+
+body.dark-mode .autocomplete-input:focus {
+    border-color: #00bcd4; /* Light blue border when focused */
+}
+
+body.dark-mode .autocomplete-dropdown {
+    background-color: #222; /* Dropdown background */
+    color: #ddd; /* Light text in dropdown */
+}
+
+body.dark-mode .autocomplete-option:hover {
+    background-color: black; /* Highlight option with blue on hover */
+    color: #fff; /* White text on hover */
+}
+
+/* Vendor Container */
+body.dark-mode .VendoeContainer {
+    background-color: #222; /* Dark background */
+    color: white; /* Light text */
+    padding: 10px;
+    border-radius: 5px; /* Rounded corners */
+    max-width: 600px;
+}
+
+/* Vendor Entry in Dark Mode */
+body.dark-mode .vendor-entry {
+    text-align: center !important; /* Center the text inside the vendor entry */
+    color: white !important; /* Ensure the text is white in dark mode */
+}
+
+
+
+/* Loading Overlay */
+body.dark-mode #loadingOverlay {
+    background: rgba(0, 0, 0, 0.8); /* Semi-transparent dark overlay */
+}
+
+body.dark-mode #loadingOverlay .loading-content {
+    color: #fff; /* Light text for loading message */
+}
+
+/* Buttons */
+body.dark-mode #sendEmailButton2 {
+    background-color: #008080; /* Teal color for the button */
+    color: #fff; /* White text */
+}
+
+body.dark-mode #sendEmailButton2:hover {
+    background-color: #004d47; /* Darker teal on hover */
+}
+
+/* Switch (Dark Mode Toggle) */
+body.dark-mode .switch {
+    background-color: #4caf50; /* Green color for switch when on */
+}
+
+body.dark-mode .switch .slider:before {
+    background-color: #fff; /* White circle for the switch */
+}
+
+/* Adjustments for the dark mode toggle button */
+body.dark-mode .slider {
+    background-color: #888; /* Neutral slider background */
+}
+
+body.dark-mode input:checked + .slider {
+    background-color: #4caf50; /* Green when checked */
+}
+
+/* Apply a more defined text color on dark mode for better contrast */
+body.dark-mode p, body.dark-mode .vendor-entry, body.dark-mode .subdivisionContainer, body.dark-mode .builderContainer {
+    color: #ddd; /* Lighter text color */
+}
+
+/* Links in Dark Mode */
+body.dark-mode a {
+    color: #00bcd4; /* Light blue color for links */
+}
+
+body.dark-mode a:hover {
+    color: #fff; /* White text for links on hover */
+}
+
+/* Scrollbars */
+body.dark-mode .VendoeContainer::-webkit-scrollbar-thumb {
+    background-color: #888; /* Scroll thumb color */
+}
+
+body.dark-mode .VendoeContainer::-webkit-scrollbar-thumb:hover {
+    background-color: #555; /* Darker scroll thumb on hover */
+}
+
+/* Switch styling for dark mode */
+body.dark-mode .switch input:checked + .slider {
+    background-color: #00bcd4; /* Light blue for dark mode switch on */
+}
+
+body.dark-mode .switch .slider {
+    background-color: #666; /* Darker grey background for the slider */
+}
+
+body.dark-mode .switch .slider:before {
+    background-color: #333; /* Darker circle for the slider */
+}
+
+/* Switch circle when activated */
+body.dark-mode .switch input:checked + .slider:before {
+    background-color: #fff; /* White circle when the switch is on */
+}
+
+/* Hover effect for dark mode */
+body.dark-mode .switch .slider:hover {
+    background-color: #555; /* Slightly darker grey when hovered */
+}
+
+/* Optional: Add a transition effect for dark mode when switching states */
+body.dark-mode .switch input:checked + .slider {
+    transition: background-color 0.4s ease;
+}
+
+body.dark-mode .switch .slider:before {
+    transition: transform 0.4s ease, background-color 0.4s ease;
 }
