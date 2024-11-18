@@ -90,14 +90,10 @@ function createVendorAutocompleteInput() {
         const inputValue = input.value.toLowerCase();
         dropdown.innerHTML = ''; // Clear previous suggestions
 
-        console.log("User input:", inputValue); // Debugging input value
-
         if (inputValue) {
             const filteredSuggestions = vendorSuggestions.filter(vendor =>
                 vendor.toLowerCase().includes(inputValue)
             );
-
-            console.log("Filtered suggestions:", filteredSuggestions); // Debugging filtered suggestions
 
             filteredSuggestions.forEach(suggestion => {
                 const option = document.createElement("div");
@@ -106,11 +102,24 @@ function createVendorAutocompleteInput() {
 
                 // Set selected suggestion to input and add to container on click
                 option.onclick = () => {
-                    input.value = suggestion; // Set input value to selected suggestion
-                    console.log("Selected suggestion:", suggestion); // Debugging selected suggestion
-                    dropdown.innerHTML = ''; // Clear dropdown after selection
-                    addVendorToContainer(suggestion); // Add selected vendor to container
-                    input.value = ''; // Clear input for additional entries
+                    // Check if the vendor is already in the container
+                    const existingVendor = document.querySelectorAll('.vendor-entry').some(entry => entry.textContent === suggestion);
+                    if (!existingVendor) {
+                        // Add selected vendor to container
+                        addVendorToContainer(suggestion);
+
+                        // Remove the selected vendor from the suggestions list
+                        vendorSuggestions = vendorSuggestions.filter(vendor => vendor !== suggestion);
+
+                        // Reset input value and clear the placeholder
+                        input.value = '';
+                        input.placeholder = 'Enter Vendor Name';
+
+                        // Clear the dropdown after selection
+                        dropdown.innerHTML = '';
+                    } else {
+                        alert("This vendor is already added.");
+                    }
                 };
 
                 dropdown.appendChild(option);
@@ -158,8 +167,11 @@ function addVendorToContainer(vendorName) {
     deleteButton.textContent = "Delete";
     deleteButton.classList.add("delete-vendor-button");
     deleteButton.onclick = () => {
+        // Remove the vendor entry from the container
         vendorEntryWrapper.remove();
-        console.log(`Vendor "${vendorName}" removed.`);
+
+        // Add the vendor back to suggestions list
+        vendorSuggestions.push(vendorName);
     };
 
     // Append the vendor entry and delete button to the wrapper
@@ -168,9 +180,9 @@ function addVendorToContainer(vendorName) {
 
     // Append the wrapper to the main vendor container
     vendorContainer.appendChild(vendorEntryWrapper);
-
     console.log(`Vendor "${vendorName}" added to container.`);
 }
+
 
 
 // Initialize vendor input area with one input field and a button to add more
@@ -245,28 +257,48 @@ async function fetchBidNameSuggestions() {
 
 // Modify fetchSubcontractorSuggestions to accept a branch filter
 async function fetchSubcontractorSuggestions(branchFilter) {
-    const filterFormula = {Branch} = "${branchFilter}";
-    const records = await fetchAirtableData(subcontractorBaseName, subcontractorTableName, 'Subcontractor Company Name', filterFormula);
-    subcontractorSuggestions = records
-        .map(record => ({
-            companyName: record.fields['Subcontractor Company Name'],
-            email: record.fields['Subcontractor Email']
-        }))
-        .filter(suggestion => suggestion.companyName && suggestion.email);
+    if (!branchFilter) {
+        console.error("Branch filter is missing.");
+        return;
+    }
+
+    // Properly interpolate the branchFilter value
+    const filterFormula = `{Branch} = "${branchFilter}"`;
+    try {
+        const records = await fetchAirtableData(
+            subcontractorBaseName,
+            subcontractorTableName,
+            'Subcontractor Company Name, Subcontractor Email',
+            filterFormula
+        );
+
+        subcontractorSuggestions = records
+            .map(record => ({
+                companyName: record.fields['Subcontractor Company Name'],
+                email: record.fields['Subcontractor Email']
+            }))
+            .filter(suggestion => suggestion.companyName && suggestion.email);
+
+        console.log("Subcontractor suggestions:", subcontractorSuggestions);
+    } catch (error) {
+        console.error("Error fetching subcontractor suggestions:", error);
+    }
 }
 
-// Function to update the city in the branchContainer after subdivision changes
+
+let cityUpdated = false;  // Flag to track if the city has been updated
+
 async function updateCityForSubdivision() {
     const subdivisionElement = document.querySelector('.subdivisionContainer');
     const subdivisionName = subdivisionElement ? subdivisionElement.textContent.trim() : "";
 
-    if (subdivisionName) {
-        const city = await fetchCityBySubdivision(subdivisionName);
+    if (subdivisionName && !cityUpdated) {  // Check if city is not yet updated
         const branchContainer = document.querySelector('.branchContainer');
-        
+
         if (branchContainer) {
-            branchContainer.textContent = city;
-            console.log("Branch container updated with city:", city); // For debugging
+            branchContainer.textContent = city;  // Set only the city
+            console.log("Branch container updated with city:", city);
+            cityUpdated = true;  // Mark that the city has been updated
         } else {
             console.error("Branch container element not found.");
         }
@@ -275,20 +307,25 @@ async function updateCityForSubdivision() {
 
 
 
+
+
+
 // Fetch bid details and update city based on subdivision
 async function fetchDetailsByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
-    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Builder', filterFormula);
+    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Builder, Project Type', filterFormula);
 
     if (records.length > 0) {
         const fields = records[0].fields;
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
         const branch = fields['Branch'] || fields['Vanir Offices copy'] || 'Unknown Branch';
-        const briqProjectType = fields['Project Type'] ? fields['Project Type'][0] : 'Single Family';
+        const projectType = fields['Project Type'] || 'Default Project Type'; // Define projectType
+
+        const materialType = fields['Material Type'] || 'General Materials';
 
         // Update the email template
-        updateTemplateText(bidName, builder, gmEmail, branch, briqProjectType);
+        updateTemplateText(bidName, builder, gmEmail, branch, projectType, materialType);
 
         // Fetch and update subcontractor suggestions
         await fetchSubcontractorSuggestions(branch);
@@ -297,17 +334,19 @@ async function fetchDetailsByBidName(bidName) {
         // Update city information
         await updateCityForSubdivision();
 
-        return { builder, gmEmail, branch, briqProjectType };
+        return { builder, gmEmail, branch, projectType, materialType };
     } else {
         console.warn("No records found for bid:", bidName);
         return {
             builder: 'Unknown Builder',
             gmEmail: 'Branch Staff@Vanir.com',
             branch: 'Unknown Branch',
-            briqProjectType: 'Single Family'
+            projectType: 'Default Project Type',
+            materialType: 'General Materials'
         };
     }
 }
+
 
 
 
@@ -401,9 +440,9 @@ function selectSuggestion(suggestion, input, dropdown) {
 }
 
 // In the updateTemplateText function:
-function updateTemplateText(subdivision, builder, gmEmail, branch, briqProjectType) {
-    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, briqProjectType }); // Debugging log
-    
+function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType) {
+    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType }); // Debugging log
+
     if (subdivision) {
         document.querySelectorAll('.subdivisionContainer').forEach(el => el.textContent = subdivision);
     }
@@ -413,37 +452,19 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, briqProjectTy
     if (gmEmail) {
         document.querySelectorAll('.gmEmailContainer').forEach(el => el.textContent = gmEmail);
     }
-  
-    if (briqProjectType) {
-        document.querySelectorAll('.briqProjectTypeContainer').forEach(el => el.textContent = briqProjectType);
+    if (branch) {
+        document.querySelectorAll('.branchContainer').forEach(el => el.textContent = branch);
+    }
+    if (projectType) {
+        document.querySelectorAll('.briqProjectTypeContainer').forEach(el => el.textContent = projectType);
+    }
+    if (materialType) {
+        document.querySelectorAll('.materialTypeContainer').forEach(el => el.textContent = materialType);
     }
 
-    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, briqProjectType });
+    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType });
 }
 
-async function fetchCityBySubdivision(subdivisionName) {
-    try {
-        const response = await fetch(`http://localhost:6005/api/placeSearch?query=${encodeURIComponent(subdivisionName)}`);
-        if (response.ok) {
-            const data = await response.json();
-            if (data.results && data.results.length > 0) {
-                const formattedAddress = data.results[0].formatted_address;
-                const city = formattedAddress.split(", ")[1] || "Unknown City";
-                console.log("City extracted:", city);
-                return city;
-            } else {
-                console.warn("No results found for subdivision:", subdivisionName);
-                return "Unknown City";
-            }
-        } else {
-            console.error("Error fetching city:", response.statusText);
-            return "Unknown City";
-        }
-    } catch (error) {
-        console.error("Error fetching city:", error);
-        return "Unknown City";
-    }
-}
 
 // Monitor subdivisionContainer for changes and trigger city lookup
 function monitorSubdivisionChanges() {
@@ -481,10 +502,14 @@ function displayEmailContent() {
         <h3>Here's the breakdown:</h3>
         <div id="vendorInputContainer"></div>
         <div class="VendoeContainer"></div>
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+
         <hr>
         <div id="subcontractorCompanyContainer"></div>
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
 
@@ -518,49 +543,64 @@ async function sendEmail() {
 document.getElementById('sendEmailButton').addEventListener('click', sendEmail);
 
 function generateMailtoLink() {
+    // Get the email template content (used to generate the subject and body)
     const emailContent = document.getElementById('emailTemplate').innerHTML;
 
+    // Collect dynamic data from UI elements
     const subcontractorEmails = subcontractorSuggestions.map(suggestion => suggestion.email).join(',');
+    const vendorNames = subcontractorSuggestions.map(suggestion => suggestion.companyName).join(', '); // Vendor names
 
+    // Fetch subdivision, builder, and other dynamic data from UI
     const subdivision = document.querySelector('.subdivisionContainer').textContent.trim();
     const builder = document.querySelector('.builderContainer').textContent.trim();
+    const branch = document.querySelector('.branchContainer').textContent.trim();  // Get the branch
+    const projectType = document.querySelector('.briqProjectTypeContainer').textContent.trim();  // Project type
+    const materialType = document.querySelector('.materialTypeContainer').textContent.trim();  // Material type
     const gmEmail = document.querySelector('.gmEmailContainer').textContent.trim() || "purchasing@vanirinstalledsales.com";
     const ccEmails = "purchasing@vanirinstalledsales.com,hunter@vanirinstalledsales.com";
 
+    // Create the subject for management and subcontractors
     const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
     const subcontractorSubject = `New Community | ${builder} | ${subdivision}`;
 
+    // Create the body content for the management email
     const managementBody = `
-    Dear Team,
+        Dear Team,
 
-    We are excited to announce that we have won a new project in ${subdivision} for ${builder}. 
+        We are excited to announce that we have won a new project in ${subdivision} for ${builder}. 
+        Let's coordinate with the relevant vendors and ensure a smooth project initiation.
 
-    Let's coordinate with the relevant vendors and ensure a smooth project initiation.
-
-    Best regards,
-    
-    Vanir Installed Sales Team
+        This will be a ${projectType} project, requiring ${materialType}.
+ Vendors involved: ${vendorNames}
+        Best regards,
+        
+        Vanir Installed Sales Team
     `.trim();
 
+    // Create the body content for the subcontractor email
     const subcontractorBody = `
-    We are thrilled to inform you that we have been awarded a new community, ${subdivision}, in collaboration with ${builder}. 
+        We are thrilled to inform you that we have been awarded a new community, ${subdivision}, in collaboration with ${builder}. 
+        We look forward to working together and maintaining high standards for this project.
 
-    We look forward to working together and maintaining high standards for this project.
+        The project will be a ${projectType} project, requiring ${materialType}.
 
-    Best regards,
-    
-    Vanir Installed Sales Team
+
+        Best regards,
+        
+        Vanir Installed Sales Team
     `.trim();
 
+    // Create the mailto links for both management and subcontractor emails
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
     const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
+    // Open Gmail in two windows (management and subcontractor)
     window.open(managementGmailLink);
     setTimeout(() => window.open(subcontractorGmailLink), 1000);
 }
 
+// Attach the generateMailtoLink function to the 'sendEmailButton2' click event
 document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
-
 
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
@@ -588,6 +628,24 @@ async function fetchAndUpdateAutocomplete() {
     bidAutocompleteInput.querySelector('input').disabled = false;
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Dynamically create bidInputContainer
+    const emailContainer = document.getElementById('emailTemplate');
+    if (!emailContainer) {
+        console.error("emailTemplate not found in the DOM.");
+        return;
+    }
+    
+    const bidContainer = document.createElement('div');
+    bidContainer.id = 'bidInputContainer';
+    emailContainer.appendChild(bidContainer);
+
+    // Initialize autocomplete for bid names
+    initializeBidAutocomplete();
+});
+
+
+
 
 // Initialize bid and vendor autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
@@ -597,15 +655,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         initializeVendorInputArea(); // Set up initial input area
 
 
-    // Initialize autocomplete for bid names
-    const bidContainer = document.getElementById('bidInputContainer');
-    if (bidContainer) {
-        const bidInput = createAutocompleteInput("Enter Bid Name", bidNameSuggestions, "bid", fetchDetailsByBidName);
-        bidContainer.appendChild(bidInput);
-    } else {
-        console.error("Bid container not found.");
-    }
 
+        
     // Initialize autocomplete for vendor names
     const vendorContainer = document.getElementById('vendorInputContainer');
     if (vendorContainer) {
@@ -615,6 +666,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Vendor container not found.");
     }
 });
+
+function initializeBidAutocomplete() {
+    const bidContainer = document.getElementById('bidInputContainer');
+    if (bidContainer) {
+        const bidInput = createAutocompleteInput(
+            "Enter Bid Name",
+            bidNameSuggestions,
+            "bid",
+            fetchDetailsByBidName
+        );
+        bidContainer.appendChild(bidInput);
+    } else {
+        console.error("Bid container not found.");
+    }
+}
+
+function waitForElement(selector, timeout = 9000) {
+    return new Promise((resolve, reject) => {
+        const interval = 100; // Check every 100ms
+        let elapsed = 0;
+
+        const intervalId = setInterval(() => {
+            const element = document.querySelector(selector);
+            if (element) {
+                clearInterval(intervalId);
+                resolve(element);
+            }
+            elapsed += interval;
+            if (elapsed >= timeout) {
+                clearInterval(intervalId);
+                reject(new Error(`Element ${selector} not found within ${timeout}ms`));
+            }
+        }, interval);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Ensure email template is displayed
+        displayEmailContent();
+
+        // Wait for bidInputContainer to be dynamically created
+        await waitForElement('#bidInputContainer');
+
+        // Initialize bid autocomplete
+        initializeBidAutocomplete();
+    } catch (error) {
+    }
+});
+
 
 // Fetch vendors on page load and initialize input area
 document.addEventListener('DOMContentLoaded', async () => {
