@@ -804,15 +804,20 @@ function generateMailtoLink() {
     // Create the mailto links for both management and subcontractor emails
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
     const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+    
 
     // Open Gmail in two windows (management and subcontractor)
     window.open(managementGmailLink);
-    setTimeout(() => window.open(subcontractorGmailLink), 1000);
+    setTimeout(() => window.open(subcontractorGmailLink), 3000); // Open second link after 3 seconds
+    
 }
 
 // Attach the generateMailtoLink function to the 'sendEmailButton2' click event
 document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
 
+document.getElementById('sendEmailButton2').addEventListener('click', function() {
+    generateMailtoLink(); // Ensure this is triggered by user interaction
+});
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
