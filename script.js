@@ -112,7 +112,7 @@ async function fetchVendorSuggestions() {
     }
 }
 
-// Function to create an autocomplete input with dropdown suggestions for vendor names
+// Function to create vendor autocomplete input
 function createVendorAutocompleteInput() {
     const wrapper = document.createElement("div");
     wrapper.classList.add("vendor-input-wrapper");
@@ -120,12 +120,12 @@ function createVendorAutocompleteInput() {
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = "Enter Vendor Name";
-    input.classList.add("vendor-input");
+    input.classList.add("vendor-autocomplete-input", "autocomplete-input");
 
     const dropdown = document.createElement("div");
     dropdown.classList.add("autocomplete-dropdown");
 
-    // Event listener to show suggestions in the dropdown as user types
+    // Event listener for showing suggestions in the dropdown as the user types
     input.addEventListener("input", function () {
         const inputValue = input.value.toLowerCase();
         dropdown.innerHTML = ''; // Clear previous suggestions
@@ -140,43 +140,33 @@ function createVendorAutocompleteInput() {
                 option.classList.add("autocomplete-option");
                 option.textContent = suggestion;
 
-                // Set selected suggestion to input and add to container on click
+                // When a user clicks on a suggestion, add it to the vendor list and clear input
                 option.onclick = () => {
                     // Check if the vendor is already in the container
                     const existingVendor = document.querySelectorAll('.vendor-entry').some(entry => entry.textContent === suggestion);
-                
-                    // Log the current state before taking action
-                    console.log('Checking if vendor already exists:', suggestion);
-                
+
                     if (!existingVendor) {
                         // Add selected vendor to container
                         addVendorToContainer(suggestion);
-                
+
                         // Remove the selected vendor from the suggestions list
                         vendorSuggestions = vendorSuggestions.filter(vendor => vendor !== suggestion);
-                
-                        // Log that the vendor was added
-                        console.log('Vendor added to container:', suggestion);
+
+                        // Clear the input field
+                        clearVendorInput(input);
                     } else {
                         alert("This vendor is already added.");
-                        console.log('Vendor already exists in the container:', suggestion);
                     }
-                
-                    // Clear the input field after vendor is either added or if the vendor already exists
-                    const vendorInput = document.querySelector('.vendor-input');
-                    if (vendorInput) {
-                        vendorInput.value = '';  // Clear input field automatically
-                        vendorInput.placeholder = 'Enter Vendor Name';  // Reset placeholder text
-                    }
-                
-                    // Clear the dropdown after selection
-                    dropdown.innerHTML = '';
+
+                    // Save data to localStorage and refresh the page
+                    saveDataToLocalStorage();
+                    // Optionally you can trigger a page refresh here if needed
+                    // refreshPage();
                 };
-                          
+
                 dropdown.appendChild(option);
             });
 
-            // Show dropdown if suggestions are available, otherwise hide it
             dropdown.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
         } else {
             dropdown.style.display = 'none';
@@ -197,16 +187,18 @@ function createVendorAutocompleteInput() {
 
 
 
-// Function to add the selected vendor to the display container with a delete button
+
+// Add the selected vendor to the container and clear the input
 function addVendorToContainer(vendorName) {
     const vendorContainer = document.querySelector('.VendoeContainer');
 
+    // Check if the container exists
     if (!vendorContainer) {
-        console.error("Vendor container not found in the DOM.");
+        console.error("Vendor container not found.");
         return;
     }
 
-    // Create a container for each vendor entry
+    // Create a container for the vendor entry
     const vendorEntryWrapper = document.createElement("div");
     vendorEntryWrapper.classList.add("vendor-entry-wrapper");
 
@@ -215,26 +207,129 @@ function addVendorToContainer(vendorName) {
     vendorEntry.classList.add("vendor-entry");
     vendorEntry.textContent = vendorName;
 
-    // Create a delete button
+    // Create a delete button for the vendor entry
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
     deleteButton.classList.add("delete-vendor-button");
     deleteButton.onclick = () => {
-        // Remove the vendor entry from the container
+        // Remove the vendor entry
         vendorEntryWrapper.remove();
 
-        // Add the vendor back to suggestions list
+        // Add the vendor back to suggestions list (if needed)
         vendorSuggestions.push(vendorName);
+
+        // Save updated data to localStorage
+        saveDataToLocalStorage();
     };
 
-    // Append the vendor entry and delete button to the wrapper
+    // Append vendor entry and delete button
     vendorEntryWrapper.appendChild(vendorEntry);
     vendorEntryWrapper.appendChild(deleteButton);
 
-    // Append the wrapper to the main vendor container
+    // Append to vendor container
     vendorContainer.appendChild(vendorEntryWrapper);
     console.log(`Vendor "${vendorName}" added to container.`);
+
+    // Save data to localStorage after adding the vendor
+    saveDataToLocalStorage();
+
+    // Clear the input field and reset
+    const inputField = document.querySelector('.vendor-autocomplete-input');
+    clearVendorInput(inputField);
 }
+
+
+
+
+// Simulate loading step by step, showing progress incrementally
+async function startLoadingProcess() {
+    await fetchBidSuggestions();
+    await fetchVendorSuggestions();
+
+    // Once everything is loaded, enable the vendor input and populate from localStorage
+    const vendorInput = document.querySelector('.vendor-input');
+    if (vendorInput) {
+        vendorInput.disabled = false;
+    }
+
+    // Load data from localStorage to populate the page
+    loadDataFromLocalStorage();
+
+    // Complete loading and hide the loading animation
+    hideLoadingAnimation();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    startLoadingProcess(); // Trigger loading process after page load
+});
+
+// Initialize the vendor input area with a new input field
+function initializeVendorInputArea() {
+    const vendorContainer = document.getElementById('vendorInputContainer');
+    
+    // Add the new input element for vendor name
+    const vendorInputField = createVendorAutocompleteInput();
+    vendorContainer.appendChild(vendorInputField);
+}
+
+// Save bid name and added vendors to localStorage
+function saveDataToLocalStorage() {
+    const addedVendors = Array.from(document.querySelectorAll('.vendor-entry')).map(entry => entry.textContent); // Get the added vendors from the DOM
+
+    localStorage.setItem('addedVendors', JSON.stringify(addedVendors)); // Store added vendors as JSON string
+}
+
+// Load saved bid name and vendors from localStorage
+function loadDataFromLocalStorage() {
+    const selectedBidName = localStorage.getItem('selectedBidName');
+    const addedVendors = JSON.parse(localStorage.getItem('addedVendors')) || [];
+
+    // Pre-fill bid name input
+    if (selectedBidName) {
+        document.querySelector('.bid-name-input').value = selectedBidName;
+    }
+
+    // Pre-fill the added vendors
+    const vendorContainer = document.querySelector('.VendoeContainer');
+    addedVendors.forEach(vendor => {
+        const vendorEntry = document.createElement('div');
+        vendorEntry.classList.add('vendor-entry-wrapper');
+        
+        const vendorText = document.createElement('p');
+        vendorText.classList.add('vendor-entry');
+        vendorText.textContent = vendor;
+
+        vendorEntry.appendChild(vendorText);
+        vendorContainer.appendChild(vendorEntry);
+    });
+}
+
+// Clear vendor input field and reset placeholder
+function clearVendorInput(inputField) {
+    inputField.value = ''; // Clear the input field
+    inputField.placeholder = 'Enter Vendor Name'; // Reset the placeholder
+}
+
+// Call this function when the page is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    loadDataFromLocalStorage();  // Load stored bid and vendor data on page load
+});
+
+
+// Clear input boxes and load new data
+function refreshPage() {
+    // Clear the input fields
+    document.querySelector('.vendor-autocomplete-input').value = '';  // Clear the vendor input field
+
+    // Save data to localStorage
+    saveDataToLocalStorage();
+    
+    // Reload the page
+    location.reload();  // Refresh the page to clear the inputs
+}
+
+
+
 
 // Simulate loading step by step, showing progress incrementally
 async function startLoadingProcess() {
@@ -259,19 +354,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     startLoadingProcess();  // Trigger loading process after page load
 });
 
-// Initialize the vendor input field and disable until all data is loaded
-function initializeVendorInputArea() {
-    const vendorContainer = document.getElementById('vendorInputContainer');
-    
-    // Disable vendor input until vendors are fully loaded
-    const vendorInput = document.createElement("input");
-    vendorInput.type = "text";
-    vendorInput.placeholder = "Enter Vendor Name";
-    vendorInput.classList.add("vendor-input");
-    vendorInput.disabled = true;  // Disable input until vendor suggestions are ready
 
-    vendorContainer.appendChild(vendorInput);
-}
 
 // Fetch data from Airtable with detailed logging and loading progress
 async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '') {
