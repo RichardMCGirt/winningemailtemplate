@@ -450,8 +450,9 @@ async function fetchSubcontractorSuggestions(branchFilter) {
         return;
     }
 
-    // Properly interpolate the branchFilter value
-    const filterFormula = `{Branch} = "${branchFilter}"`;
+    // Properly interpolate the branchFilter value to filter subcontractors by branch
+    const filterFormula = `{Branch} = "${branchFilter}"`; // Make sure to use the correct field name in Airtable
+
     try {
         const records = await fetchAirtableData(
             subcontractorBaseName,
@@ -467,11 +468,12 @@ async function fetchSubcontractorSuggestions(branchFilter) {
             }))
             .filter(suggestion => suggestion.companyName && suggestion.email);
 
-        console.log("Subcontractor suggestions:", subcontractorSuggestions);
+        console.log("Subcontractor suggestions (filtered by branch):", subcontractorSuggestions);
     } catch (error) {
         console.error("Error fetching subcontractor suggestions:", error);
     }
 }
+
 
 
 let cityUpdated = false;  // Flag to track if the city has been updated
@@ -753,7 +755,13 @@ function generateMailtoLink() {
     const emailContent = document.getElementById('emailTemplate').innerHTML;
 
     // Collect dynamic data from UI elements
-    const subcontractorEmails = subcontractorSuggestions.map(suggestion => suggestion.email).join(',');
+    const branch = document.querySelector('.branchContainer').textContent.trim();  // Get the branch selected
+
+    // Filter subcontractors by the branch
+    const filteredSubcontractors = subcontractorSuggestions.filter(sub => sub.branch === branch);
+    
+    // Extract emails from the filtered subcontractors
+    const subcontractorEmails = filteredSubcontractors.map(suggestion => suggestion.email).join(',');
     
     // Vendor names array should be updated with selected vendor names
     const vendorNames = selectedVendorEmails.map(vendor => vendor.name).join(', '); // Vendor names
@@ -761,7 +769,6 @@ function generateMailtoLink() {
     // Fetch subdivision, builder, and other dynamic data from UI
     const subdivision = document.querySelector('.subdivisionContainer').textContent.trim();
     const builder = document.querySelector('.builderContainer').textContent.trim();
-    const branch = document.querySelector('.branchContainer').textContent.trim();  // Get the branch
     const projectType = document.querySelector('.briqProjectTypeContainer').textContent.trim();  // Project type
     const materialType = document.querySelector('.materialTypeContainer').textContent.trim();  // Material type
     const gmEmail = document.querySelector('.gmEmailContainer').textContent.trim() || "purchasing@vanirinstalledsales.com";
@@ -837,6 +844,7 @@ function generateMailtoLink() {
         mailtoOpened = true; // Set the flag to true after opening the windows
     }
 }
+
 
 
 

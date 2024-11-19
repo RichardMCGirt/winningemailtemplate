@@ -429,6 +429,7 @@ input:checked + .slider:before {
 
 /* Dark mode
 
+
 /* Global Dark Mode Styles */
 body.dark-mode {
     background-color: #121212; /* Dark background */
@@ -564,6 +565,13 @@ body.dark-mode a:hover {
     color: #fff; /* White text for links on hover */
 }
 
+/* Dark mode styles for email template */
+body.dark-mode #emailTemplate {
+    background-color: #121212; /* Dark background for the email section */
+    color: white; /* White text for dark mode */
+    border-top: 2px solid white; /* Change border color to a lighter one for dark mode */
+}
+
 /* Scrollbars */
 body.dark-mode .VendoeContainer::-webkit-scrollbar-thumb {
     background-color: #888; /* Scroll thumb color */
@@ -603,4 +611,15 @@ body.dark-mode .switch input:checked + .slider {
 
 body.dark-mode .switch .slider:before {
     transition: transform 0.4s ease, background-color 0.4s ease;
+}
+
+/* Add this to your CSS file */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* You can also add specific styles for the dark mode */
+body.dark-mode {
+    background-color: #121212; /* Dark background */
+    color: white; /* White text */
 }
