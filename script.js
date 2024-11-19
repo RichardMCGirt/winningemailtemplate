@@ -110,13 +110,11 @@ async function fetchVendorSuggestions() {
         vendorLoadingProgress = 45;  // After fetching bids, vendor progress is set to 45%
         totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average progress
         updateLoadingProgress(totalLoadingProgress);
-        console.log("Vendor suggestions fetched", vendorSuggestions);
     } catch (error) {
         console.error("Error fetching vendor suggestions:", error);
     }
 }
 
-// Function to create vendor autocomplete input
 function createVendorAutocompleteInput() {
     // Check if the input field already exists
     const existingInput = document.querySelector('.vendor-autocomplete-input');
@@ -135,6 +133,8 @@ function createVendorAutocompleteInput() {
     const dropdown = document.createElement("div");
     dropdown.classList.add("autocomplete-dropdown");
 
+    let highlightedIndex = -1;  // Keep track of the currently highlighted option
+
     // Event listener for showing suggestions in the dropdown as the user types
     input.addEventListener("input", function () {
         const inputValue = input.value.toLowerCase();
@@ -145,22 +145,22 @@ function createVendorAutocompleteInput() {
                 vendor.toLowerCase().includes(inputValue)
             );
 
-            filteredSuggestions.forEach(suggestion => {
+            filteredSuggestions.forEach((suggestion, index) => {
                 const option = document.createElement("div");
                 option.classList.add("autocomplete-option");
                 option.textContent = suggestion;
 
                 // When a user clicks on a suggestion, select it and fetch emails
                 option.onclick = () => {
-                    // Fetch vendor emails after selecting the vendor
                     fetchVendorEmails(suggestion);
-
-                    // Optionally, you can add the vendor to a list or perform any other action
-
-                    // Clear input field after selection
-                    input.value = '';
-                    dropdown.style.display = 'none';  // Hide the dropdown
+                    input.value = '';  // Clear input field
+                    dropdown.style.display = 'none';  // Hide the dropdown after selection
                 };
+
+                // Add a class to highlight the selected option
+                if (index === highlightedIndex) {
+                    option.classList.add("highlighted");
+                }
 
                 dropdown.appendChild(option);
             });
@@ -171,10 +171,40 @@ function createVendorAutocompleteInput() {
         }
     });
 
-    // Close dropdown when clicking outside
+    // Handle arrow key navigation and Enter key to select the option
+    input.addEventListener("keydown", (e) => {
+        const options = dropdown.querySelectorAll(".autocomplete-option");
+
+        if (e.key === "ArrowDown") {
+            if (highlightedIndex < options.length - 1) {
+                highlightedIndex++;
+            }
+        } else if (e.key === "ArrowUp") {
+            if (highlightedIndex > 0) {
+                highlightedIndex--;
+            }
+        } else if (e.key === "Enter") {
+            if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+                options[highlightedIndex].click();  // Select the highlighted option
+            }
+        }
+
+        // Highlight the currently selected option and populate input box
+        options.forEach((option, index) => {
+            option.classList.remove("highlighted");
+            option.style.opacity = "1";  // Reset opacity
+            if (index === highlightedIndex) {
+                option.classList.add("highlighted");
+                option.style.opacity = "0.5";  // Set opacity to 0.5 for highlighted option
+                input.value = option.textContent;  // Populate the input box with the selected text
+            }
+        });
+    });
+
+    // Add the event listener to close the dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!wrapper.contains(e.target)) {
-            dropdown.style.display = 'none';
+            dropdown.style.display = 'none';  // Hide dropdown when clicking outside
         }
     });
 
@@ -182,6 +212,9 @@ function createVendorAutocompleteInput() {
     wrapper.appendChild(dropdown);
     return wrapper;
 }
+
+
+
 
 
 // Trigger a page refresh after adding a vendor
@@ -267,8 +300,6 @@ function addVendorToContainer(vendorName) {
     // Add the vendor name to the list of vendorNames
     vendorNames.push(vendorName);
 
-    // Save data to localStorage after adding the vendor
-    saveDataToLocalStorage();
 
     // Clear the input field after selection
     const inputField = document.querySelector('.vendor-autocomplete-input');
@@ -387,15 +418,12 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     let offset = null;
     let iteration = 0;
 
-    console.log(`Fetching data from Airtable: Base ID: ${baseId}, Table Name: ${tableName}, Field: ${fieldName}`);
-    console.log(`Filter Formula: ${filterFormula ? filterFormula : 'None'}`);
 
     do {
         let url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
         if (filterFormula) url += `?filterByFormula=${encodeURIComponent(filterFormula)}`;
         if (offset) url += `${filterFormula ? '&' : '?'}offset=${offset}`;
 
-        console.log(`Iteration ${++iteration}: Fetching from URL: ${url}`);
 
         try {
             const response = await fetch(url, {
@@ -411,11 +439,9 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
             }
 
             const data = await response.json();
-            console.log(`Iteration ${iteration}: Retrieved ${data.records.length} records.`);
             allRecords = allRecords.concat(data.records);
 
             if (data.offset) {
-                console.log(`Iteration ${iteration}: More records available, moving to next offset.`);
             } else {
                 console.log(`Iteration ${iteration}: No more records. Fetch complete.`);
             }
@@ -430,7 +456,6 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     } while (offset);
 
     console.log(`Total records fetched: ${allRecords.length}`);
-    console.log(`Field Data Extracted (${fieldName}):`, allRecords.map(record => record.fields[fieldName]));
 
     return allRecords;
 }
@@ -569,7 +594,11 @@ function updateSubcontractorAutocomplete() {
 
     // Append the complete email list to the container
     subcontractorContainer.appendChild(emailList);
+
+    // Check if the container is empty and hide it if needed
+    checkAndHideSubcontractorContainer();
 }
+
 
 // Function to create a unified autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, onSelection) {
@@ -714,28 +743,37 @@ async function fetchVendorEmails(vendorName) {
     }
 }
 
-
-
 function displayEmailContent() {
     const emailContent = `
-        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
+        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
         <p>CC: <span class="cc-email-container">Vendor</span></p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
 
         <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
-        <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
         <h3>Here's the breakdown:</h3>
         <div id="vendorInputContainer"></div>
         <div class="VendoeContainer"></div>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+<br>
+<button id="sendEmailButton" style="display: none;"></button>
+<div id="sendEmailButtonContainer">
+    <button id="sendEmailButton2" class="google-btn" style="display: none;">
+        <span class="google-icon"></span> Export to Gmail
+    </button>
+</div>
 
+        </div>
+        <br>
         <hr>
+        <br>
         <div id="subcontractorCompanyContainer"></div>
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+        <p>If interested in working on this project email <span class="gmEmailContainer"></span></p>
 
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
@@ -743,6 +781,33 @@ function displayEmailContent() {
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
 }
+
+function checkAndHideSubcontractorContainer() {
+    const subcontractorContainer = document.getElementById('subcontractorCompanyContainer');
+    
+    if (!subcontractorContainer) {
+        console.error("subcontractorCompanyContainer not found in the DOM.");
+        return;  // Exit the function if the container is not found
+    }
+
+    if (!subcontractorContainer.hasChildNodes() || subcontractorContainer.textContent.trim() === '') {
+        subcontractorContainer.style.display = 'none'; // Hide the container if empty
+    } else {
+        subcontractorContainer.style.display = 'block'; // Ensure it is visible if it has content
+    }
+}
+
+// Wait until the DOM is fully loaded, then check for the element
+document.addEventListener('DOMContentLoaded', () => {
+// Dynamically create the subcontractor container
+const subcontractorContainer = document.createElement('div');
+subcontractorContainer.id = 'subcontractorCompanyContainer';
+
+// After the element is created, check if it is empty
+checkAndHideSubcontractorContainer();
+});
+
+
 
 
 // Trigger the display of email content once vendor emails are fetched
@@ -775,7 +840,7 @@ function generateMailtoLink() {
 
     // Collect selected vendor emails for CC
     const vendorEmails = selectedVendorEmails.map(vendor => vendor.emails).flat().join(', '); // Flatten the emails and join with commas
-    const ccEmails = `${gmEmail},${vendorEmails},hunter@vanirinstalledsales.com`;
+    const ccEmails = `${gmEmail},${vendorEmails},hunter@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com,`;
 
     // Create the subject for management and subcontractors
     const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
@@ -845,21 +910,37 @@ function generateMailtoLink() {
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Dynamically create and append the button, and then add the event listener
+    const sendEmailButton2 = document.createElement('button');
+    sendEmailButton2.id = 'sendEmailButton2';
+    sendEmailButton2.classList.add('google-btn');
+    sendEmailButton2.innerHTML = '<span class="google-icon"></span> Export to Gmail';
+    
+    const buttonContainer = document.getElementById('sendEmailButtonContainer');
+    if (buttonContainer) {
+        buttonContainer.appendChild(sendEmailButton2);
+    } else {
+        console.error('sendEmailButtonContainer not found.');
+    }
 
-
-
-
-
-// Attach the generateMailtoLink function to the 'sendEmailButton2' click event
-document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
-
-document.getElementById('sendEmailButton2').addEventListener('click', function() {
-    generateMailtoLink(); // Ensure this is triggered by user interaction
+    // Now add the event listener
+    sendEmailButton2.addEventListener('click', generateMailtoLink);
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sendEmailButton2 = document.getElementById('sendEmailButton2');
+    if (sendEmailButton2) {
+        sendEmailButton2.addEventListener('click', generateMailtoLink);
+    } else {
+        console.error('sendEmailButton2 not found in the DOM.');
+    }
+});
+
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
-
 
     // Fetch bid names only (no subcontractors yet)
     await fetchBidNameSuggestions();
@@ -982,13 +1063,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
 });
 
-// Toggle Dark Mode
 const toggleDarkModeCheckbox = document.getElementById('toggleDarkMode');
+const toggleDarkModeText = document.getElementById('toggleDarkModeText');
 
 // Check if dark mode is enabled in localStorage
 if (localStorage.getItem('darkMode') === 'enabled') {
     document.body.classList.add('dark-mode');
     toggleDarkModeCheckbox.checked = true; // Set the switch to 'on' position
+    toggleDarkModeText.textContent = 'Toggle Light Mode'; // Update text to "Toggle Light Mode"
 }
 
 // Event listener to toggle dark mode on checkbox change
@@ -996,10 +1078,14 @@ toggleDarkModeCheckbox.addEventListener('change', () => {
     const body = document.body;
     body.classList.toggle('dark-mode');
 
-    // Save the user's preference in localStorage
+    // Update the text depending on the mode
     if (body.classList.contains('dark-mode')) {
         localStorage.setItem('darkMode', 'enabled');
+        toggleDarkModeText.textContent = 'Toggle Light Mode'; // Change text to "Toggle Light Mode"
     } else {
         localStorage.removeItem('darkMode');
+        toggleDarkModeText.textContent = 'Toggle Dark Mode'; // Change text to "Toggle Dark Mode"
     }
 });
+
+
