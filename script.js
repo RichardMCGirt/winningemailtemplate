@@ -16,6 +16,8 @@ let bidLoadingProgress = 0;
 let vendorLoadingProgress = 0;
 let totalLoadingProgress = 0;
 let selectedVendorEmails = [];  // Array to store selected vendor emails
+let mailtoOpened = false;
+
 
 const MAX_PROGRESS = 100;
 
@@ -204,7 +206,7 @@ function updateEmailCC() {
     }
 }
 
-// Add the selected vendor to the container and update CC email section
+/// Add the selected vendor to the container and update the CC section
 function addVendorToContainer(vendorName) {
     console.log("Adding vendor:", vendorName);
 
@@ -239,6 +241,9 @@ function addVendorToContainer(vendorName) {
         // Remove vendor from the selectedVendorEmails array
         selectedVendorEmails = selectedVendorEmails.filter(vendor => vendor.name !== vendorName);
 
+        // Remove vendor from the vendor names list
+        vendorNames = vendorNames.filter(name => name !== vendorName);
+
         // Update the CC section
         updateEmailCC();
 
@@ -259,6 +264,9 @@ function addVendorToContainer(vendorName) {
     // Fetch and add vendor emails to the CC section
     fetchVendorEmails(vendorName);
 
+    // Add the vendor name to the list of vendorNames
+    vendorNames.push(vendorName);
+
     // Save data to localStorage after adding the vendor
     saveDataToLocalStorage();
 
@@ -267,13 +275,10 @@ function addVendorToContainer(vendorName) {
     if (inputField) {
         inputField.value = '';
         inputField.placeholder = 'Enter Vendor Name';
-
-
-        // Log the placeholder value
-        console.log("Input field placeholder after reset:", inputField.placeholder);
     } else {
         console.error("Input field not found for clearing.");
     }
+
 
     // Check if the input field is still holding the old value and log it after a delay
     setTimeout(() => {
@@ -340,41 +345,6 @@ function initializeVendorInputArea() {
 
 }
 
-// Save bid name and added vendors to localStorage
-function saveDataToLocalStorage() {
-    const addedVendors = Array.from(document.querySelectorAll('.vendor-entry')).map(entry => entry.textContent); // Get the added vendors from the DOM
-
-    localStorage.setItem('addedVendors', JSON.stringify(addedVendors)); // Store added vendors as JSON string
-}
-
-// Load saved bid name and vendors from localStorage
-function loadDataFromLocalStorage() {
-    const selectedBidName = localStorage.getItem('selectedBidName');
-    const addedVendors = JSON.parse(localStorage.getItem('addedVendors')) || [];
-
-    // Pre-fill bid name input
-    if (selectedBidName) {
-        document.querySelector('.bid-name-input').value = selectedBidName;
-    }
-
-    // Pre-fill the added vendors
-    const vendorContainer = document.querySelector('.VendoeContainer');
-    addedVendors.forEach(vendor => {
-        const vendorEntry = document.createElement('div');
-        vendorEntry.classList.add('vendor-entry-wrapper');
-        
-        const vendorText = document.createElement('p');
-        vendorText.classList.add('vendor-entry');
-        vendorText.textContent = vendor;
-
-        vendorEntry.appendChild(vendorText);
-        vendorContainer.appendChild(vendorEntry);
-    });
-}
-
-
-
-
 // Clear input boxes and load new data
 function refreshPage() {
     // Clear the input fields
@@ -386,9 +356,6 @@ function refreshPage() {
     // Reload the page
     location.reload();  // Refresh the page to clear the inputs
 }
-
-
-
 
 // Simulate loading step by step, showing progress incrementally
 async function startLoadingProcess() {
@@ -413,8 +380,6 @@ async function startLoadingProcess() {
 document.addEventListener('DOMContentLoaded', async () => {
     startLoadingProcess();  // Trigger loading process after page load
 });
-
-
 
 // Fetch data from Airtable with detailed logging and loading progress
 async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '') {
@@ -712,7 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchVendorEmails
 });
 
-// Function to fetch vendor emails and link them to the vendor
+// Function to fetch vendor emails for only the selected vendor
 async function fetchVendorEmails(vendorName) {
     try {
         // Fetch all vendor records from Airtable
@@ -726,16 +691,14 @@ async function fetchVendorEmails(vendorName) {
             const email = selectedVendor.fields['Email'];
             const secondaryEmail = selectedVendor.fields['Secondary Email'];
 
-            // Add vendor and their emails to the selectedVendorEmails array if not already present
-            if (email && !selectedVendorEmails.some(vendor => vendor.name === vendorName)) {
-                selectedVendorEmails.push({ name: vendorName, emails: [email] });
-            }
-
-            if (secondaryEmail && !selectedVendorEmails.some(vendor => vendor.name === vendorName && vendor.emails.includes(secondaryEmail))) {
-                // Find the vendor and add the secondary email
+            // Check if the vendor is already in the selectedVendorEmails array
+            if (!selectedVendorEmails.some(vendor => vendor.name === vendorName)) {
+                selectedVendorEmails.push({ name: vendorName, emails: [email, secondaryEmail].filter(Boolean) });
+            } else {
+                // If the vendor is already added, update their email list
                 const vendor = selectedVendorEmails.find(vendor => vendor.name === vendorName);
-                if (vendor) {
-                    vendor.emails.push(secondaryEmail);
+                if (vendor && secondaryEmail && !vendor.emails.includes(secondaryEmail)) {
+                    vendor.emails.push(secondaryEmail); // Add the secondary email if it's missing
                 }
             }
 
@@ -757,6 +720,8 @@ function displayEmailContent() {
         <p>CC: <span class="cc-email-container">Vendor</span></p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
+
+        <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
         <h3>Here's the breakdown:</h3>
@@ -813,7 +778,9 @@ function generateMailtoLink() {
 
     // Collect dynamic data from UI elements
     const subcontractorEmails = subcontractorSuggestions.map(suggestion => suggestion.email).join(',');
-    const vendorNames = subcontractorSuggestions.map(suggestion => suggestion.companyName).join(', '); // Vendor names
+    
+    // Vendor names array should be updated with selected vendor names
+    const vendorNames = selectedVendorEmails.map(vendor => vendor.name).join(', '); // Vendor names
 
     // Fetch subdivision, builder, and other dynamic data from UI
     const subdivision = document.querySelector('.subdivisionContainer').textContent.trim();
@@ -822,7 +789,10 @@ function generateMailtoLink() {
     const projectType = document.querySelector('.briqProjectTypeContainer').textContent.trim();  // Project type
     const materialType = document.querySelector('.materialTypeContainer').textContent.trim();  // Material type
     const gmEmail = document.querySelector('.gmEmailContainer').textContent.trim() || "purchasing@vanirinstalledsales.com";
-    const ccEmails = "purchasing@vanirinstalledsales.com,hunter@vanirinstalledsales.com";
+
+    // Collect selected vendor emails for CC
+    const vendorEmails = selectedVendorEmails.map(vendor => vendor.emails).flat().join(', '); // Flatten the emails and join with commas
+    const ccEmails = `${gmEmail},${vendorEmails},hunter@vanirinstalledsales.com`;
 
     // Create the subject for management and subcontractors
     const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
@@ -830,13 +800,16 @@ function generateMailtoLink() {
 
     // Create the body content for the management email
     const managementBody = `
-        Dear Team,
+                Dear Team,
+
+        Major Wins for Team ${branch}
 
         We are excited to announce that we have won a new project in ${subdivision} for ${builder}. 
         Let's coordinate with the relevant vendors and ensure a smooth project initiation.
 
         This will be a ${projectType} project, requiring ${materialType}.
- Vendors involved: ${vendorNames}
+        Vendors involved: ${vendorNames} 
+        
         Best regards,
         
         Vanir Installed Sales Team
@@ -849,7 +822,6 @@ function generateMailtoLink() {
 
         The project will be a ${projectType} project, requiring ${materialType}.
 
-
         Best regards,
         
         Vanir Installed Sales Team
@@ -857,14 +829,17 @@ function generateMailtoLink() {
 
     // Create the mailto links for both management and subcontractor emails
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-    const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
-    
+    const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
-    // Open Gmail in two windows (management and subcontractor)
+    // Open Gmail in two windows (management and subcontractor) only once
     window.open(managementGmailLink);
     setTimeout(() => window.open(subcontractorGmailLink), 3000); // Open second link after 3 seconds
     
+    mailtoOpened = true; // Set the flag to true after opening the windows
 }
+
+
+
 
 // Attach the generateMailtoLink function to the 'sendEmailButton2' click event
 document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
