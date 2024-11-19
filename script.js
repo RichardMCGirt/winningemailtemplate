@@ -748,30 +748,6 @@ document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
 
-async function sendEmail() {
-    const emailContent = document.getElementById('emailTemplate').innerHTML; // HTML content from the template
-    const recipientEmail = document.getElementById('subcontractorEmailInput').value;
-
-    try {
-        const response = await fetch('http://localhost:5001/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                to: recipientEmail,
-                subject: 'Your Email Subject Here',
-                htmlContent: emailContent,
-            }),
-        });
-        const result = await response.json();
-        alert(result.message);
-    } catch (error) {
-        console.error('Error sending email:', error);
-        alert('Failed to send email');
-    }
-}
-
-document.getElementById('sendEmailButton').addEventListener('click', sendEmail);
-
 function generateMailtoLink() {
     // Get the email template content (used to generate the subject and body)
     const emailContent = document.getElementById('emailTemplate').innerHTML;
@@ -818,6 +794,7 @@ function generateMailtoLink() {
     // Create the body content for the subcontractor email
     const subcontractorBody = `
         We are thrilled to inform you that we have been awarded a new community, ${subdivision}, in collaboration with ${builder}. 
+       
         We look forward to working together and maintaining high standards for this project.
 
         The project will be a ${projectType} project, requiring ${materialType}.
@@ -826,30 +803,41 @@ function generateMailtoLink() {
         
         Vanir Installed Sales Team
 
-        Estamos encantados de informarle que se nos ha adjudicado una nueva comunidad, ${subdivision}, en colaboración con ${builder}. 
-        Esperamos trabajar juntos y mantener altos estándares para este proyecto.
+       Nos complace informarle que hemos sido adjudicados con un nuevo proyecto en la comunidad ${subdivision}, en colaboración con ${builder}.
+       Esperamos trabajar juntos y mantener los más altos estándares en este proyecto.
 
-        El proyecto será un proyecto de tipo ${projectType}, que requerirá ${materialType}.
+       Este proyecto será de tipo ${projectType} y requerirá ${materialType}.
 
-        Atentamente,
-        
-        El equipo de Vanir Installed Sales
-   
-
+       Atentamente, 
+       El equipo de Vanir Installed Sales
     `.trim();
-
-    
 
     // Create the mailto links for both management and subcontractor emails
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
     const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
-    // Open Gmail in two windows (management and subcontractor) only once
-    window.open(managementGmailLink);
-    setTimeout(() => window.open(subcontractorGmailLink), 3000); // Open second link after 3 seconds
-    
-    mailtoOpened = true; // Set the flag to true after opening the windows
+    // Try to open Gmail in two windows (management and subcontractor) with a delay
+    const managementWindow = window.open(managementGmailLink);
+    const subcontractorWindow = window.open(subcontractorGmailLink);
+
+    // Check if both windows were successfully opened
+    if (!managementWindow || !subcontractorWindow) {
+        // If pop-ups were blocked, show a message to the user
+        alert('Pop-ups were blocked. Please enable pop-ups for this site to send the emails.');
+        // You can also show a more friendly message in the UI, for example:
+        const popUpBlockedMessage = document.createElement('div');
+        popUpBlockedMessage.classList.add('popup-blocked-message');
+        popUpBlockedMessage.innerHTML = `
+            <p><strong>Oops!</strong> It seems that pop-ups are blocked in your browser. 
+            Please allow pop-ups for this site to send the emails.</p>
+            <p><a href="https://support.google.com/chrome/answer/95472?hl=en" target="_blank">Learn how to enable pop-ups in Chrome</a></p>
+        `;
+        document.body.appendChild(popUpBlockedMessage);
+    } else {
+        mailtoOpened = true; // Set the flag to true after opening the windows
+    }
 }
+
 
 
 
