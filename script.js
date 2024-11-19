@@ -17,6 +17,7 @@ let vendorLoadingProgress = 0;
 let totalLoadingProgress = 0;
 let selectedVendorEmails = [];  // Array to store selected vendor emails
 let mailtoOpened = false;
+let vendorNames = [];  // Initialize vendorNames as an empty array
 
 
 const MAX_PROGRESS = 100;
@@ -234,25 +235,24 @@ function addVendorToContainer(vendorName) {
     
     deleteButton.onclick = () => {
         console.log("Delete button clicked for vendor:", vendorName);
-
-        // Remove the vendor entry
+    
+        // Remove the vendor entry from the container
         vendorEntryWrapper.remove();
-
+    
         // Remove vendor from the selectedVendorEmails array
         selectedVendorEmails = selectedVendorEmails.filter(vendor => vendor.name !== vendorName);
-
-        // Remove vendor from the vendor names list
-        vendorNames = vendorNames.filter(name => name !== vendorName);
-
+    
+        // Remove vendor from the vendorNames array
+        vendorNames = vendorNames.filter(name => name !== vendorName);  // Correctly remove from vendorNames
+    
         // Update the CC section
         updateEmailCC();
-
+    
         // Add the vendor back to suggestions list (if needed)
         vendorSuggestions.push(vendorName);
-
-        // Save updated data to localStorage
-        saveDataToLocalStorage();
+    
     };
+    
 
     // Append vendor entry and delete button
     vendorEntryWrapper.appendChild(vendorEntry);
