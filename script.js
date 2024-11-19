@@ -15,6 +15,7 @@ let vendorSuggestions = []; // Store vendor names
 let bidLoadingProgress = 0;
 let vendorLoadingProgress = 0;
 let totalLoadingProgress = 0;
+let selectedVendorEmails = [];  // Array to store selected vendor emails
 
 const MAX_PROGRESS = 100;
 
@@ -112,7 +113,7 @@ async function fetchVendorSuggestions() {
     }
 }
 
-// Function to create vendor autocomplete input
+// Create vendor autocomplete input with selection handler
 function createVendorAutocompleteInput() {
     const wrapper = document.createElement("div");
     wrapper.classList.add("vendor-input-wrapper");
@@ -140,30 +141,16 @@ function createVendorAutocompleteInput() {
                 option.classList.add("autocomplete-option");
                 option.textContent = suggestion;
 
-                // When a user clicks on a suggestion, add it to the vendor list and clear input
+                // When a user clicks on a suggestion, select it and fetch emails
                 option.onclick = () => {
-                    // Check if the vendor is already in the container
-                    const existingVendor = document.querySelectorAll('.vendor-entry').some(entry => entry.textContent === suggestion);
+                    // Fetch vendor emails after selecting the vendor
+                    fetchVendorEmails(suggestion);
 
-                    if (!existingVendor) {
-                        // Add selected vendor to container
-                        addVendorToContainer(suggestion);
+                    // Optionally, you can add the vendor to a list or perform any other action
 
-                        // Remove the selected vendor from the suggestions list
-                        vendorSuggestions = vendorSuggestions.filter(vendor => vendor !== suggestion);
-
-                        // Clear the input field
-                        clearVendorInput(input);
-                        refreshPage();
-
-                    } else {
-                        alert("This vendor is already added.");
-                    }
-
-                    // Save data to localStorage and refresh the page
-                    saveDataToLocalStorage();
-                    // Optionally you can trigger a page refresh here if needed
-                     refreshPage();
+                    // Clear input field after selection
+                    input.value = '';
+                    dropdown.style.display = 'none';  // Hide the dropdown
                 };
 
                 dropdown.appendChild(option);
@@ -187,9 +174,16 @@ function createVendorAutocompleteInput() {
     return wrapper;
 }
 
+
 // Trigger a page refresh after adding a vendor
 function refreshPage() {
     location.reload(); // Reload the page to clear input fields and restore saved data
+}
+
+// Function to clear vendor emails
+function clearVendorEmails() {
+    selectedVendorEmails = [];  // Clear the selected vendor emails array
+    updateEmailCC();  // Update the CC section to reflect the cleared emails
 }
 
 
@@ -324,9 +318,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Initialize the vendor input area with a new input field
 function initializeVendorInputArea() {
-    
     // Add the new input element for vendor name
     const vendorInputField = createVendorAutocompleteInput();
+    const vendorContainer = document.getElementById('vendorInputContainer');
+    if (vendorContainer) {
+        vendorContainer.appendChild(vendorInputField);
+    } else {
+        console.error("Vendor container not found.");
+    }
 }
 
 // Save bid name and added vendors to localStorage
@@ -387,6 +386,7 @@ async function startLoadingProcess() {
     
     // Step 2: Load vendors (after bids are loaded)
     await fetchVendorSuggestions();
+    await fetchVendorEmails
 
     // Once everything is loaded, we can enable the vendor input
     const vendorInput = document.querySelector('.vendor-input');
@@ -697,15 +697,56 @@ function monitorSubdivisionChanges() {
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     monitorSubdivisionChanges();
+    fetchVendorEmails
 });
 
+// Function to fetch vendor emails based on the selected vendor
+async function fetchVendorEmails(vendorName) {
+    try {
+        // Fetch all vendor records
+        const records = await fetchAirtableData(VendorBaseName, VendorTableName, 'Name, Email, Secondary Email');
+        
+        // Find the vendor record that matches the selected vendor name
+        const selectedVendor = records.find(record => record.fields['Name'] === vendorName);
 
+        if (selectedVendor) {
+            // Get both the primary and secondary emails
+            const email = selectedVendor.fields['Email'];
+            const secondaryEmail = selectedVendor.fields['Secondary Email'];
+
+            // Add emails to the selectedVendorEmails array if not already present
+            if (email && !selectedVendorEmails.includes(email)) {
+                selectedVendorEmails.push(email);
+            }
+            if (secondaryEmail && !selectedVendorEmails.includes(secondaryEmail)) {
+                selectedVendorEmails.push(secondaryEmail);
+            }
+
+            // Update the CC section in the email content
+            updateEmailCC();
+        } else {
+            console.log("Vendor not found.");
+        }
+    } catch (error) {
+        console.error("Error fetching vendor emails:", error);
+    }
+}
+
+// Update the CC section of the email template with multiple vendor emails
+function updateEmailCC() {
+    const ccContainer = document.querySelector('.cc-email-container');
+    if (ccContainer) {
+        ccContainer.textContent = selectedVendorEmails.join(', '); // Join emails with commas
+    } else {
+        console.error("CC container not found.");
+    }
+}
 
 
 function displayEmailContent() {
     const emailContent = `
         <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
-        <p>CC: Vendor</p>
+        <p>CC: <span class="cc-email-container">Vendor</span></p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
@@ -728,6 +769,11 @@ function displayEmailContent() {
     emailContainer.innerHTML = emailContent;
 }
 
+
+// Trigger the display of email content once vendor emails are fetched
+document.addEventListener('DOMContentLoaded', () => {
+    displayEmailContent();
+});
 
 async function sendEmail() {
     const emailContent = document.getElementById('emailTemplate').innerHTML; // HTML content from the template
