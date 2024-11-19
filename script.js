@@ -121,7 +121,7 @@ function createVendorAutocompleteInput() {
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = "Enter Vendor Name";
-    input.classList.add("vendor-autocomplete-input", "autocomplete-input");
+    input.classList.add("autocomplete-input");
 
     const dropdown = document.createElement("div");
     dropdown.classList.add("autocomplete-dropdown");
@@ -246,8 +246,6 @@ function addVendorToContainer(vendorName) {
     // Save data to localStorage after adding the vendor
     saveDataToLocalStorage();
 
-    // Select the correct input field to clear (ensure we are targeting the right element)
-    const inputField = document.querySelector('.vendor-autocomplete-input');
 
     if (inputField) {
         console.log("Input field value before clearing:", inputField.value);
@@ -267,11 +265,7 @@ function addVendorToContainer(vendorName) {
         console.error("Input field not found for clearing.");
     }
 
-    // Check if the input field is still holding the old value and log it after a delay
-    setTimeout(() => {
-        const postClearInputField = document.querySelector('.vendor-autocomplete-input');
-        console.log("After clearing input, current value (after delay):", postClearInputField ? postClearInputField.value : "Input field not found");
-    }, 100);
+ 
 }
 
 
@@ -366,7 +360,6 @@ function loadDataFromLocalStorage() {
 // Clear input boxes and load new data
 function refreshPage() {
     // Clear the input fields
-    document.querySelector('.vendor-autocomplete-input').value = '';  // Clear the vendor input field
 
     // Save data to localStorage
     saveDataToLocalStorage();
