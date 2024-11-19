@@ -825,7 +825,20 @@ function generateMailtoLink() {
         Best regards,
         
         Vanir Installed Sales Team
+
+        Estamos encantados de informarle que se nos ha adjudicado una nueva comunidad, ${subdivision}, en colaboración con ${builder}. 
+        Esperamos trabajar juntos y mantener altos estándares para este proyecto.
+
+        El proyecto será un proyecto de tipo ${projectType}, que requerirá ${materialType}.
+
+        Atentamente,
+        
+        El equipo de Vanir Installed Sales
+   
+
     `.trim();
+
+    
 
     // Create the mailto links for both management and subcontractor emails
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
