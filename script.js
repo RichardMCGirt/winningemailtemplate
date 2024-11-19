@@ -113,15 +113,21 @@ async function fetchVendorSuggestions() {
     }
 }
 
-// Create vendor autocomplete input with selection handler
+// Function to create vendor autocomplete input
 function createVendorAutocompleteInput() {
+    // Check if the input field already exists
+    const existingInput = document.querySelector('.vendor-autocomplete-input');
+    if (existingInput) {
+        return;  // If the input already exists, do nothing
+    }
+
     const wrapper = document.createElement("div");
     wrapper.classList.add("vendor-input-wrapper");
 
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = "Enter Vendor Name";
-    input.classList.add("autocomplete-input");
+    input.classList.add("vendor-autocomplete-input", "autocomplete-input");
 
     const dropdown = document.createElement("div");
     dropdown.classList.add("autocomplete-dropdown");
@@ -186,8 +192,19 @@ function clearVendorEmails() {
     updateEmailCC();  // Update the CC section to reflect the cleared emails
 }
 
+// Function to update the CC section with vendor emails
+function updateEmailCC() {
+    const ccContainer = document.querySelector('.cc-email-container');
+    if (ccContainer) {
+        // Flatten the emails from all vendors and display them joined by a comma
+        const allEmails = selectedVendorEmails.map(vendor => vendor.emails).flat();
+        ccContainer.textContent = allEmails.join(', ');
+    } else {
+        console.error("CC container not found.");
+    }
+}
 
-// Add the selected vendor to the container and clear the input
+// Add the selected vendor to the container and update CC email section
 function addVendorToContainer(vendorName) {
     console.log("Adding vendor:", vendorName);
 
@@ -199,8 +216,6 @@ function addVendorToContainer(vendorName) {
         return;
     }
 
-    console.log("Vendor container found:", vendorContainer);
-
     // Create a container for the vendor entry
     const vendorEntryWrapper = document.createElement("div");
     vendorEntryWrapper.classList.add("vendor-entry-wrapper");
@@ -210,54 +225,49 @@ function addVendorToContainer(vendorName) {
     vendorEntry.classList.add("vendor-entry");
     vendorEntry.textContent = vendorName;
 
-    console.log("Created vendor entry element:", vendorEntry);
-
     // Create a delete button for the vendor entry
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
     deleteButton.classList.add("delete-vendor-button");
+    
     deleteButton.onclick = () => {
         console.log("Delete button clicked for vendor:", vendorName);
 
         // Remove the vendor entry
         vendorEntryWrapper.remove();
 
+        // Remove vendor from the selectedVendorEmails array
+        selectedVendorEmails = selectedVendorEmails.filter(vendor => vendor.name !== vendorName);
+
+        // Update the CC section
+        updateEmailCC();
+
         // Add the vendor back to suggestions list (if needed)
         vendorSuggestions.push(vendorName);
-
-        console.log("Vendor added back to suggestions:", vendorName);
 
         // Save updated data to localStorage
         saveDataToLocalStorage();
     };
 
-    console.log("Delete button created:", deleteButton);
-
     // Append vendor entry and delete button
     vendorEntryWrapper.appendChild(vendorEntry);
     vendorEntryWrapper.appendChild(deleteButton);
 
-    console.log("Appended vendor entry and delete button to wrapper:", vendorEntryWrapper);
-
     // Append to vendor container
     vendorContainer.appendChild(vendorEntryWrapper);
-    console.log(`Vendor "${vendorName}" added to container.`);
+
+    // Fetch and add vendor emails to the CC section
+    fetchVendorEmails(vendorName);
 
     // Save data to localStorage after adding the vendor
     saveDataToLocalStorage();
 
-
+    // Clear the input field after selection
+    const inputField = document.querySelector('.vendor-autocomplete-input');
     if (inputField) {
-        console.log("Input field value before clearing:", inputField.value);
-
-        // Clear the input field
         inputField.value = '';
-
-        // Log after clearing to confirm input value is reset
-        console.log("Input field value after clearing:", inputField.value);
-
-        // Reset the placeholder
         inputField.placeholder = 'Enter Vendor Name';
+
 
         // Log the placeholder value
         console.log("Input field placeholder after reset:", inputField.placeholder);
@@ -265,9 +275,17 @@ function addVendorToContainer(vendorName) {
         console.error("Input field not found for clearing.");
     }
 
- 
+    // Check if the input field is still holding the old value and log it after a delay
+    setTimeout(() => {
+        const postClearInputField = document.querySelector('.vendor-autocomplete-input');
+        console.log("After clearing input, current value (after delay):", postClearInputField ? postClearInputField.value : "Input field not found");
+    }, 100);
 }
 
+// Function to remove vendor email from the selectedVendorEmails array
+function removeVendorEmail(vendorName) {
+    selectedVendorEmails = selectedVendorEmails.filter(email => !email.includes(vendorName));
+}
 
 
 
@@ -310,16 +328,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     startLoadingProcess(); // Trigger loading process after page load
 });
 
-// Initialize the vendor input area with a new input field
+// Ensure vendor input is added only once
 function initializeVendorInputArea() {
-    // Add the new input element for vendor name
-    const vendorInputField = createVendorAutocompleteInput();
     const vendorContainer = document.getElementById('vendorInputContainer');
-    if (vendorContainer) {
-        vendorContainer.appendChild(vendorInputField);
-    } else {
+
+    if (!vendorContainer) {
         console.error("Vendor container not found.");
+        return;
     }
+
+
 }
 
 // Save bid name and added vendors to localStorage
@@ -360,6 +378,7 @@ function loadDataFromLocalStorage() {
 // Clear input boxes and load new data
 function refreshPage() {
     // Clear the input fields
+    document.querySelector('.vendor-autocomplete-input').value = '';  // Clear the vendor input field
 
     // Save data to localStorage
     saveDataToLocalStorage();
@@ -693,10 +712,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchVendorEmails
 });
 
-// Function to fetch vendor emails based on the selected vendor
+// Function to fetch vendor emails and link them to the vendor
 async function fetchVendorEmails(vendorName) {
     try {
-        // Fetch all vendor records
+        // Fetch all vendor records from Airtable
         const records = await fetchAirtableData(VendorBaseName, VendorTableName, 'Name, Email, Secondary Email');
         
         // Find the vendor record that matches the selected vendor name
@@ -707,15 +726,20 @@ async function fetchVendorEmails(vendorName) {
             const email = selectedVendor.fields['Email'];
             const secondaryEmail = selectedVendor.fields['Secondary Email'];
 
-            // Add emails to the selectedVendorEmails array if not already present
-            if (email && !selectedVendorEmails.includes(email)) {
-                selectedVendorEmails.push(email);
-            }
-            if (secondaryEmail && !selectedVendorEmails.includes(secondaryEmail)) {
-                selectedVendorEmails.push(secondaryEmail);
+            // Add vendor and their emails to the selectedVendorEmails array if not already present
+            if (email && !selectedVendorEmails.some(vendor => vendor.name === vendorName)) {
+                selectedVendorEmails.push({ name: vendorName, emails: [email] });
             }
 
-            // Update the CC section in the email content
+            if (secondaryEmail && !selectedVendorEmails.some(vendor => vendor.name === vendorName && vendor.emails.includes(secondaryEmail))) {
+                // Find the vendor and add the secondary email
+                const vendor = selectedVendorEmails.find(vendor => vendor.name === vendorName);
+                if (vendor) {
+                    vendor.emails.push(secondaryEmail);
+                }
+            }
+
+            // Update the CC section with the selected vendor's emails
             updateEmailCC();
         } else {
             console.log("Vendor not found.");
@@ -725,15 +749,6 @@ async function fetchVendorEmails(vendorName) {
     }
 }
 
-// Update the CC section of the email template with multiple vendor emails
-function updateEmailCC() {
-    const ccContainer = document.querySelector('.cc-email-container');
-    if (ccContainer) {
-        ccContainer.textContent = selectedVendorEmails.join(', '); // Join emails with commas
-    } else {
-        console.error("CC container not found.");
-    }
-}
 
 
 function displayEmailContent() {
@@ -1004,4 +1019,3 @@ toggleDarkModeCheckbox.addEventListener('change', () => {
         localStorage.removeItem('darkMode');
     }
 });
-
