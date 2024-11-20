@@ -250,7 +250,8 @@ function addVendorToContainer(vendorName) {
     
         // Add the vendor back to suggestions list (if needed)
         vendorSuggestions.push(vendorName);
-    
+        updateVendorDisplay();
+
     };
     
 
@@ -290,6 +291,7 @@ function addVendorToContainer(vendorName) {
 // Function to remove vendor email from the selectedVendorEmails array
 function removeVendorEmail(vendorName) {
     selectedVendorEmails = selectedVendorEmails.filter(email => !email.includes(vendorName));
+    updateVendorDisplay();
 }
 
 
@@ -511,7 +513,7 @@ async function fetchDetailsByBidName(bidName) {
         const projectType = fields['Project Type'] || 'Default Project Type'; // Define projectType
         const materialType = fields['Material Type'] || 'General Materials';
         const attachments = fields['Attachments'] || []; // Directly use the URLs array
-        const numberOfLots = fields['Number of Lots'] || 'Unknown';
+        const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || 'Unknown';
 
         // Check if attachments are an array and log their details
@@ -678,8 +680,25 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
         document.querySelectorAll('.numberOfLotsContainer').forEach(el => el.textContent = numberOfLots);
     }
     if (anticipatedStartDate) {
-        document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => el.textContent = anticipatedStartDate);
+        // Parse the anticipatedStartDate into a Date object
+        const date = new Date(anticipatedStartDate);
+    
+        // Check if the date is valid
+        if (!isNaN(date.getTime())) {
+            // Format the date as "Month day, yyyy"
+            const formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+    
+            // Update the UI with the formatted date
+            document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => el.textContent = formattedDate);
+        } else {
+            console.error("Invalid date format:", anticipatedStartDate);
+        }
     }
+    
 
     console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate });
 }
@@ -744,7 +763,29 @@ async function fetchVendorEmails(vendorName) {
     }
 }
 
+function updateVendorDisplay() {
+    const vendorContainer = document.querySelector('.VendoeContainer');
+    const vendorsHeader = document.getElementById('vendorsHeader');
 
+    // Get the number of vendors by counting the child elements of .VendoeContainer
+    const vendorCount = vendorContainer ? vendorContainer.children.length : 0;
+
+    // Update the header based on the number of vendors
+    if (vendorCount === 1) {
+        vendorsHeader.textContent = 'Vendor'; // If 1 vendor is added
+    } else if (vendorCount > 1) {
+        vendorsHeader.textContent = 'Vendors'; // If more than 1 vendor is added
+    } else {
+        vendorsHeader.textContent = 'Vendors'; // Default text when there are no vendors
+    }
+
+    // Hide the container if no vendors have been added
+    if (vendorCount === 0) {
+        vendorContainer.style.display = 'none';
+    } else {
+        vendorContainer.style.display = 'block';
+    }
+}
 
 function displayEmailContent() {
     const emailContent = `
@@ -756,8 +797,10 @@ function displayEmailContent() {
         <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
-        <h3>Here's the breakdown:</h3>
         <div id="vendorInputContainer"></div>
+
+        <h2>Here's the breakdown:</h2>
+<h4 id="vendorsHeader">Vendors</h4>
         <div class="VendoeContainer"></div>
          <p><strong>Attachments:</strong> <span class="attachmentsContainer"></span></p>
     <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
