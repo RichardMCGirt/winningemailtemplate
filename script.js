@@ -110,11 +110,13 @@ async function fetchVendorSuggestions() {
         vendorLoadingProgress = 45;  // After fetching bids, vendor progress is set to 45%
         totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average progress
         updateLoadingProgress(totalLoadingProgress);
+        console.log("Vendor suggestions fetched", vendorSuggestions);
     } catch (error) {
         console.error("Error fetching vendor suggestions:", error);
     }
 }
 
+// Function to create vendor autocomplete input
 function createVendorAutocompleteInput() {
     // Check if the input field already exists
     const existingInput = document.querySelector('.vendor-autocomplete-input');
@@ -133,8 +135,6 @@ function createVendorAutocompleteInput() {
     const dropdown = document.createElement("div");
     dropdown.classList.add("autocomplete-dropdown");
 
-    let highlightedIndex = -1;  // Keep track of the currently highlighted option
-
     // Event listener for showing suggestions in the dropdown as the user types
     input.addEventListener("input", function () {
         const inputValue = input.value.toLowerCase();
@@ -145,22 +145,22 @@ function createVendorAutocompleteInput() {
                 vendor.toLowerCase().includes(inputValue)
             );
 
-            filteredSuggestions.forEach((suggestion, index) => {
+            filteredSuggestions.forEach(suggestion => {
                 const option = document.createElement("div");
                 option.classList.add("autocomplete-option");
                 option.textContent = suggestion;
 
                 // When a user clicks on a suggestion, select it and fetch emails
                 option.onclick = () => {
+                    // Fetch vendor emails after selecting the vendor
                     fetchVendorEmails(suggestion);
-                    input.value = '';  // Clear input field
-                    dropdown.style.display = 'none';  // Hide the dropdown after selection
-                };
 
-                // Add a class to highlight the selected option
-                if (index === highlightedIndex) {
-                    option.classList.add("highlighted");
-                }
+                    // Optionally, you can add the vendor to a list or perform any other action
+
+                    // Clear input field after selection
+                    input.value = '';
+                    dropdown.style.display = 'none';  // Hide the dropdown
+                };
 
                 dropdown.appendChild(option);
             });
@@ -171,40 +171,10 @@ function createVendorAutocompleteInput() {
         }
     });
 
-    // Handle arrow key navigation and Enter key to select the option
-    input.addEventListener("keydown", (e) => {
-        const options = dropdown.querySelectorAll(".autocomplete-option");
-
-        if (e.key === "ArrowDown") {
-            if (highlightedIndex < options.length - 1) {
-                highlightedIndex++;
-            }
-        } else if (e.key === "ArrowUp") {
-            if (highlightedIndex > 0) {
-                highlightedIndex--;
-            }
-        } else if (e.key === "Enter") {
-            if (highlightedIndex >= 0 && highlightedIndex < options.length) {
-                options[highlightedIndex].click();  // Select the highlighted option
-            }
-        }
-
-        // Highlight the currently selected option and populate input box
-        options.forEach((option, index) => {
-            option.classList.remove("highlighted");
-            option.style.opacity = "1";  // Reset opacity
-            if (index === highlightedIndex) {
-                option.classList.add("highlighted");
-                option.style.opacity = "0.5";  // Set opacity to 0.5 for highlighted option
-                input.value = option.textContent;  // Populate the input box with the selected text
-            }
-        });
-    });
-
-    // Add the event listener to close the dropdown when clicking outside
+    // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!wrapper.contains(e.target)) {
-            dropdown.style.display = 'none';  // Hide dropdown when clicking outside
+            dropdown.style.display = 'none';
         }
     });
 
@@ -212,9 +182,6 @@ function createVendorAutocompleteInput() {
     wrapper.appendChild(dropdown);
     return wrapper;
 }
-
-
-
 
 
 // Trigger a page refresh after adding a vendor
@@ -300,6 +267,8 @@ function addVendorToContainer(vendorName) {
     // Add the vendor name to the list of vendorNames
     vendorNames.push(vendorName);
 
+    // Save data to localStorage after adding the vendor
+    saveDataToLocalStorage();
 
     // Clear the input field after selection
     const inputField = document.querySelector('.vendor-autocomplete-input');
@@ -418,12 +387,15 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     let offset = null;
     let iteration = 0;
 
+    console.log(`Fetching data from Airtable: Base ID: ${baseId}, Table Name: ${tableName}, Field: ${fieldName}`);
+    console.log(`Filter Formula: ${filterFormula ? filterFormula : 'None'}`);
 
     do {
         let url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
         if (filterFormula) url += `?filterByFormula=${encodeURIComponent(filterFormula)}`;
         if (offset) url += `${filterFormula ? '&' : '?'}offset=${offset}`;
 
+        console.log(`Iteration ${++iteration}: Fetching from URL: ${url}`);
 
         try {
             const response = await fetch(url, {
@@ -439,9 +411,11 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
             }
 
             const data = await response.json();
+            console.log(`Iteration ${iteration}: Retrieved ${data.records.length} records.`);
             allRecords = allRecords.concat(data.records);
 
             if (data.offset) {
+                console.log(`Iteration ${iteration}: More records available, moving to next offset.`);
             } else {
                 console.log(`Iteration ${iteration}: No more records. Fetch complete.`);
             }
@@ -456,6 +430,7 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     } while (offset);
 
     console.log(`Total records fetched: ${allRecords.length}`);
+    console.log(`Field Data Extracted (${fieldName}):`, allRecords.map(record => record.fields[fieldName]));
 
     return allRecords;
 }
@@ -520,27 +495,41 @@ async function updateCityForSubdivision() {
     }
 }
 
-
-
-
-
-
-// Fetch bid details and update city based on subdivision
 async function fetchDetailsByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
-    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Builder, Project Type', filterFormula);
+    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date', filterFormula);
 
     if (records.length > 0) {
         const fields = records[0].fields;
+        
+        // Log the entire fields object to inspect all data
+        console.log("Fetched fields from Airtable:", fields);
+        
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
         const branch = fields['Branch'] || fields['Vanir Offices copy'] || 'Unknown Branch';
         const projectType = fields['Project Type'] || 'Default Project Type'; // Define projectType
-
         const materialType = fields['Material Type'] || 'General Materials';
+        const attachments = fields['Attachments'] || []; // Directly use the URLs array
+        const numberOfLots = fields['Number of Lots'] || 'Unknown';
+        const anticipatedStartDate = fields['Anticipated Start Date'] || 'Unknown';
 
-        // Update the email template
-        updateTemplateText(bidName, builder, gmEmail, branch, projectType, materialType);
+        // Check if attachments are an array and log their details
+        if (Array.isArray(attachments)) {
+            attachments.forEach((attachment, index) => {
+                console.log(`Attachment ${index + 1}:`);
+                console.log(`ID: ${attachment.id}`);
+                console.log(`URL: ${attachment.url}`);
+                console.log(`Filename: ${attachment.filename}`);
+                console.log(`Width: ${attachment.width}`);
+                console.log(`Height: ${attachment.height}`);
+            });
+        } else {
+            console.log("No attachments found.");
+        }
+
+        // Update the email template with new fields
+        updateTemplateText(bidName, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate);
 
         // Fetch and update subcontractor suggestions
         await fetchSubcontractorSuggestions(branch);
@@ -549,7 +538,7 @@ async function fetchDetailsByBidName(bidName) {
         // Update city information
         await updateCityForSubdivision();
 
-        return { builder, gmEmail, branch, projectType, materialType };
+        return { builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate };
     } else {
         console.warn("No records found for bid:", bidName);
         return {
@@ -557,11 +546,13 @@ async function fetchDetailsByBidName(bidName) {
             gmEmail: 'Branch Staff@Vanir.com',
             branch: 'Unknown Branch',
             projectType: 'Default Project Type',
-            materialType: 'General Materials'
+            materialType: 'General Materials',
+            attachments: [],
+            numberOfLots: 'Unknown',
+            anticipatedStartDate: 'Unknown'
         };
     }
 }
-
 
 
 
@@ -594,11 +585,7 @@ function updateSubcontractorAutocomplete() {
 
     // Append the complete email list to the container
     subcontractorContainer.appendChild(emailList);
-
-    // Check if the container is empty and hide it if needed
-    checkAndHideSubcontractorContainer();
 }
-
 
 // Function to create a unified autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, onSelection) {
@@ -659,8 +646,8 @@ function selectSuggestion(suggestion, input, dropdown) {
 }
 
 // In the updateTemplateText function:
-function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType) {
-    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType }); // Debugging log
+function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate) {
+    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate });
 
     if (subdivision) {
         document.querySelectorAll('.subdivisionContainer').forEach(el => el.textContent = subdivision);
@@ -680,9 +667,23 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
     if (materialType) {
         document.querySelectorAll('.materialTypeContainer').forEach(el => el.textContent = materialType);
     }
+    // Display attachment links or image previews in the UI
+    if (attachments && attachments.length > 0) {
+        const attachmentLinks = attachments.map(att => `<a href="${att.url}" target="_blank">${att.filename}</a>`).join('<br>');
+        document.querySelector('.attachmentsContainer').innerHTML = attachmentLinks;
+    } else {
+        document.querySelector('.attachmentsContainer').textContent = 'No attachments available';
+    }
+    if (numberOfLots) {
+        document.querySelectorAll('.numberOfLotsContainer').forEach(el => el.textContent = numberOfLots);
+    }
+    if (anticipatedStartDate) {
+        document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => el.textContent = anticipatedStartDate);
+    }
 
-    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType });
+    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate });
 }
+
 
 
 // Monitor subdivisionContainer for changes and trigger city lookup
@@ -743,37 +744,31 @@ async function fetchVendorEmails(vendorName) {
     }
 }
 
+
+
 function displayEmailContent() {
     const emailContent = `
-        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
+        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
         <p>CC: <span class="cc-email-container">Vendor</span></p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
 
         <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
-        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
+        <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
         <h3>Here's the breakdown:</h3>
         <div id="vendorInputContainer"></div>
         <div class="VendoeContainer"></div>
+         <p><strong>Attachments:</strong> <span class="attachmentsContainer"></span></p>
+    <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
+    <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
-<br>
-<button id="sendEmailButton" style="display: none;"></button>
-<div id="sendEmailButtonContainer">
-    <button id="sendEmailButton2" class="google-btn" style="display: none;">
-        <span class="google-icon"></span> Export to Gmail
-    </button>
-</div>
 
-        </div>
-        <br>
         <hr>
-        <br>
         <div id="subcontractorCompanyContainer"></div>
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
-        <p>If interested in working on this project email <span class="gmEmailContainer"></span></p>
 
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
@@ -781,33 +776,6 @@ function displayEmailContent() {
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
 }
-
-function checkAndHideSubcontractorContainer() {
-    const subcontractorContainer = document.getElementById('subcontractorCompanyContainer');
-    
-    if (!subcontractorContainer) {
-        console.error("subcontractorCompanyContainer not found in the DOM.");
-        return;  // Exit the function if the container is not found
-    }
-
-    if (!subcontractorContainer.hasChildNodes() || subcontractorContainer.textContent.trim() === '') {
-        subcontractorContainer.style.display = 'none'; // Hide the container if empty
-    } else {
-        subcontractorContainer.style.display = 'block'; // Ensure it is visible if it has content
-    }
-}
-
-// Wait until the DOM is fully loaded, then check for the element
-document.addEventListener('DOMContentLoaded', () => {
-// Dynamically create the subcontractor container
-const subcontractorContainer = document.createElement('div');
-subcontractorContainer.id = 'subcontractorCompanyContainer';
-
-// After the element is created, check if it is empty
-checkAndHideSubcontractorContainer();
-});
-
-
 
 
 // Trigger the display of email content once vendor emails are fetched
@@ -840,7 +808,21 @@ function generateMailtoLink() {
 
     // Collect selected vendor emails for CC
     const vendorEmails = selectedVendorEmails.map(vendor => vendor.emails).flat().join(', '); // Flatten the emails and join with commas
-    const ccEmails = `${gmEmail},${vendorEmails},hunter@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com,`;
+    const ccEmails = `${gmEmail},${vendorEmails},hunter@vanirinstalledsales.com`;
+
+    // Get the new fields: Attachments, Number of Lots, and Anticipated Start Date
+    const attachments = document.querySelector('.attachmentsContainer').textContent.trim();
+    const numberOfLots = document.querySelector('.numberOfLotsContainer').textContent.trim();
+    const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer').textContent.trim();
+
+    // Log the attachments array to inspect its structure
+    console.log("Attachments:", attachments);
+
+    // Assuming attachments is an array of objects, extract URLs (replace with actual field names based on your Airtable setup)
+    const attachmentUrls = Array.isArray(attachments) ? attachments.map(att => att.url || att) : [];
+
+    // Log the URLs (make sure they are extracted correctly)
+    console.log("Attachment URLs:", attachmentUrls);
 
     // Create the subject for management and subcontractors
     const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
@@ -856,8 +838,12 @@ function generateMailtoLink() {
         Let's coordinate with the relevant vendors and ensure a smooth project initiation.
 
         This will be a ${projectType} project, requiring ${materialType}.
-        Vendors involved: ${vendorNames} 
-        
+        Vendors involved: ${vendorNames}
+
+        Attachments: ${attachmentUrls.length > 0 ? attachmentUrls.map(url => `<a href="${url}">${url}</a>`).join(', ') : 'None'}
+        Number of Lots: ${numberOfLots}
+        Anticipated Start Date: ${anticipatedStartDate}
+
         Best regards,
         
         Vanir Installed Sales Team
@@ -870,6 +856,10 @@ function generateMailtoLink() {
         We look forward to working together and maintaining high standards for this project.
 
         The project will be a ${projectType} project, requiring ${materialType}.
+        
+        Attachments: ${attachmentUrls.length > 0 ? attachmentUrls.map(url => `<a href="${url}">${url}</a>`).join(', ') : 'None'}
+        Number of Lots: ${numberOfLots}
+        Anticipated Start Date: ${anticipatedStartDate}
 
         Best regards,
         
@@ -888,59 +878,35 @@ function generateMailtoLink() {
     const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
     const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&cc=${encodeURIComponent(ccEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
-    // Try to open Gmail in two windows (management and subcontractor) with a delay
+    // Open both email windows
     const managementWindow = window.open(managementGmailLink);
     const subcontractorWindow = window.open(subcontractorGmailLink);
 
-    // Check if both windows were successfully opened
+    // Handle pop-up blocking
     if (!managementWindow || !subcontractorWindow) {
-        // If pop-ups were blocked, show a message to the user
         alert('Pop-ups were blocked. Please enable pop-ups for this site to send the emails.');
-        // You can also show a more friendly message in the UI, for example:
-        const popUpBlockedMessage = document.createElement('div');
-        popUpBlockedMessage.classList.add('popup-blocked-message');
-        popUpBlockedMessage.innerHTML = `
-            <p><strong>Oops!</strong> It seems that pop-ups are blocked in your browser. 
-            Please allow pop-ups for this site to send the emails.</p>
-            <p><a href="https://support.google.com/chrome/answer/95472?hl=en" target="_blank">Learn how to enable pop-ups in Chrome</a></p>
-        `;
-        document.body.appendChild(popUpBlockedMessage);
     } else {
         mailtoOpened = true; // Set the flag to true after opening the windows
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Dynamically create and append the button, and then add the event listener
-    const sendEmailButton2 = document.createElement('button');
-    sendEmailButton2.id = 'sendEmailButton2';
-    sendEmailButton2.classList.add('google-btn');
-    sendEmailButton2.innerHTML = '<span class="google-icon"></span> Export to Gmail';
-    
-    const buttonContainer = document.getElementById('sendEmailButtonContainer');
-    if (buttonContainer) {
-        buttonContainer.appendChild(sendEmailButton2);
-    } else {
-        console.error('sendEmailButtonContainer not found.');
-    }
 
-    // Now add the event listener
-    sendEmailButton2.addEventListener('click', generateMailtoLink);
+
+
+
+
+
+
+// Attach the generateMailtoLink function to the 'sendEmailButton2' click event
+document.getElementById('sendEmailButton2').addEventListener('click', generateMailtoLink);
+
+document.getElementById('sendEmailButton2').addEventListener('click', function() {
+    generateMailtoLink(); // Ensure this is triggered by user interaction
 });
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    const sendEmailButton2 = document.getElementById('sendEmailButton2');
-    if (sendEmailButton2) {
-        sendEmailButton2.addEventListener('click', generateMailtoLink);
-    } else {
-        console.error('sendEmailButton2 not found in the DOM.');
-    }
-});
-
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
+
 
     // Fetch bid names only (no subcontractors yet)
     await fetchBidNameSuggestions();
@@ -1063,14 +1029,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
 });
 
+// Toggle Dark Mode
 const toggleDarkModeCheckbox = document.getElementById('toggleDarkMode');
-const toggleDarkModeText = document.getElementById('toggleDarkModeText');
 
 // Check if dark mode is enabled in localStorage
 if (localStorage.getItem('darkMode') === 'enabled') {
     document.body.classList.add('dark-mode');
     toggleDarkModeCheckbox.checked = true; // Set the switch to 'on' position
-    toggleDarkModeText.textContent = 'Toggle Light Mode'; // Update text to "Toggle Light Mode"
 }
 
 // Event listener to toggle dark mode on checkbox change
@@ -1078,14 +1043,10 @@ toggleDarkModeCheckbox.addEventListener('change', () => {
     const body = document.body;
     body.classList.toggle('dark-mode');
 
-    // Update the text depending on the mode
+    // Save the user's preference in localStorage
     if (body.classList.contains('dark-mode')) {
         localStorage.setItem('darkMode', 'enabled');
-        toggleDarkModeText.textContent = 'Toggle Light Mode'; // Change text to "Toggle Light Mode"
     } else {
         localStorage.removeItem('darkMode');
-        toggleDarkModeText.textContent = 'Toggle Dark Mode'; // Change text to "Toggle Dark Mode"
     }
 });
-
-
