@@ -815,33 +815,39 @@ function generateMailtoLink() {
     const materialType = document.querySelector('.materialTypeContainer').textContent.trim();  // Material Type
     const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer').textContent.trim();  // Anticipated Start Date
     const numberOfLots = document.querySelector('.numberOfLotsContainer').textContent.trim();  // Number of Lots
-    let attachments = document.querySelector('.attachmentsContainer').textContent.trim();  // Attachments
 
-    // Ensure attachments are an array of individual URLs (split by spaces or commas, as needed)
-    if (attachments && !Array.isArray(attachments)) {
-        attachments = attachments.split(/(?<=\.PNG)/).map(url => url.trim());  // Split based on .PNG and trim spaces
-    }
+    // Attachments URLs (already fetched)
+    const attachments = [
+        {
+            filename: 'Custom Boral Drip Cap.PNG',
+            url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
+        },
+        {
+            filename: 'Custom Boral Window Arch.PNG',
+            url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
+        },
+        {
+            filename: 'Boral Rafter Tail with Cove Radius.PNG',
+            url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
+        },
+        {
+            filename: 'Laminated Drip Cap.PNG',
+            url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
+        },
+    ];
 
-    // Log attachments before creating mailto link
-    console.log("Attachments (raw):", attachments);  // Log raw attachments
-
-    // Prepend the base URL for Airtable or your file hosting location
-    const baseUrl = "https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ";
-    // Transform attachment filenames into full URLs
-    const formattedAttachments = attachments.length > 0 ?
-        attachments.map(att => {
-            // Prepend the base URL to each attachment filename
-            const fullUrl = `${baseUrl}${att}`;
-            return `<a href="${fullUrl}" target="_blank">${att}</a>`;
-        }).join('<br>') : 'No attachments available';
+    // Format the attachments with filename and URL
+    const formattedAttachments = attachments.map(att => {
+        return `${att.filename}: ${att.url}`; // Format the filename followed by the URL
+    }).join('\n'); // Join each attachment with a newline
 
     // Vendor Emails and Team Emails
     const teamEmails = 'purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, gonzalez@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com';
-    const vendorEmails = selectedVendorEmails.map(vendor => vendor.emails).flat().join(', '); // Flatten and join vendor emails
+    const vendorEmails = selectedVendorEmails.map(vendor => vendor.emails).flat().join(', ');
     const ccEmails = `${vendorEmails}`;
 
-    // Get subcontractor emails dynamically from .VendoeContainer based on branch
-    const subcontractorEmails = getSubcontractorsByBranch(subcontractors, branch);
+    // Fetch subcontractor emails dynamically by branch
+    const subcontractorEmails = getSubcontractorsByBranch(subcontractors, branch); // Fetch subcontractor emails for the given branch
 
     // Log the dynamic data before creating the mailto link
     console.log('Branch:', branch);
@@ -856,10 +862,8 @@ function generateMailtoLink() {
     console.log('Vendor Emails:', vendorEmails);
     console.log('Subcontractor Emails:', subcontractorEmails);
 
-    // Management Email Subject
+    // Management Email Subject and Body
     const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
-
-    // Management Email Body
     const managementBody = `
         Dear Team,
 
@@ -873,7 +877,8 @@ function generateMailtoLink() {
         - Number of Lots: ${numberOfLots}
         - Anticipated Start Date: ${anticipatedStartDate}
 
-        Attachments: ${formattedAttachments}
+        Attachments:
+        ${formattedAttachments}
 
         Best regards,
         Vanir Installed Sales Team
@@ -897,7 +902,8 @@ function generateMailtoLink() {
         Best regards,
         Vanir Installed Sales Team
 
-        Attachments: ${formattedAttachments}
+        Attachments:
+        ${formattedAttachments}
     `.trim();
 
     // Create the mailto link for management email (To: management team, CC: vendors)
@@ -925,6 +931,8 @@ function getSubcontractorsByBranch(subcontractors, branch) {
         .map(sub => sub.fields.email)  // Map to get just the emails
         .join(', ');  // Join emails by commas to pass in the URL
 }
+
+
 
 
 
