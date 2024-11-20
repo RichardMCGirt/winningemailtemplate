@@ -304,12 +304,6 @@ function clearVendorInput(inputField) {
     }
 }
 
-
-
-
-
-
-
 // Simulate loading step by step, showing progress incrementally
 async function startLoadingProcess() {
     await fetchBidSuggestions();
@@ -464,8 +458,6 @@ async function fetchSubcontractorSuggestions(branchFilter) {
     }
 }
 
-
-
 let cityUpdated = false;  // Flag to track if the city has been updated
 
 async function updateCityForSubdivision() {
@@ -543,8 +535,6 @@ async function fetchDetailsByBidName(bidName) {
         };
     }
 }
-
-
 
 // Function to update subcontractor autocomplete input and display all emails in UI
 function updateSubcontractorAutocomplete() {
@@ -896,10 +886,11 @@ function generateMailtoLink() {
         
         Vanir Installed Sales Team
 
-       Nos complace informarle que hemos sido adjudicados con un nuevo proyecto en la comunidad ${subdivision}, en colaboración con ${builder}.
-       Esperamos trabajar juntos y mantener los más altos estándares en este proyecto.
 
-       Este proyecto será de tipo ${projectType} y requerirá ${materialType}.
+       Nos da gusto informarle que hemos recibido un nuevo proyecto en la comunidad ${subdivision}, en colaboración con ${builder}.
+       Estamos emocionados por trabajar juntos y mantener los más altos estándares en este proyecto.
+
+       Este proyecto será de casas ${projectType} y necesitará ${materialType}.
 
        Atentamente, 
        El equipo de Vanir Installed Sales
