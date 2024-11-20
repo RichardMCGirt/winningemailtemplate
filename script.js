@@ -110,7 +110,6 @@ async function fetchVendorSuggestions() {
         vendorLoadingProgress = 45;  // After fetching bids, vendor progress is set to 45%
         totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average progress
         updateLoadingProgress(totalLoadingProgress);
-        console.log("Vendor suggestions fetched", vendorSuggestions);
     } catch (error) {
         console.error("Error fetching vendor suggestions:", error);
     }
@@ -268,8 +267,6 @@ function addVendorToContainer(vendorName) {
     // Add the vendor name to the list of vendorNames
     vendorNames.push(vendorName);
 
-    // Save data to localStorage after adding the vendor
-    saveDataToLocalStorage();
 
     // Clear the input field after selection
     const inputField = document.querySelector('.vendor-autocomplete-input');
@@ -389,15 +386,12 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     let offset = null;
     let iteration = 0;
 
-    console.log(`Fetching data from Airtable: Base ID: ${baseId}, Table Name: ${tableName}, Field: ${fieldName}`);
-    console.log(`Filter Formula: ${filterFormula ? filterFormula : 'None'}`);
 
     do {
         let url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
         if (filterFormula) url += `?filterByFormula=${encodeURIComponent(filterFormula)}`;
         if (offset) url += `${filterFormula ? '&' : '?'}offset=${offset}`;
 
-        console.log(`Iteration ${++iteration}: Fetching from URL: ${url}`);
 
         try {
             const response = await fetch(url, {
@@ -413,26 +407,20 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
             }
 
             const data = await response.json();
-            console.log(`Iteration ${iteration}: Retrieved ${data.records.length} records.`);
             allRecords = allRecords.concat(data.records);
 
             if (data.offset) {
-                console.log(`Iteration ${iteration}: More records available, moving to next offset.`);
             } else {
-                console.log(`Iteration ${iteration}: No more records. Fetch complete.`);
             }
 
-            offset = data.offset; // Continue pagination if offset exists
+            offset = data.offset; 
         } catch (error) {
-            console.error(`Iteration ${iteration}: Error occurred during fetch: ${error.message}`);
-            console.error(`Failed URL: ${url}`);
+          
             console.error(error);
             return [];
         }
     } while (offset);
 
-    console.log(`Total records fetched: ${allRecords.length}`);
-    console.log(`Field Data Extracted (${fieldName}):`, allRecords.map(record => record.fields[fieldName]));
 
     return allRecords;
 }
