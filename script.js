@@ -493,12 +493,12 @@ async function fetchDetailsByBidName(bidName) {
         
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
-        const branch = fields['Branch'] || fields['Vanir Offices copy'] || 'Unknown Branch';
-        const projectType = fields['Project Type'] || 'Default Project Type'; // Define projectType
-        const materialType = fields['Material Type'] || 'General Materials';
+        const branch = fields['Branch'] || 'Unknown Branch';
+        const projectType = fields['Project Type'] || ''; // Define projectType
+        const materialType = fields['Material Type'] || '';
         const attachments = fields['Attachments'] || []; // Directly use the URLs array
         const numberOfLots = fields['Number of Lots'] || '';
-        const anticipatedStartDate = fields['Anticipated Start Date'] || 'Unknown';
+        const anticipatedStartDate = fields['Anticipated Start Date'] || '';
 
         // Check if attachments are an array and log their details
         if (Array.isArray(attachments)) {
@@ -745,29 +745,57 @@ async function fetchVendorEmails(vendorName) {
     }
 }
 
-function updateVendorDisplay() {
-    const vendorContainer = document.querySelector('.VendoeContainer');
-    const vendorsHeader = document.getElementById('vendorsHeader');
+document.addEventListener("DOMContentLoaded", () => {
+    function updateVendorDisplay() {
+        console.log("updateVendorDisplay called");
 
-    // Get the number of vendors by counting the child elements of .VendoeContainer
-    const vendorCount = vendorContainer ? vendorContainer.children.length : 0;
+        // Select the vendor container and header
+        const vendorContainer = document.querySelector('.VendoeContainer');
+        const vendorsHeader = document.getElementById('vendorsHeader');
 
-    // Update the header based on the number of vendors
-    if (vendorCount === 1) {
-        vendorsHeader.textContent = 'Vendor'; // If 1 vendor is added
-    } else if (vendorCount > 1) {
-        vendorsHeader.textContent = 'Vendors'; // If more than 1 vendor is added
-    } else {
-        vendorsHeader.textContent = 'Vendors'; // Default text when there are no vendors
+        // Check if vendorsHeader exists
+        if (vendorsHeader) {
+            vendorsHeader.textContent = 'Vendor'; // Default text on page startup
+            console.log("Initialized vendorsHeader to 'Vendor'");
+        } else {
+            console.error("vendorsHeader element not found");
+            return; // Exit if vendorsHeader is missing
+        }
+
+        // Get the number of vendors
+        const vendorCount = vendorContainer ? vendorContainer.children.length : 0;
+        console.log("Vendor Count:", vendorCount);
+
+        // Update the header based on the number of vendors
+        if (vendorCount === 0) {
+            console.log("No vendors found, keeping header as 'Vendor'");
+        } else if (vendorCount === 1) {
+            console.log("One vendor found, keeping header as 'Vendor'");
+            vendorsHeader.textContent = 'Vendor';
+        } else {
+            console.log("Multiple vendors found, setting header to 'Vendors'");
+            vendorsHeader.textContent = 'Vendors';
+        }
+
+        // Hide or show the container based on the vendor count
+        if (vendorContainer) {
+            if (vendorCount === 0) {
+                console.log("Hiding vendor container");
+                vendorContainer.style.display = 'none';
+            } else {
+                console.log("Showing vendor container");
+                vendorContainer.style.display = 'block';
+            }
+        } else {
+            console.error("Vendor container not found");
+        }
     }
 
-    // Hide the container if no vendors have been added
-    if (vendorCount === 0) {
-        vendorContainer.style.display = 'none';
-    } else {
-        vendorContainer.style.display = 'block';
-    }
-}
+    updateVendorDisplay(); // Call the function on startup
+});
+
+
+
 
 function displayEmailContent() {
     const emailContent = `
@@ -776,13 +804,13 @@ function displayEmailContent() {
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
 
-        <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong>
+        <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong></h4>
         <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
         <div id="vendorInputContainer"></div>
 
         <h2>Here's the breakdown:</h2>
-<h4 id="vendorsHeader">Vendors</h4>
+<h4 id="vendorsHeader">Vendor</h4>
         <div class="VendoeContainer"></div>
          <p><strong>Attachments:</strong> <span class="attachmentsContainer"></span></p>
     <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
@@ -892,14 +920,7 @@ async function generateMailtoLinks() {
 
         // Attachments
         const attachments = [
-            {
-                filename: 'Custom Boral Drip Cap.PNG',
-                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
-            },
-            {
-                filename: 'Custom Boral Window Arch.PNG',
-                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
-            }
+          
         ];
         const formattedAttachments = attachments.map(att => `${att.filename}: ${att.url}`).join('\n');
 
@@ -912,11 +933,11 @@ Dear Team,
 We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This is an excellent opportunity to showcase our expertise and drive further growth.
 
 Project Details:
-- **Branch:** ${branch}
-- **Project Type:** ${projectType}
-- **Material Type:** ${materialType}
-- **Number of Lots:** ${numberOfLots}
-- **Anticipated Start Date:** ${anticipatedStartDate}
+- Branch:** ${branch}
+- Project Type:** ${projectType}
+- Material Type:** ${materialType}
+- Number of Lots:** ${numberOfLots}
+- Anticipated Start Date:** ${anticipatedStartDate}
 
 Attachments:
 ${formattedAttachments}
