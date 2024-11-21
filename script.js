@@ -819,7 +819,6 @@ if (ccEmailContainer) {
 function getCCEmails() {
     // Assuming the emails are listed as text inside the container
     const emails = Array.from(ccEmailContainer.children).map(child => child.textContent.trim());
-    console.log("CC Emails:", emails); // Log emails
     return emails;
 }
 
@@ -867,29 +866,29 @@ async function generateMailtoLinks() {
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
 
-          // Extract CC emails from the cc-email-container
-          const ccEmails = ccEmailContainer.textContent
-          .split(/[\s,;]+/) // Split by spaces, commas, or semicolons
-          .filter(email => email.includes("@")); // Filter valid email addresses
-      const ccEmailsString = ccEmails.join(',');
+        // Extract CC emails from the cc-email-container
+        const ccEmails = ccEmailContainer.textContent
+            .split(/[\s,;]+/) // Split by spaces, commas, or semicolons
+            .filter(email => email.includes("@")); // Filter valid email addresses
+        const ccEmailsString = ccEmails.join(',');
 
-      // Subcontractor container logic
-      const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
-      if (!subcontractorContainer) {
-          console.error("Subcontractor container not found.");
-          alert("Subcontractor information is missing.");
-          return;
-      }
+        // Subcontractor container logic
+        const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
+        if (!subcontractorContainer) {
+            console.error("Subcontractor container not found.");
+            alert("Subcontractor information is missing.");
+            return;
+        }
 
-      const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
-          .map(emailElement => emailElement.textContent.trim())
-          .join(", ");
+        const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
+            .map(emailElement => emailElement.textContent.trim())
+            .join(", ");
 
-      if (!subcontractorEmails) {
-          console.error("No subcontractor emails found in the container.");
-          alert("No subcontractor emails found.");
-          return;
-      }
+        if (!subcontractorEmails) {
+            console.error("No subcontractor emails found in the container.");
+            alert("No subcontractor emails found.");
+            return;
+        }
 
         // Attachments
         const attachments = [
@@ -906,55 +905,56 @@ async function generateMailtoLinks() {
 
         // Management Email
         const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
-        const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
+        const managementSubject = `New Project Awarded: ${subdivision} - ${builder}`;
         const managementBody = `
-            Dear Team,
+Dear Team,
 
-            Major Wins for Team ${branch}
+We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This is an excellent opportunity to showcase our expertise and drive further growth.
 
-            We are excited to announce that we have been awarded a new project in ${subdivision} with ${builder}.
+Project Details:
+- **Branch:** ${branch}
+- **Project Type:** ${projectType}
+- **Material Type:** ${materialType}
+- **Number of Lots:** ${numberOfLots}
+- **Anticipated Start Date:** ${anticipatedStartDate}
 
-            This will be a ${projectType} project, requiring ${materialType}.
+Attachments:
+${formattedAttachments}
 
-            Here's the breakdown:
-            - Number of Lots: ${numberOfLots}
-            - Anticipated Start Date: ${anticipatedStartDate}
+Let’s continue this momentum and deliver exceptional results.
 
-            Attachments:
-            ${formattedAttachments}
-
-            Best regards,
-            Vanir Installed Sales Team
-        `.trim();
+Best regards,  
+Vanir Installed Sales Team
+`.trim();
 
         // Subcontractor Email
-        const subcontractorSubject = `New Project Awarded | ${branch} | ${builder}`;
+        const subcontractorSubject = `Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
-            Dear Subcontractor,
+Dear Subcontractor,
 
-            We are excited to inform you that we have been awarded a new project in ${subdivision}, in collaboration with ${builder}.
+We are pleased to announce a new project in ${subdivision}, partnering with ${builder}. We are seeking your expertise to deliver exceptional results.
 
-            The project will involve the following details:
-            - Project Type: ${projectType}
-            - Material Type: ${materialType}
-            - Number of Lots: ${numberOfLots}
-            - Anticipated Start Date: ${anticipatedStartDate}
+Project Details:
+- **Branch:** ${branch}
+- **Project Type:** ${projectType}
+- **Material Type:** ${materialType}
+- **Number of Lots:** ${numberOfLots}
+- **Anticipated Start Date:** ${anticipatedStartDate}
 
-            Please let us know if you have any questions or need further information.
+Please review the details and let us know if you have any questions or require additional information.
 
-            Best regards,
-            Vanir Installed Sales Team
-        `.trim();
+Best regards,  
+Vanir Installed Sales Team
+`.trim();
 
-        // Generate Gmail links
         // Generate Gmail links
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
             teamEmails
         )}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-        
+
         const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-            teamEmails
-        )}&cc=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+            subcontractorEmails
+        )}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
@@ -972,6 +972,7 @@ async function generateMailtoLinks() {
         console.error("Error generating mailto links:", error.message);
     }
 }
+
 let ccObserver = null;
 
 function observeCCContainer() {
