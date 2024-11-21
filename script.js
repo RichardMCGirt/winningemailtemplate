@@ -13,14 +13,16 @@ let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 let vendorSuggestions = []; // Store vendor names
 let city = [];
 let subcontractors = []; // Initialize an empty array for subcontractors
+let selectedVendorEmails = [];
 
 
 let bidLoadingProgress = 0;
 let vendorLoadingProgress = 0;
 let totalLoadingProgress = 0;
-let selectedVendorEmails = [];  // Array to store selected vendor emails
 let mailtoOpened = false;
 let vendorNames = [];  // Initialize vendorNames as an empty array
+
+
 
 
 const MAX_PROGRESS = 100;
@@ -97,7 +99,6 @@ async function fetchBidSuggestions() {
         bidLoadingProgress = 55;
         totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average of both progress
         updateLoadingProgress(totalLoadingProgress);
-        console.log("Bid suggestions fetched", bidNameSuggestions);
     } catch (error) {
         console.error("Error fetching bid suggestions:", error);
     }
@@ -201,13 +202,14 @@ function clearVendorEmails() {
 function updateEmailCC() {
     const ccContainer = document.querySelector('.cc-email-container');
     if (ccContainer) {
-        // Flatten the emails from all vendors and display them joined by a comma
         const allEmails = selectedVendorEmails.map(vendor => vendor.emails).flat();
         ccContainer.textContent = allEmails.join(', ');
+        console.log("CC Email Container Updated:", ccContainer.textContent);
     } else {
         console.error("CC container not found.");
     }
 }
+
 
 /// Add the selected vendor to the container and update the CC section
 function addVendorToContainer(vendorName) {
@@ -288,10 +290,12 @@ function addVendorToContainer(vendorName) {
     }, 100);
 }
 
-// Function to remove vendor email from the selectedVendorEmails array
-function removeVendorEmail(vendorName) {
-    selectedVendorEmails = selectedVendorEmails.filter(email => !email.includes(vendorName));
-    updateVendorDisplay();
+// Function to handle vendor removal
+function removeVendor(vendorEmail) {
+    selectedVendorEmails = selectedVendorEmails.filter(email => email !== vendorEmail);
+    console.log(`Removed vendor email: ${vendorEmail}`);
+    updateCCEmailContainer(); // Update the email container
+    generateManagementGmailLink(); // Regenerate the Gmail link
 }
 
 
@@ -804,6 +808,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const ccEmailContainer = document.getElementById('cc-email-container');
+// Check if the element exists and log its content
+if (ccEmailContainer) {
+    console.log(ccEmailContainer.textContent.trim());
+} else {
+    console.error('Element with class "cc-email-container" not found.');
+}
 
 // Function to extract emails from cc-email-container
 function getCCEmails() {
@@ -813,10 +823,26 @@ function getCCEmails() {
     return emails;
 }
 
-// Get the team emails, subject, and body (existing variables)
-const teamEmails = "team@example.com"; // Replace with your dynamic variable
-const managementSubject = "Your Subject";
-const managementBody = "Your Body";
+// Function to update the CC email container dynamically
+function updateCCEmailContainer() {
+    const ccEmailContainer = document.querySelector('.cc-email-container');
+    if (ccEmailContainer) {
+        ccEmailContainer.textContent = selectedVendorEmails.join(', ');
+    } else {
+        console.error('Element with class "cc-email-container" not found.');
+    }
+}
+
+// Function to handle vendor selection
+function selectVendor(vendorName, vendorEmail) {
+    if (!selectedVendorEmails.includes(vendorEmail)) {
+        selectedVendorEmails.push(vendorEmail);
+        console.log(`Added vendor email: ${vendorEmail}`);
+    }
+    updateCCEmailContainer(); // Update the email container
+    generateManagementGmailLink(); // Regenerate the Gmail link
+}
+
 
 // Fetch CC Emails
 const ccEmails = getCCEmails(); // Get the CC emails from the container
@@ -824,16 +850,48 @@ const ccEmailsString = ccEmails.join(','); // Combine emails into a single comma
 
 // Define generateMailtoLinks
 async function generateMailtoLinks() {
-        // Get dynamic data from the DOM
-        const branch = document.querySelector('.branchContainer').textContent.trim();  // Branch
-        const subdivision = document.querySelector('.subdivisionContainer').textContent.trim();  // Subdivision
-        const builder = document.querySelector('.builderContainer').textContent.trim();  // Builder
-        const projectType = document.querySelector('.briqProjectTypeContainer').textContent.trim();  // Project Type
-        const materialType = document.querySelector('.materialTypeContainer').textContent.trim();  // Material Type
-        const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer').textContent.trim();  // Anticipated Start Date
-        const numberOfLots = document.querySelector('.numberOfLotsContainer').textContent.trim();  // Number of Lots
-    
-        // Attachments URLs (already fetched)
+    try {
+        // Ensure the cc-email-container exists
+        const ccEmailContainer = await waitForElement('.cc-email-container');
+        if (!ccEmailContainer) {
+            console.error('Element with class "cc-email-container" not found.');
+            return;
+        }
+
+        // Fetch dynamic data from the DOM
+        const branch = document.querySelector('.branchContainer')?.textContent.trim() || 'Unknown Branch';
+        const subdivision = document.querySelector('.subdivisionContainer')?.textContent.trim() || 'Unknown Subdivision';
+        const builder = document.querySelector('.builderContainer')?.textContent.trim() || 'Unknown Builder';
+        const projectType = document.querySelector('.briqProjectTypeContainer')?.textContent.trim() || 'Default Project Type';
+        const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
+        const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
+        const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
+
+          // Extract CC emails from the cc-email-container
+          const ccEmails = ccEmailContainer.textContent
+          .split(/[\s,;]+/) // Split by spaces, commas, or semicolons
+          .filter(email => email.includes("@")); // Filter valid email addresses
+      const ccEmailsString = ccEmails.join(',');
+
+      // Subcontractor container logic
+      const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
+      if (!subcontractorContainer) {
+          console.error("Subcontractor container not found.");
+          alert("Subcontractor information is missing.");
+          return;
+      }
+
+      const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
+          .map(emailElement => emailElement.textContent.trim())
+          .join(", ");
+
+      if (!subcontractorEmails) {
+          console.error("No subcontractor emails found in the container.");
+          alert("No subcontractor emails found.");
+          return;
+      }
+
+        // Attachments
         const attachments = [
             {
                 filename: 'Custom Boral Drip Cap.PNG',
@@ -842,106 +900,116 @@ async function generateMailtoLinks() {
             {
                 filename: 'Custom Boral Window Arch.PNG',
                 url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
-            },
-            {
-                filename: 'Boral Rafter Tail with Cove Radius.PNG',
-                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
-            },
-            {
-                filename: 'Laminated Drip Cap.PNG',
-                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
-            },
+            }
         ];
-    
-        // Format the attachments with filename and URL
-        const formattedAttachments = attachments.map(att => {
-            return `${att.filename}: ${att.url}`; // Format the filename followed by the URL
-        }).join('\n'); // Join each attachment with a newline
-    const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
+        const formattedAttachments = attachments.map(att => `${att.filename}: ${att.url}`).join('\n');
 
-    if (!subcontractorContainer) {
-        console.error("Subcontractor container not found.");
-        alert("Subcontractor information is missing.");
-        return;
-    }
+        // Management Email
+        const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
+        const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
+        const managementBody = `
+            Dear Team,
 
-    const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
-        .map(emailElement => emailElement.textContent.trim())
-        .join(", ");
+            Major Wins for Team ${branch}
 
-    if (!subcontractorEmails) {
-        console.error("No subcontractor emails found in the container.");
-        alert("No subcontractor emails found.");
-        return;
-    }
+            We are excited to announce that we have been awarded a new project in ${subdivision} with ${builder}.
 
-    const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
+            This will be a ${projectType} project, requiring ${materialType}.
 
-    // Management Email Subject and Body
-    const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
-    const managementBody = `
-        Dear Team,
+            Here's the breakdown:
+            - Number of Lots: ${numberOfLots}
+            - Anticipated Start Date: ${anticipatedStartDate}
 
-        Major Wins for Team ${branch}
+            Attachments:
+            ${formattedAttachments}
 
-        We are excited to announce that we have been awarded a new project in ${subdivision} with ${builder}.
+            Best regards,
+            Vanir Installed Sales Team
+        `.trim();
 
-        This will be a ${projectType} project, requiring ${materialType}.
+        // Subcontractor Email
+        const subcontractorSubject = `New Project Awarded | ${branch} | ${builder}`;
+        const subcontractorBody = `
+            Dear Subcontractor,
 
-        Here's the breakdown:
-        - Number of Lots: ${numberOfLots}
-        - Anticipated Start Date: ${anticipatedStartDate}
+            We are excited to inform you that we have been awarded a new project in ${subdivision}, in collaboration with ${builder}.
 
-        Attachments:
-        ${formattedAttachments}
+            The project will involve the following details:
+            - Project Type: ${projectType}
+            - Material Type: ${materialType}
+            - Number of Lots: ${numberOfLots}
+            - Anticipated Start Date: ${anticipatedStartDate}
 
-        Best regards,
-        Vanir Installed Sales Team
-    `.trim();
+            Please let us know if you have any questions or need further information.
 
-    // Subcontractor Email Subject and Body
-    const subcontractorSubject = `New Project Awarded | ${branch} | ${builder}`;
-    const subcontractorBody = `
-        Dear Subcontractor,
+            Best regards,
+            Vanir Installed Sales Team
+        `.trim();
 
-        We are excited to inform you that we have been awarded a new project in ${subdivision}, in collaboration with ${builder}.
-
-        The project will involve the following details:
-        - Project Type: ${projectType}
-        - Material Type: ${materialType}
-        - Number of Lots: ${numberOfLots}
-        - Anticipated Start Date: ${anticipatedStartDate}
-
-        Please let us know if you have any questions or need further information.
-
-        Best regards,
-        Vanir Installed Sales Team
-
+        // Generate Gmail links
+        // Generate Gmail links
+        const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+            teamEmails
+        )}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
         
-    `.trim();
+        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+            teamEmails
+        )}&cc=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
+        console.log("Management Gmail Link:", managementGmailLink);
+        console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
 
-   // Generate the Gmail link with CC field
-const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-    teamEmails
-)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
+        // Open the links
+        const managementWindow = window.open(managementGmailLink);
+        const subcontractorWindow = window.open(subcontractorGmailLink);
 
-console.log("Generated Gmail Link:", managementGmailLink);
+        if (!managementWindow || !subcontractorWindow) {
+            alert("Pop-ups were blocked. Please enable pop-ups for this site.");
+        }
+        return managementGmailLink; // Return the link for further use
 
-    const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-        teamEmails
-    )}&cc=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
-
-    const managementWindow = window.open(managementGmailLink);
-    const subcontractorWindow = window.open(subcontractorGmailLink);
-
-    if (!managementWindow || !subcontractorWindow) {
-        alert("Pop-ups were blocked. Please enable pop-ups for this site.");
+    } catch (error) {
+        console.error("Error generating mailto links:", error.message);
     }
 }
+let ccObserver = null;
+
+function observeCCContainer() {
+    const ccEmailContainer = document.querySelector('.cc-email-container');
+
+    if (!ccEmailContainer) {
+        console.error('CC email container not found.');
+        return;
+    }
+
+    // Disconnect existing observer if any
+    if (ccObserver) {
+        ccObserver.disconnect();
+    }
+
+    // Create a new observer
+    ccObserver = new MutationObserver(() => {
+        console.log("CC Email Container Updated:", ccEmailContainer.textContent);
+        const ccEmails = ccEmailContainer.textContent.trim().split(',').filter(Boolean);
+        console.log("Updated CC Emails:", ccEmails);
+    });
+
+    ccObserver.observe(ccEmailContainer, { childList: true, characterData: true, subtree: true });
+}
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    const sendEmailButton = document.getElementById('sendEmailButton2');
+    // Initial call to observe the CC container
+    observeCCContainer();
+
+    // Schedule it to run every minute
+    setInterval(() => {
+        observeCCContainer();
+    }, 60000); // 60000 milliseconds = 1 minute
+});
+
+document.addEventListener('DOMContentLoaded', () => {
     const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
 
     if (sendEmailButton) {
@@ -1048,9 +1116,10 @@ function initializeBidAutocomplete() {
     }
 }
 
-function waitForElement(selector, timeout = 9000) {
+// Function to wait for the cc-email-container to exist in the DOM
+async function waitForElement(selector, timeout = 5000) {
     return new Promise((resolve, reject) => {
-        const interval = 100; // Check every 100ms
+        const interval = 100;
         let elapsed = 0;
 
         const intervalId = setInterval(() => {
@@ -1062,11 +1131,12 @@ function waitForElement(selector, timeout = 9000) {
             elapsed += interval;
             if (elapsed >= timeout) {
                 clearInterval(intervalId);
-                reject(new Error(`Element ${selector} not found within ${timeout}ms`));
+                reject(new Error(`Element "${selector}" not found within ${timeout}ms`));
             }
         }, interval);
     });
 }
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
