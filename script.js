@@ -430,16 +430,13 @@ async function fetchBidNameSuggestions() {
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
 }
 
-// Modify fetchSubcontractorSuggestions to accept a branch filter
 async function fetchSubcontractorSuggestions(branchFilter) {
     if (!branchFilter) {
         console.error("Branch filter is missing.");
         return;
     }
 
-    // Properly interpolate the branchFilter value to filter subcontractors by branch
-    const filterFormula = `{Branch} = "${branchFilter}"`; // Make sure to use the correct field name in Airtable
-
+    const filterFormula = `{Branch} = "${branchFilter}"`;
     try {
         const records = await fetchAirtableData(
             subcontractorBaseName,
@@ -806,100 +803,163 @@ document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
 
-function generateMailtoLink() {
-    try {
+const ccEmailContainer = document.getElementById('cc-email-container');
+
+// Function to extract emails from cc-email-container
+function getCCEmails() {
+    // Assuming the emails are listed as text inside the container
+    const emails = Array.from(ccEmailContainer.children).map(child => child.textContent.trim());
+    console.log("CC Emails:", emails); // Log emails
+    return emails;
+}
+
+// Get the team emails, subject, and body (existing variables)
+const teamEmails = "team@example.com"; // Replace with your dynamic variable
+const managementSubject = "Your Subject";
+const managementBody = "Your Body";
+
+// Fetch CC Emails
+const ccEmails = getCCEmails(); // Get the CC emails from the container
+const ccEmailsString = ccEmails.join(','); // Combine emails into a single comma-separated string
+
+// Define generateMailtoLinks
+async function generateMailtoLinks() {
         // Get dynamic data from the DOM
-        const branch = document.querySelector('.branchContainer').textContent.trim(); // Branch
-        const subdivision = document.querySelector('.subdivisionContainer').textContent.trim(); // Subdivision
-        const builder = document.querySelector('.builderContainer').textContent.trim(); // Builder
-        const projectType = document.querySelector('.briqProjectTypeContainer').textContent.trim(); // Project Type
-        const materialType = document.querySelector('.materialTypeContainer').textContent.trim(); // Material Type
-        const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer').textContent.trim(); // Anticipated Start Date
-        const numberOfLots = document.querySelector('.numberOfLotsContainer').textContent.trim(); // Number of Lots
-
-        console.log('Fetched dynamic data:');
-        console.log('Branch:', branch);
-        console.log('Subdivision:', subdivision);
-        console.log('Builder:', builder);
-        console.log('Project Type:', projectType);
-        console.log('Material Type:', materialType);
-        console.log('Anticipated Start Date:', anticipatedStartDate);
-        console.log('Number of Lots:', numberOfLots);
-
+        const branch = document.querySelector('.branchContainer').textContent.trim();  // Branch
+        const subdivision = document.querySelector('.subdivisionContainer').textContent.trim();  // Subdivision
+        const builder = document.querySelector('.builderContainer').textContent.trim();  // Builder
+        const projectType = document.querySelector('.briqProjectTypeContainer').textContent.trim();  // Project Type
+        const materialType = document.querySelector('.materialTypeContainer').textContent.trim();  // Material Type
+        const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer').textContent.trim();  // Anticipated Start Date
+        const numberOfLots = document.querySelector('.numberOfLotsContainer').textContent.trim();  // Number of Lots
+    
         // Attachments URLs (already fetched)
         const attachments = [
             {
                 filename: 'Custom Boral Drip Cap.PNG',
-                url: 'https://example.com/attachment1.png',
+                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
             },
             {
                 filename: 'Custom Boral Window Arch.PNG',
-                url: 'https://example.com/attachment2.png',
+                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
+            },
+            {
+                filename: 'Boral Rafter Tail with Cove Radius.PNG',
+                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
+            },
+            {
+                filename: 'Laminated Drip Cap.PNG',
+                url: 'https://v5.airtableusercontent.com/v3/u/35/35/1732140000000/NFUuAUQo6soZfdLRGPQP-A/b5PmNIrXDEBnY6VUAR7j9g8VMdHdLSeO-bcGwGrJg0SMInJA3tAIlDGu9LlukPW-iBGTB46FCKOEuucIl0OpHQO6-ZWRf2feS0aM_3Srcx-Q3sGn68GNVbdIfMrEfbY8uQ7PwHoNcgsIpL-KH-Z0WRNor0jD1AMlr0HPuwNUjgM/oNTi-9BN3ZjvRL82dbWW02jv-gy7Yro3I3zQan-7_uQ',
             },
         ];
+    
+        // Format the attachments with filename and URL
+        const formattedAttachments = attachments.map(att => {
+            return `${att.filename}: ${att.url}`; // Format the filename followed by the URL
+        }).join('\n'); // Join each attachment with a newline
+    const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
 
-        // Format the attachments
-        const formattedAttachments = attachments.map(att => `${att.filename}: ${att.url}`).join('\n');
-        console.log('Formatted Attachments:', formattedAttachments);
+    if (!subcontractorContainer) {
+        console.error("Subcontractor container not found.");
+        alert("Subcontractor information is missing.");
+        return;
+    }
 
-        // Vendor Emails and Team Emails
-        const teamEmails = 'purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com';
-        console.log('Team Emails:', teamEmails);
+    const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
+        .map(emailElement => emailElement.textContent.trim())
+        .join(", ");
 
-        const vendorEmails = selectedVendorEmails.map(vendor => vendor.emails).flat().join(', ');
-        console.log('Vendor Emails:', vendorEmails);
+    if (!subcontractorEmails) {
+        console.error("No subcontractor emails found in the container.");
+        alert("No subcontractor emails found.");
+        return;
+    }
 
-        // Fetch subcontractor emails dynamically by branch
-        const subcontractorEmails = getSubcontractorsByBranch(subcontractors, branch); // Fetch subcontractor emails for the given branch
-        console.log('Subcontractor Emails:', subcontractorEmails);
+    const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
 
-        // Management Email Subject and Body
-        const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
-        const managementBody = `
-            Dear Team,
-            Major Wins for Team ${branch}
-            We are excited to announce that we have been awarded a new project in ${subdivision} with ${builder}.
-            Attachments:
-            ${formattedAttachments}
-        `.trim();
+    // Management Email Subject and Body
+    const managementSubject = `WINNING! | ${subdivision} | ${builder}`;
+    const managementBody = `
+        Dear Team,
 
-        console.log('Management Email Subject:', managementSubject);
-        console.log('Management Email Body:', managementBody);
+        Major Wins for Team ${branch}
 
-        // Subcontractor Email Subject and Body
-        const subcontractorSubject = `New Project Awarded | ${branch} | ${builder}`;
-        const subcontractorBody = `
-            Dear Subcontractor,
-            We are excited to inform you that we have been awarded a new project in ${subdivision}, in collaboration with ${builder}.
-            Attachments:
-            ${formattedAttachments}
-        `.trim();
+        We are excited to announce that we have been awarded a new project in ${subdivision} with ${builder}.
 
-        console.log('Subcontractor Email Subject:', subcontractorSubject);
-        console.log('Subcontractor Email Body:', subcontractorBody);
+        This will be a ${projectType} project, requiring ${materialType}.
 
-        // Create the mailto links
-        const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(vendorEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-        console.log('Management Gmail Link:', managementGmailLink);
+        Here's the breakdown:
+        - Number of Lots: ${numberOfLots}
+        - Anticipated Start Date: ${anticipatedStartDate}
 
-        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(subcontractorEmails)}&cc=${encodeURIComponent(vendorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
-        console.log('Subcontractor Gmail Link:', subcontractorGmailLink);
+        Attachments:
+        ${formattedAttachments}
 
-        // Open the Gmail windows for management and subcontractor emails
-        const managementWindow = window.open(managementGmailLink);
-        const subcontractorWindow = window.open(subcontractorGmailLink);
+        Best regards,
+        Vanir Installed Sales Team
+    `.trim();
 
-        // Handle pop-up blocking
-        if (!managementWindow || !subcontractorWindow) {
-            alert('Pop-ups were blocked. Please enable pop-ups for this site to send the emails.');
-        } else {
-            console.log('Mailto links successfully opened.');
-        }
-    } catch (error) {
-        console.error('Error in generateMailtoLink:', error);
+    // Subcontractor Email Subject and Body
+    const subcontractorSubject = `New Project Awarded | ${branch} | ${builder}`;
+    const subcontractorBody = `
+        Dear Subcontractor,
+
+        We are excited to inform you that we have been awarded a new project in ${subdivision}, in collaboration with ${builder}.
+
+        The project will involve the following details:
+        - Project Type: ${projectType}
+        - Material Type: ${materialType}
+        - Number of Lots: ${numberOfLots}
+        - Anticipated Start Date: ${anticipatedStartDate}
+
+        Please let us know if you have any questions or need further information.
+
+        Best regards,
+        Vanir Installed Sales Team
+
+        
+    `.trim();
+
+
+   // Generate the Gmail link with CC field
+const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+    teamEmails
+)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
+
+console.log("Generated Gmail Link:", managementGmailLink);
+
+    const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+        teamEmails
+    )}&cc=${encodeURIComponent(subcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+
+    const managementWindow = window.open(managementGmailLink);
+    const subcontractorWindow = window.open(subcontractorGmailLink);
+
+    if (!managementWindow || !subcontractorWindow) {
+        alert("Pop-ups were blocked. Please enable pop-ups for this site.");
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const sendEmailButton = document.getElementById('sendEmailButton2');
+    const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
+
+    if (sendEmailButton) {
+        sendEmailButton.addEventListener('click', function () {
+            generateMailtoLinks(); // Trigger the mailto generation
+        });
+    } else {
+        console.error("Button with ID 'sendEmailButton2' not found.");
+    }
+
+    if (sendManagementEmailButton) {
+        sendManagementEmailButton.addEventListener('click', function () {
+            generateMailtoLinks(); // Trigger the mailto generation
+        });
+    } else {
+        console.error("Button with ID 'sendManagementEmailButton' not found.");
+    }
+});
 
 
 // Function to get subcontractor emails by branch
@@ -909,25 +969,6 @@ function getSubcontractorsByBranch(subcontractors, branch) {
         .map(sub => sub.fields.email)  // Map to get just the emails
         .join(', ');  // Join emails by commas to pass in the URL
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Attach the generateMailtoLink function to the 'sendEmailButton2' click ev
-document.getElementById('sendEmailButton2').addEventListener('click', function() {
-    generateMailtoLink(); // Ensure this is triggered by user interaction
-});
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
