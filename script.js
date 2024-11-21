@@ -186,12 +186,6 @@ function createVendorAutocompleteInput() {
     return wrapper;
 }
 
-
-// Trigger a page refresh after adding a vendor
-function refreshPage() {
-    location.reload(); // Reload the page to clear input fields and restore saved data
-}
-
 // Function to clear vendor emails
 function clearVendorEmails() {
     selectedVendorEmails = [];  // Clear the selected vendor emails array
@@ -345,17 +339,6 @@ function initializeVendorInputArea() {
 
 }
 
-// Clear input boxes and load new data
-function refreshPage() {
-    // Clear the input fields
-    document.querySelector('.vendor-autocomplete-input').value = '';  // Clear the vendor input field
-
-    // Save data to localStorage
-    saveDataToLocalStorage();
-    
-    // Reload the page
-    location.reload();  // Refresh the page to clear the inputs
-}
 
 // Simulate loading step by step, showing progress incrementally
 async function startLoadingProcess() {
@@ -794,6 +777,30 @@ document.addEventListener("DOMContentLoaded", () => {
     updateVendorDisplay(); // Call the function on startup
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+    const observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === "childList") {
+                // Iterate through added nodes to find textareas
+                Array.from(mutation.addedNodes).forEach((node) => {
+                    if (node.tagName === "TEXTAREA" && (node.id === "additionalInfoInput" || node.id === "additionalInfoInputSub")) {
+                        // Attach the dynamic height adjustment event listener
+                        node.addEventListener("input", function () {
+                            this.style.height = "auto"; // Reset height
+                            this.style.height = `${this.scrollHeight}px`; // Adjust to content height
+                        });
+                        console.log(`Dynamic height adjustment enabled for ${node.id}`);
+                    }
+                });
+            }
+        }
+    });
+
+    // Start observing the document body for changes
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+
+
 
 
 
@@ -816,11 +823,21 @@ function displayEmailContent() {
     <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
     <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
-        <hr>
+        <br>
+<textarea 
+    id="additionalInfoInput" 
+    class="dynamic-textarea" 
+    name="additionalInfo" 
+    placeholder="Enter additional details" 
+    rows="1"></textarea>
+            <hr>
         <div id="subcontractorCompanyContainer"></div>
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+
+
+
 
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
     `;
@@ -835,30 +852,6 @@ document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
 
-const ccEmailContainer = document.getElementById('cc-email-container');
-// Check if the element exists and log its content
-if (ccEmailContainer) {
-    console.log(ccEmailContainer.textContent.trim());
-} else {
-    console.error('Element with class "cc-email-container" not found.');
-}
-
-// Function to extract emails from cc-email-container
-function getCCEmails() {
-    // Assuming the emails are listed as text inside the container
-    const emails = Array.from(ccEmailContainer.children).map(child => child.textContent.trim());
-    return emails;
-}
-
-// Function to update the CC email container dynamically
-function updateCCEmailContainer() {
-    const ccEmailContainer = document.querySelector('.cc-email-container');
-    if (ccEmailContainer) {
-        ccEmailContainer.textContent = selectedVendorEmails.join(', ');
-    } else {
-        console.error('Element with class "cc-email-container" not found.');
-    }
-}
 
 // Function to handle vendor selection
 function selectVendor(vendorName, vendorEmail) {
@@ -866,14 +859,11 @@ function selectVendor(vendorName, vendorEmail) {
         selectedVendorEmails.push(vendorEmail);
         console.log(`Added vendor email: ${vendorEmail}`);
     }
-    updateCCEmailContainer(); // Update the email container
     generateManagementGmailLink(); // Regenerate the Gmail link
 }
 
 
 // Fetch CC Emails
-const ccEmails = getCCEmails(); // Get the CC emails from the container
-const ccEmailsString = ccEmails.join(','); // Combine emails into a single comma-separated string
 
 // Define generateMailtoLinks
 async function generateMailtoLinks() {

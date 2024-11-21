@@ -268,6 +268,38 @@ strong {
     background-color: #cc2f2f;
 }
 
+.loading-animation {
+    display: none;
+    font-size: 16px;
+}
+
+.autocomplete-container {
+    margin: 20px 0;
+}
+
+.autocomplete-container input {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+}
+
+#translateButton {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#translateButton:hover {
+    background-color: #0056b3;
+}
+
+
 /* Email input field styling */
 #subcontractorEmailInput {
     width: 100%;
@@ -309,6 +341,38 @@ strong {
     cursor: pointer; /* Pointer cursor on hover */
     transition: background-color 0.3s, box-shadow 0.2s; /* Smooth transition effects */
 }
+
+.dynamic-textarea {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    padding: 12px;
+    font-size: 16px;
+    width: 100%;
+    max-width: 800px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-color: #f9f9f9;
+    color: #333;
+    resize: none; /* Disable manual resizing */
+    overflow: hidden; /* Prevent scrollbars */
+}
+
+.dynamic-textarea:focus {
+    border-color: #007BFF;
+    box-shadow: 0 0 6px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+
+.dynamic-textarea::placeholder {
+    color: #aaa;
+    font-style: italic;
+}
+
+
+
 
 /* Add a Google icon to the button */
 #sendEmailButton2 .google-icon {
@@ -622,4 +686,57 @@ body {
 body.dark-mode {
     background-color: #121212; /* Dark background */
     color: white; /* White text */
+}
+
+.translate-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    max-width: 800px;
+    width: 100%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.textarea-row {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+
+textarea {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: none;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+h2 {
+    font-size: 18px;
+    color: #333;
+}
+
+p {
+    font-size: 16px;
+    color: #555;
 }
