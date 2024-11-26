@@ -523,36 +523,24 @@ async function fetchDetailsByBidName(bidName) {
     }
 }
 
-// Function to update subcontractor autocomplete input and display all emails in UI
 function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
 
-    // Display all subcontractor emails in a formatted list
-    const emailList = document.createElement("ul");
-    subcontractorSuggestions.forEach(sub => {
-        const emailItem = document.createElement("li");
+    // Collect all emails into an array
+    const emailArray = subcontractorSuggestions.map(sub => sub.email);
 
-        // Create separate spans for alignment
-        const nameColonSpan = document.createElement("span");
-        nameColonSpan.classList.add("name-colon");
-        nameColonSpan.textContent = `${sub.companyName} : `;
+    // Join the emails with commas for a formatted "email to" field style
+    const formattedEmails = emailArray.join(', ');
 
-        const emailSpan = document.createElement("span");
-        emailSpan.classList.add("email");
-        emailSpan.textContent = sub.email;
+    // Create a single text node with formatted emails
+    const emailTextNode = document.createElement("div");
+    emailTextNode.textContent = formattedEmails;
 
-        // Append the spans to the list item
-        emailItem.appendChild(nameColonSpan);
-        emailItem.appendChild(emailSpan);
-
-        // Append the list item to the email list
-        emailList.appendChild(emailItem);
-    });
-
-    // Append the complete email list to the container
-    subcontractorContainer.appendChild(emailList);
+    // Append the formatted emails to the container
+    subcontractorContainer.appendChild(emailTextNode);
 }
+
 
 // Function to create a unified autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, onSelection) {
@@ -612,9 +600,8 @@ function selectSuggestion(suggestion, input, dropdown) {
     dropdown.innerHTML = ''; // Clear dropdown after selection
 }
 
-// In the updateTemplateText function:
-function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate) {
-    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate });
+function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails) {
+    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails });
 
     if (subdivision) {
         document.querySelectorAll('.subdivisionContainer').forEach(el => el.textContent = subdivision);
@@ -634,6 +621,7 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
     if (materialType) {
         document.querySelectorAll('.materialTypeContainer').forEach(el => el.textContent = materialType);
     }
+
     // Display attachment links or image previews in the UI
     if (attachments && attachments.length > 0) {
         const attachmentLinks = attachments.map(att => `<a href="${att.url}" target="_blank">${att.filename}</a>`).join('<br>');
@@ -641,13 +629,15 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
     } else {
         document.querySelector('.attachmentsContainer').textContent = 'No attachments available';
     }
+
     if (numberOfLots) {
         document.querySelectorAll('.numberOfLotsContainer').forEach(el => el.textContent = numberOfLots);
     }
+
     if (anticipatedStartDate) {
         // Parse the anticipatedStartDate into a Date object
         const date = new Date(anticipatedStartDate);
-    
+
         // Check if the date is valid
         if (!isNaN(date.getTime())) {
             // Format the date as "Month day, yyyy"
@@ -656,17 +646,24 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
                 month: 'long',
                 day: 'numeric'
             });
-    
+
             // Update the UI with the formatted date
             document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => el.textContent = formattedDate);
         } else {
             console.error("Invalid date format:", anticipatedStartDate);
         }
     }
-    
 
-    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate });
+    // Update the "Additional Details" section
+    if (additionalDetails) {
+        document.querySelectorAll('.additionalDetailsContainer').forEach(el => el.textContent = additionalDetails);
+    } else {
+        document.querySelectorAll('.additionalDetailsContainer').forEach(el => el.textContent = "No additional details provided.");
+    }
+
+    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails });
 }
+
 
 
 
@@ -774,8 +771,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    updateVendorDisplay(); // Call the function on startup
+    // Call the function every five minutes (100,000 milliseconds)
+    setInterval(updateVendorDisplay, 70000);
 });
+
 
 document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver((mutationsList) => {
@@ -801,12 +800,48 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+async function waitForElement(selector, timeout = 5000, interval = 100) {
+    return new Promise((resolve, reject) => {
+        let elapsed = 0;
+        const intervalId = setInterval(() => {
+            const element = document.querySelector(selector);
+            if (element) {
+                clearInterval(intervalId);
+                resolve(element);
+            }
+            elapsed += interval;
+            if (elapsed >= timeout) {
+                clearInterval(intervalId);
+                reject(new Error(`Element "${selector}" not found within ${timeout}ms`));
+            }
+        }, interval);
+    });
+}
+
+async function exportTextareaToEmail() {
+    const textarea = document.getElementById('additionalInfoInput');
+    const additionalDetails = textarea.value.trim();
+
+    // Check if textarea has content
+    if (!additionalDetails) {
+        console.log("No additional details provided.");
+        return;
+    }
+
+    // Find the email body section
+    const emailBodyContainer = document.getElementById('emailTemplate');
+    if (!emailBodyContainer) {
+        console.error("Email template container not found.");
+        return;
+    }
+}
+
 
 
 
 function displayEmailContent() {
     const emailContent = `
-        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
+        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
         <p>CC: <span class="cc-email-container">Vendor</span></p>
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Dear Team,</p>
@@ -824,12 +859,11 @@ function displayEmailContent() {
     <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
         <br>
-<textarea 
-    id="additionalInfoInput" 
-    class="dynamic-textarea" 
-    name="additionalInfo" 
-    placeholder="Enter additional details" 
-    rows="1"></textarea>
+<div>
+    <p><strong>Additional Details:</strong></p>
+    <p class="additionalDetailsContainer">No additional details provided.</p>
+</div>
+
             <hr>
         <div id="subcontractorCompanyContainer"></div>
         <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
@@ -862,19 +896,20 @@ function selectVendor(vendorName, vendorEmail) {
     generateManagementGmailLink(); // Regenerate the Gmail link
 }
 
-
-// Fetch CC Emails
+const textarea = document.getElementById('additionalInfoInput');
+const additionalDetails = textarea ? textarea.value.trim() : null;
 
 // Define generateMailtoLinks
 async function generateMailtoLinks() {
     try {
-        // Ensure the cc-email-container exists
+        // Wait for the cc-email-container to be available
         const ccEmailContainer = await waitForElement('.cc-email-container');
         if (!ccEmailContainer) {
             console.error('Element with class "cc-email-container" not found.');
             return;
         }
 
+      
         // Fetch dynamic data from the DOM
         const branch = document.querySelector('.branchContainer')?.textContent.trim() || 'Unknown Branch';
         const subdivision = document.querySelector('.subdivisionContainer')?.textContent.trim() || 'Unknown Subdivision';
@@ -884,29 +919,61 @@ async function generateMailtoLinks() {
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
 
-        // Extract CC emails from the cc-email-container
-        const ccEmails = ccEmailContainer.textContent
-            .split(/[\s,;]+/) // Split by spaces, commas, or semicolons
-            .filter(email => email.includes("@")); // Filter valid email addresses
-        const ccEmailsString = ccEmails.join(',');
+      // Extract CC emails from the cc-email-container
+const ccEmails = ccEmailContainer.textContent
+.split(/[\s,;]+/) // Split by spaces, commas, or semicolons
+.filter(email => email.includes("@")); // Filter valid email addresses
 
-        // Subcontractor container logic
-        const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
-        if (!subcontractorContainer) {
-            console.error("Subcontractor container not found.");
-            alert("Subcontractor information is missing.");
-            return;
-        }
+const ccEmailsString = ccEmails.join(',');
 
-        const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
-            .map(emailElement => emailElement.textContent.trim())
-            .join(", ");
+// Log the extracted CC emails and the formatted string
+console.log("Extracted CC emails:", ccEmails);
+console.log("Formatted CC emails string:", ccEmailsString);
 
-        if (!subcontractorEmails) {
-            console.error("No subcontractor emails found in the container.");
-            alert("No subcontractor emails found.");
-            return;
-        }
+// Subcontractor container logic
+const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
+if (!subcontractorContainer) {
+console.error("Subcontractor container not found.");
+alert("Subcontractor information is missing.");
+return;
+}
+
+// Log the existence of the subcontractor container
+console.log("Subcontractor container found:", subcontractorContainer);
+
+// Extract subcontractor emails
+const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
+.map(emailElement => emailElement.textContent.trim())
+.join(", ");
+
+// Log the subcontractor emails
+console.log("Extracted subcontractor emails:", subcontractorEmails);
+
+// Check if subcontractor emails exist and log accordingly
+if (!subcontractorEmails) {
+console.log("No subcontractor emails found.");
+} else {
+console.log("Subcontractor emails found and formatted:", subcontractorEmails);
+}
+
+const subcontractorEmailsFromSuggestions = subcontractorSuggestions
+    .map(suggestion => suggestion.email)  // Extract the email addresses
+    .join(', ');  // Join them into a comma-separated string
+
+// Log the emails to verify the extraction
+console.log("Subcontractor emails from suggestions:", subcontractorEmailsFromSuggestions);
+
+
+
+
+
+// Combine both the extracted emails (from the container and suggestions)
+const allSubcontractorEmails = [subcontractorEmails, subcontractorEmailsFromSuggestions]
+    .filter(Boolean)  // Filter out any empty values
+    .join(', ');  // Join them into a single string
+
+
+        
 
         // Attachments
         const attachments = [
@@ -915,7 +982,7 @@ async function generateMailtoLinks() {
         const formattedAttachments = attachments.map(att => `${att.filename}: ${att.url}`).join('\n');
 
         // Management Email
-        const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
+        const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
         const managementSubject = `New Project Awarded: ${subdivision} - ${builder}`;
         const managementBody = `
 Dear Team,
@@ -931,6 +998,9 @@ Project Details:
 
 Attachments:
 ${formattedAttachments}
+
+   
+
 
 Let’s continue this momentum and deliver exceptional results.
 
@@ -958,14 +1028,19 @@ Best regards,
 Vanir Installed Sales Team
 `.trim();
 
+// Log the combined emails
+console.log("Combined subcontractor emails:", allSubcontractorEmails);
+const toEmails = [teamEmails, subcontractorEmails].filter(Boolean).join(', ');
+
         // Generate Gmail links
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
             teamEmails
         )}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
 
-        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-            subcontractorEmails
-        )}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+// Gmail link for subcontractors with the combined emails in CC and teamEmails in To
+const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+    toEmails
+)}&cc=${encodeURIComponent(allSubcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
@@ -1012,6 +1087,7 @@ function observeCCContainer() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+
     // Initial call to observe the CC container
     observeCCContainer();
 
