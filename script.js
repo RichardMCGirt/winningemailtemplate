@@ -667,6 +667,7 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
 
 
 
+
 // Monitor subdivisionContainer for changes and trigger city lookup
 function monitorSubdivisionChanges() {
     const subdivisionElement = document.querySelector('.subdivisionContainer');
@@ -861,15 +862,14 @@ function displayEmailContent() {
         <br>
 <div>
     <p><strong>Additional Details:</strong></p>
-    <p class="additionalDetailsContainer">No additional details provided.</p>
+<textarea class="additionalDetailsContainer" placeholder=""></textarea>
 </div>
 
             <hr>
-
-<!-- Content with placeholders to update dynamically -->
-<p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
-<p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-<p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+        <div id="subcontractorCompanyContainer"></div>
+        <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
+        <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
 
 
 
@@ -880,7 +880,6 @@ function displayEmailContent() {
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
 }
-
 
 // Trigger the display of email content once vendor emails are fetched
 document.addEventListener('DOMContentLoaded', () => {
@@ -910,7 +909,6 @@ async function generateMailtoLinks() {
             return;
         }
 
-      
         // Fetch dynamic data from the DOM
         const branch = document.querySelector('.branchContainer')?.textContent.trim() || 'Unknown Branch';
         const subdivision = document.querySelector('.subdivisionContainer')?.textContent.trim() || 'Unknown Subdivision';
@@ -920,108 +918,115 @@ async function generateMailtoLinks() {
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
 
-      // Extract CC emails from the cc-email-container
-const ccEmails = ccEmailContainer.textContent
-.split(/[\s,;]+/) // Split by spaces, commas, or semicolons
-.filter(email => email.includes("@")); // Filter valid email addresses
+        // Extract CC emails from the cc-email-container
+        const ccEmails = ccEmailContainer.textContent
+            .split(/[\s,;]+/) // Split by spaces, commas, or semicolons
+            .filter(email => email.includes("@")); // Filter valid email addresses
 
-const ccEmailsString = ccEmails.join(',');
+        const ccEmailsString = ccEmails.join(',');
 
-// Log the extracted CC emails and the formatted string
-console.log("Extracted CC emails:", ccEmails);
-console.log("Formatted CC emails string:", ccEmailsString);
+        // Log the extracted CC emails and the formatted string
+        console.log("Extracted CC emails:", ccEmails);
+        console.log("Formatted CC emails string:", ccEmailsString);
 
-// Subcontractor container logic
-const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
-if (!subcontractorContainer) {
-console.error("Subcontractor container not found.");
-alert("Subcontractor information is missing.");
-return;
-}
+        // Subcontractor container logic
+        const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
+        if (!subcontractorContainer) {
+            console.error("Subcontractor container not found.");
+            alert("Subcontractor information is missing.");
+            return;
+        }
 
-// Log the existence of the subcontractor container
-console.log("Subcontractor container found:", subcontractorContainer);
+        // Extract subcontractor emails
+        const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
+            .map(emailElement => emailElement.textContent.trim())
+            .join(", ");
 
-// Extract subcontractor emails
-const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
-.map(emailElement => emailElement.textContent.trim())
-.join(", ");
+        console.log("Extracted subcontractor emails:", subcontractorEmails);
 
-// Log the subcontractor emails
-console.log("Extracted subcontractor emails:", subcontractorEmails);
+        const subcontractorEmailsFromSuggestions = subcontractorSuggestions
+            .map(suggestion => suggestion.email)  // Extract the email addresses
+            .join(', ');  // Join them into a comma-separated string
 
-// Check if subcontractor emails exist and log accordingly
-if (!subcontractorEmails) {
-console.log("No subcontractor emails found.");
-} else {
-console.log("Subcontractor emails found and formatted:", subcontractorEmails);
-}
+        console.log("Subcontractor emails from suggestions:", subcontractorEmailsFromSuggestions);
 
-const subcontractorEmailsFromSuggestions = subcontractorSuggestions
-    .map(suggestion => suggestion.email)  // Extract the email addresses
-    .join(', ');  // Join them into a comma-separated string
+        // Combine both the extracted emails (from the container and suggestions)
+        const allSubcontractorEmails = [subcontractorEmails, subcontractorEmailsFromSuggestions]
+            .filter(Boolean)  // Filter out any empty values
+            .join(', ');  // Join them into a single string
 
-// Log the emails to verify the extraction
-console.log("Subcontractor emails from suggestions:", subcontractorEmailsFromSuggestions);
-
-
-
-
-
-// Combine both the extracted emails (from the container and suggestions)
-const allSubcontractorEmails = [subcontractorEmails, subcontractorEmailsFromSuggestions]
-    .filter(Boolean)  // Filter out any empty values
-    .join(', ');  // Join them into a single string
-
-
+        // Fetch and format the attachments into a mailto-friendly format
+        const attachments = await fetchAttachments();
         
+        // Log the fetched attachments to ensure correct structure
+        console.log("Fetched attachments:", attachments);
 
-        // Attachments
-        const attachments = [
-          
-        ];
-        const formattedAttachments = attachments.map(att => `${att.filename}: ${att.url}`).join('\n');
+        // Format the attachments properly
+        const formattedAttachments = attachments
+            .map(att => {
+                // Ensure the attachment object contains a filename and URL
+                if (att && att.filename && att.url) {
+                    return `${att.filename}: ${att.url}`;  // Format as "filename: url"
+                } else {
+                    console.warn("Attachment missing filename or url", att);
+                    return null;  // Return null for invalid attachments
+                }
+            })
+            .filter(Boolean)  // Remove null or undefined entries
+            .join('\n');  // Join the formatted attachments into a string
 
         // Management Email
         const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
         const managementSubject = `New Project Awarded: ${subdivision} - ${builder}`;
-        const managementBody = `
+const managementBody = `
 Dear Team,
 
 We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This is an excellent opportunity to showcase our expertise and drive further growth.
 
 Project Details:
-- Branch:** ${branch}
-- Project Type:** ${projectType}
-- Material Type:** ${materialType}
-- Number of Lots:** ${numberOfLots}
-- Anticipated Start Date:** ${anticipatedStartDate}
+- Branch: ${branch}
+- Project Type: ${projectType}
+- Material Type: ${materialType}
+- Number of Lots: ${numberOfLots}
+- Anticipated Start Date: ${anticipatedStartDate}
 
 Attachments:
 ${formattedAttachments}
 
-   
-
-
-Let’s continue this momentum and deliver exceptional results.
+Let's continue this momentum and deliver exceptional results.
 
 Best regards,  
 Vanir Installed Sales Team
 `.trim();
 
+// Replace line breaks with %0A for proper formatting in the URL
+const formattedManagementBody = managementBody.replace(/\n/g, '%0A');
+
+// For the subject, there is no need to change anything, just encode it.
+const formattedManagementSubject = encodeURIComponent(managementSubject);
+
+// Define the "mailto" link with formatted body and subject
+const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${formattedManagementSubject}&body=${formattedManagementBody}`;
+
+console.log("Management Gmail Link:", managementGmailLink);
+
+// Open the Gmail link in a new window
+window.open(managementGmailLink);
+
+
         // Subcontractor Email
         const subcontractorSubject = `Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
-
+Dear Subcontractor,
 
 We are pleased to announce a new project in ${subdivision}, partnering with ${builder}. We are seeking your expertise to deliver exceptional results.
 
 Project Details:
-- **Branch:** ${branch}
-- **Project Type:** ${projectType}
-- **Material Type:** ${materialType}
-- **Number of Lots:** ${numberOfLots}
-- **Anticipated Start Date:** ${anticipatedStartDate}
+- Branch: ${branch}
+- Project Type: ${projectType}
+- Material Type: ${materialType}
+- Number of Lots: ${numberOfLots}
+- Anticipated Start Date: ${anticipatedStartDate}
 
 Please review the details and let us know if you have any questions or require additional information.
 
@@ -1029,36 +1034,51 @@ Best regards,
 Vanir Installed Sales Team
 `.trim();
 
-// Log the combined emails
-console.log("Combined subcontractor emails:", allSubcontractorEmails);
-const toEmails = [teamEmails, subcontractorEmails].filter(Boolean).join(', ');
+        // Combine emails for the "To" and "CC" sections
+        const toEmails = [teamEmails, subcontractorEmails].filter(Boolean).join(', ');
 
-        // Generate Gmail links
-        const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-            teamEmails
-        )}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-
-// Gmail link for subcontractors with the combined emails in CC and teamEmails in To
-const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-    toEmails
-)}&cc=${encodeURIComponent(allSubcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+        // Generate Gmail links for both Management and Subcontractor emails
+        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmails)}&cc=${encodeURIComponent(allSubcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
 
-        // Open the links
+        // Open the Gmail links
         const managementWindow = window.open(managementGmailLink);
         const subcontractorWindow = window.open(subcontractorGmailLink);
 
         if (!managementWindow || !subcontractorWindow) {
             alert("Pop-ups were blocked. Please enable pop-ups for this site.");
         }
+
         return managementGmailLink; // Return the link for further use
 
     } catch (error) {
         console.error("Error generating mailto links:", error.message);
     }
 }
+
+// Function to fetch attachments from Airtable (make sure this returns an array of attachment objects)
+async function fetchAttachments() {
+    try {
+        // Fetch the data from Airtable (adjusting field name based on your Airtable setup)
+        const records = await fetchAirtableData(bidBaseName, bidTableName, 'Attachments');
+
+        // Flatten the array and extract only the attachment objects
+        const attachments = records
+            .map(record => record.fields['Attachments'])
+            .flat();  // Flatten in case multiple attachments are returned per record
+
+        // Log the structure of attachments to check the data
+        console.log("Fetched Attachments:", attachments);
+
+        return attachments;  // Return the list of attachments
+    } catch (error) {
+        console.error("Error fetching attachments:", error);
+        return [];  // Return an empty array in case of failure
+    }
+}
+
 
 let ccObserver = null;
 

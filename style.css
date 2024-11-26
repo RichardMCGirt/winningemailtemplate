@@ -740,3 +740,20 @@ p {
     font-size: 16px;
     color: #555;
 }
+
+.additionalDetailsContainer {
+    max-width: 100%; /* Ensures the textarea doesn't go beyond the container's width */
+    width: 50%;     /* Makes the textarea take up the full width available within its parent container */
+    height: 150px;   /* Adjust the height as needed */
+    padding: 10px;   /* Adds some padding inside the textarea */
+    border: 1px solid #ccc; /* Adds a border around the textarea */
+    border-radius: 5px; /* Rounds the corners of the textarea */
+    font-size: 14px; /* Adjust font size */
+    resize: vertical; /* Allows the user to resize the height but not the width */
+    box-sizing: border-box; /* Ensures padding is included in the width and height */
+}
+
+.additionalDetailsContainer:focus {
+    border-color: #4D90FE; /* Changes the border color when the textarea is focused */
+    outline: none; /* Removes the default outline */
+}
