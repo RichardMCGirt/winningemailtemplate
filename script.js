@@ -1052,7 +1052,7 @@ Best regards,
 Vanir Installed Sales Team
 
 <div style="display: flex; align-items: center; margin-top: 20px;">
-<img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+<img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
   <div>
     <strong>Vanir Installed Sales, LLC</strong><br>
     Phone: <br>
@@ -1101,7 +1101,7 @@ If you're interested in working with us on this exciting opportunity, please rea
 Best regards,  
 
 <div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
-                                                    <img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+                                                    <img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
                                                     <div>
                                                     <strong>Vanir Installed Sales, LLC</strong><br>
                                                     Phone: <br>
