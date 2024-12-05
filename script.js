@@ -15,15 +15,11 @@ let city = [];
 let subcontractors = []; // Initialize an empty array for subcontractors
 let selectedVendorEmails = [];
 
-
 let bidLoadingProgress = 0;
 let vendorLoadingProgress = 0;
 let totalLoadingProgress = 0;
 let mailtoOpened = false;
 let vendorNames = [];  // Initialize vendorNames as an empty array
-
-
-
 
 const MAX_PROGRESS = 100;
 
@@ -409,8 +405,6 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     return allRecords;
 }
 
-
-
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
@@ -664,10 +658,6 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
     console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails });
 }
 
-
-
-
-
 // Monitor subdivisionContainer for changes and trigger city lookup
 function monitorSubdivisionChanges() {
     const subdivisionElement = document.querySelector('.subdivisionContainer');
@@ -853,12 +843,10 @@ function addDynamicInputListeners() {
 
     // Event listener to update signatures dynamically
     userPhoneInput.addEventListener('input', () => {
-        signaturePhone1.textContent = userPhoneInput.value;
         signaturePhone2.textContent = userPhoneInput.value;
     });
 
     userEmailInput.addEventListener('input', () => {
-        signatureEmail1.textContent = userEmailInput.value;
         signatureEmail2.textContent = userEmailInput.value;
     });
 }
@@ -885,29 +873,29 @@ function displayEmailContent() {
     <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
         <br>
-                            <div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
-                                                    <img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
-                                                    <div>
-                                                    <strong>Vanir Installed Sales, LLC</strong><br>
-                                                     Phone: <span id="signaturePhone1"></span><br>
-                                                     Email: <span id="signatureEmail1"></span><br>
+<div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
+<img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+
+
+    <div style="border-left: 1px solid #ccc; height: 80px; margin: 0 10px;"></div>
+    <div>
+        <strong>Vanir Installed Sales, LLC</strong><br>
+        <div class="input-container" style="display: flex; align-items: center; gap: 10px;">
+            <label for="userPhone" style="min-width: 60px;">Phone:</label>
+            <input type="text" id="userPhone" placeholder="Enter your phone number" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div class="input-container" style="display: flex; align-items: center; gap: 10px;">
+            <label for="userEmail" style="min-width: 60px;">Email:</label>
+            <input type="text" id="userEmail" placeholder="Enter your email" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            </div>
+     <br>
+                                                
                                                     <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
                                                     <em>Better Look. Better Service. Best Choice.</em>
   </div>
 </div>
 <hr>
- <div class="input-container">
-      <label for="userPhone">Phone:</label>
-      <input type="text" id="userPhone" placeholder="Enter your phone number">
-    </div>
-    <div class="input-container">
-      <label for="userEmail">Email:</label>
-      <input type="text" id="userEmail" placeholder="Enter your email">
-    </div>
-  </div>
-
-<div>
-
 
             <hr>
         <div id="subcontractorCompanyContainer"></div>
@@ -919,8 +907,8 @@ function displayEmailContent() {
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
 
 
-        <div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
-                                                    <img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+      <div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
+<img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
                                                     <div>
                                                     <strong>Vanir Installed Sales, LLC</strong><br>
                                                     Phone: <span id="signaturePhone2"></span><br>
@@ -1198,8 +1186,6 @@ function observeCCContainer() {
     ccObserver.observe(ccEmailContainer, { childList: true, characterData: true, subtree: true });
 }
 
-
-
 document.addEventListener('DOMContentLoaded', () => {
 
     // Initial call to observe the CC container
@@ -1323,19 +1309,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeBidAutocomplete();
 });
 
-
-
-
 // Initialize bid and vendor autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
     // Fetch suggestions
     await fetchBidNameSuggestions();
     await fetchVendorSuggestions();
         initializeVendorInputArea(); // Set up initial input area
-
-
-
-        
+  
     // Initialize autocomplete for vendor names
     const vendorContainer = document.getElementById('vendorInputContainer');
     if (vendorContainer) {

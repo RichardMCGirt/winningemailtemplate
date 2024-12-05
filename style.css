@@ -759,15 +759,21 @@ p {
 }
 
 .input-container {
-    margin-bottom: 15px;
-  }
-  .input-container label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  .input-container input {
-    width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
-  }
+    display: flex;
+    align-items: center; /* Align items vertically in the center */
+    gap: 10px; /* Adds space between items */
+    margin-bottom: 10px; /* Optional: Adds space between rows */
+}
+
+.input-container label {
+    min-width: 50px; /* Ensures labels have consistent width */
+    text-align: right; /* Aligns the label text to the right */
+}
+
+.input-container input {
+    flex: 1; /* Makes the input field take up the remaining space */
+    padding: 5px; /* Optional: Adds padding for better usability */
+    border: 1px solid #ccc; /* Optional: Border for inputs */
+    border-radius: 4px; /* Optional: Rounded corners for inputs */
+    max-width: 50%;
+}
