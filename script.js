@@ -773,7 +773,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Call the function every five minutes (100,000 milliseconds)
-    setInterval(updateVendorDisplay, 70000);
+    setInterval(updateVendorDisplay, 50000);
 });
 
 
@@ -836,7 +836,32 @@ async function exportTextareaToEmail() {
         return;
     }
 }
+// Function to add event listeners to dynamically created inputs
+function addDynamicInputListeners() {
+    // Get input fields and signature spans
+    const userPhoneInput = document.getElementById('userPhone');
+    const userEmailInput = document.getElementById('userEmail');
+    const signaturePhone1 = document.getElementById('signaturePhone1');
+    const signatureEmail1 = document.getElementById('signatureEmail1');
+    const signaturePhone2 = document.getElementById('signaturePhone2');
+    const signatureEmail2 = document.getElementById('signatureEmail2');
 
+    if (!userPhoneInput || !userEmailInput) {
+        console.error('User input fields not found. Ensure they are created before calling this function.');
+        return;
+    }
+
+    // Event listener to update signatures dynamically
+    userPhoneInput.addEventListener('input', () => {
+        signaturePhone1.textContent = userPhoneInput.value;
+        signaturePhone2.textContent = userPhoneInput.value;
+    });
+
+    userEmailInput.addEventListener('input', () => {
+        signatureEmail1.textContent = userEmailInput.value;
+        signatureEmail2.textContent = userEmailInput.value;
+    });
+}
 
 
 
@@ -860,25 +885,61 @@ function displayEmailContent() {
     <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
         <br>
-<div>
-    <p><strong>Additional Details:</strong></p>
-<textarea class="additionalDetailsContainer" placeholder=""></textarea>
+                            <div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
+                                                    <img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+                                                    <div>
+                                                    <strong>Vanir Installed Sales, LLC</strong><br>
+                                                     Phone: <span id="signaturePhone1"></span><br>
+                                                     Email: <span id="signatureEmail1"></span><br>
+                                                    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
+                                                    <em>Better Look. Better Service. Best Choice.</em>
+  </div>
 </div>
+<hr>
+ <div class="input-container">
+      <label for="userPhone">Phone:</label>
+      <input type="text" id="userPhone" placeholder="Enter your phone number">
+    </div>
+    <div class="input-container">
+      <label for="userEmail">Email:</label>
+      <input type="text" id="userEmail" placeholder="Enter your email">
+    </div>
+  </div>
+
+<div>
+
 
             <hr>
         <div id="subcontractorCompanyContainer"></div>
-        <p><strong>Subject:</strong> New Community | <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
-        <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
-
-
-
+        <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
+       <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+<p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+<p>If you're interested in working with us on this exciting opportunity, please reach out to <strong><span class="gmEmailContainer"></span></strong>.</p>
 
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
+
+
+        <div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
+                                                    <img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+                                                    <div>
+                                                    <strong>Vanir Installed Sales, LLC</strong><br>
+                                                    Phone: <span id="signaturePhone2"></span><br>
+                                                    Email: <span id="signatureEmail2"></span><br>
+                                                    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
+                                                    <em>Better Look. Better Service. Best Choice.</em>
+  </div>
+</div>
+
+
+<div>
     `;
 
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
+
+        // Add event listeners after the content is added
+        addDynamicInputListeners();
+    
 }
 
 // Trigger the display of email content once vendor emails are fetched
@@ -977,47 +1038,65 @@ async function generateMailtoLinks() {
 
         // Management Email
         const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
-        const managementSubject = `New Project Awarded: ${subdivision} - ${builder}`;
+
+// Replace unwanted symbols and decode if needed
+const managementSubject = `New Project Awarded: ${branch} - ${subdivision} - ${builder}`
+  .replace(/[:@\-]/g, ' ') // Replace problematic symbols with spaces
+  .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+  .trim();
+
+console.log(managementSubject);
+  
 const managementBody = `
 Dear Team,
 
 We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This is an excellent opportunity to showcase our expertise and drive further growth.
 
 Project Details:
-- Branch: ${branch}
 - Project Type: ${projectType}
 - Material Type: ${materialType}
 - Number of Lots: ${numberOfLots}
 - Anticipated Start Date: ${anticipatedStartDate}
 
-Attachments:
-${formattedAttachments}
-
 Let's continue this momentum and deliver exceptional results.
 
 Best regards,  
 Vanir Installed Sales Team
+
+<div style="display: flex; align-items: center; margin-top: 20px;">
+<img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+  <div>
+    <strong>Vanir Installed Sales, LLC</strong><br>
+    Phone: <br>
+    Email: contact@vanirinstalledsales.com<br>
+    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
+    <em>Better Look. Better Service. Best Choice.</em>
+  </div>
+</div>
 `.trim();
 
-// Replace line breaks with %0A for proper formatting in the URL
-const formattedManagementBody = managementBody.replace(/\n/g, '%0A');
+// Define a maximum size for the email body (e.g., 2000 characters)
+const MAX_BODY_SIZE = 2000;
+
+// Truncate the body if it exceeds the maximum size
+const truncatedManagementBody = managementBody.length > MAX_BODY_SIZE 
+    ? managementBody.slice(0, MAX_BODY_SIZE) + '... (truncated)' 
+    : managementBody;
+
+// Replace line breaks with '%0A' for URL encoding
+const formattedManagementBody = truncatedManagementBody.replace(/\n/g, '%0A');
 
 // For the subject, there is no need to change anything, just encode it.
 const formattedManagementSubject = encodeURIComponent(managementSubject);
 
 // Define the "mailto" link with formatted body and subject
-const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${formattedManagementSubject}&body=${formattedManagementBody}`;
+const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
 
 console.log("Management Gmail Link:", managementGmailLink);
-
-// Open the Gmail link in a new window
-window.open(managementGmailLink);
-
 
         // Subcontractor Email
         const subcontractorSubject = `Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
-Dear Subcontractor,
 
 We are pleased to announce a new project in ${subdivision}, partnering with ${builder}. We are seeking your expertise to deliver exceptional results.
 
@@ -1029,9 +1108,23 @@ Project Details:
 - Anticipated Start Date: ${anticipatedStartDate}
 
 Please review the details and let us know if you have any questions or require additional information.
+If you're interested in working with us on this exciting opportunity, please reach out to <strong><span class="gmEmailContainer"></span></strong>.
 
 Best regards,  
-Vanir Installed Sales Team
+
+<div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
+                                                    <img src="logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
+                                                    <div>
+                                                    <strong>Vanir Installed Sales, LLC</strong><br>
+                                                    Phone: <br>
+                                                    Email: <br>
+                                                    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
+                                                    <em>Better Look. Better Service. Best Choice.</em>
+  </div>
+</div>
+
+
+<div>
 `.trim();
 
         // Combine emails for the "To" and "CC" sections
@@ -1121,22 +1214,65 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
 
-    if (sendEmailButton) {
-        sendEmailButton.addEventListener('click', function () {
-            generateMailtoLinks(); // Trigger the mailto generation
-        });
-    } else {
-        console.error("Button with ID 'sendEmailButton2' not found.");
-    }
-
     if (sendManagementEmailButton) {
         sendManagementEmailButton.addEventListener('click', function () {
+            console.log("Redirecting to Gmail...");
+            showRedirectAnimation(); // Trigger animation
             generateMailtoLinks(); // Trigger the mailto generation
         });
     } else {
         console.error("Button with ID 'sendManagementEmailButton' not found.");
     }
 });
+
+// Function to show the redirect animation
+function showRedirectAnimation() {
+    const animationOverlay = document.createElement('div');
+    animationOverlay.id = 'redirectOverlay';
+    animationOverlay.style.position = 'fixed';
+    animationOverlay.style.top = '0';
+    animationOverlay.style.left = '0';
+    animationOverlay.style.width = '100%';
+    animationOverlay.style.height = '100%';
+    animationOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    animationOverlay.style.zIndex = '9999';
+    animationOverlay.style.display = 'flex';
+    animationOverlay.style.justifyContent = 'center';
+    animationOverlay.style.alignItems = 'center';
+    animationOverlay.innerHTML = `
+        <div style="text-align: center; color: white; font-size: 20px;">
+            <p>Redirecting to Gmail...</p>
+            <div class="spinner"></div>
+        </div>
+    `;
+
+    document.body.appendChild(animationOverlay);
+
+    // Spinner animation styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .spinner {
+            margin: 20px auto;
+            width: 40px;
+            height: 40px;
+            border: 4px solid white;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Remove the animation after a few seconds (optional)
+    setTimeout(() => {
+        document.body.removeChild(animationOverlay);
+    }, 15000); // Adjust duration as needed
+}
+
 
 
 // Function to get subcontractor emails by branch
@@ -1295,3 +1431,4 @@ toggleDarkModeCheckbox.addEventListener('change', () => {
         localStorage.removeItem('darkMode');
     }
 });
+
