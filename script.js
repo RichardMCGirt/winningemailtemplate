@@ -826,13 +826,11 @@ async function exportTextareaToEmail() {
         return;
     }
 }
-// Function to add event listeners to dynamically created inputs
+// Function to add event listeners to dynamically created inputs and handle localStorage
 function addDynamicInputListeners() {
     // Get input fields and signature spans
     const userPhoneInput = document.getElementById('userPhone');
     const userEmailInput = document.getElementById('userEmail');
-    const signaturePhone1 = document.getElementById('signaturePhone1');
-    const signatureEmail1 = document.getElementById('signatureEmail1');
     const signaturePhone2 = document.getElementById('signaturePhone2');
     const signatureEmail2 = document.getElementById('signatureEmail2');
 
@@ -841,16 +839,91 @@ function addDynamicInputListeners() {
         return;
     }
 
-    // Event listener to update signatures dynamically
+    // Check if data exists in localStorage and set them to the inputs
+    if (localStorage.getItem('userPhone')) {
+        userPhoneInput.value = localStorage.getItem('userPhone');
+        signaturePhone2.textContent = userPhoneInput.value; // Update the signature when the page loads
+    }
+    if (localStorage.getItem('userEmail')) {
+        userEmailInput.value = localStorage.getItem('userEmail');
+        signatureEmail2.textContent = userEmailInput.value; // Update the signature when the page loads
+    }
+
+    // Event listener to update signatures dynamically and store input values in localStorage
     userPhoneInput.addEventListener('input', () => {
         signaturePhone2.textContent = userPhoneInput.value;
+        localStorage.setItem('userPhone', userPhoneInput.value);
     });
 
     userEmailInput.addEventListener('input', () => {
         signatureEmail2.textContent = userEmailInput.value;
+        localStorage.setItem('userEmail', userEmailInput.value);
+
+        // Auto-complete domain when "@" is entered
+        if (userEmailInput.value.includes('@') && !userEmailInput.value.endsWith('@vanirinstalledsales.com')) {
+            userEmailInput.value = userEmailInput.value.split('@')[0] + '@vanirinstalledsales.com';
+            localStorage.setItem('userEmail', userEmailInput.value); // Update localStorage with the auto-completed value
+            signatureEmail2.textContent = userEmailInput.value; // Update the signature
+        }
     });
 }
 
+// Call the function to initialize the event listeners
+addDynamicInputListeners();
+
+
+async function sendEmailData() {
+    const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; // Replace with your Apps Script URL
+  
+
+      const data = {
+        branch: document.querySelector('.branchContainer')?.textContent.trim(),
+        subdivision: document.querySelector('.subdivisionContainer')?.textContent.trim(),
+        builder: document.querySelector('.builderContainer')?.textContent.trim(),
+        projectType: document.querySelector('.briqProjectTypeContainer')?.textContent.trim(),
+        materialType: document.querySelector('.materialTypeContainer')?.textContent.trim(),
+        anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
+        numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
+        managementEmails: [
+          "purchasing@vanirinstalledsales.com",
+          "maggie@vanirinstalledsales.com",
+          "jason.smith@vanirinstalledsales.com",
+          "hunter@vanirinstalledsales.com",
+        ],
+        subcontractorEmails: [
+          "example1@subcontractor.com",
+          "example2@subcontractor.com",
+        ],
+      };
+    
+      console.log("Prepared data for POST request:", data);
+    
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+    
+        console.log("Response from server:", response);
+    
+        const result = await response.json();
+        console.log("Parsed response from server:", result);
+    
+        if (result.success) {
+          alert("Emails sent successfully!");
+        } else {
+          console.error("Error response from server:", result.message);
+          alert("Error sending emails: " + result.message);
+        }
+      } catch (error) {
+        console.error("Error in fetch request:", error);
+        alert("An error occurred while sending the data.");
+      }
+    }
+  
 
 
 function displayEmailContent() {
@@ -1197,19 +1270,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 60000); // 60000 milliseconds = 1 minute
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
-
-    if (sendManagementEmailButton) {
-        sendManagementEmailButton.addEventListener('click', function () {
-            console.log("Redirecting to Gmail...");
-            showRedirectAnimation(); // Trigger animation
-            generateMailtoLinks(); // Trigger the mailto generation
-        });
-    } else {
-        console.error("Button with ID 'sendManagementEmailButton' not found.");
+document.addEventListener("DOMContentLoaded", () => {
+    const sendButton = document.getElementById("sendManagementEmailButton");
+  
+    if (!sendButton) {
+      console.error("Send Management Email button not found.");
+      return;
     }
-});
+  
+    sendButton.addEventListener("click", () => {
+      console.log("Export to Gmail button clicked.");
+  
+      // Load the Google API Client Library
+      gapi.load("client:auth2", async () => {
+        try {
+          // Initialize the client
+          await gapi.client.init({
+            apiKey: "AIzaSyCkS1tVW-Z7vuuymmd69h9LMJ7w2PzVdjM", // Replace with your API Key
+            clientId: "882687108659-lmbcqc7c9hk2p6jbidnlei43ecc1r4qv.apps.googleusercontent.com", // Replace with your Client ID
+            scope: "https://www.googleapis.com/auth/script.projects", // Adjust scope as needed
+            discoveryDocs: [
+              "https://script.googleapis.com/$discovery/rest?version=v1",
+            ],
+          });
+  
+          // Check if the user is already signed in
+          const authInstance = gapi.auth2.getAuthInstance();
+          if (!authInstance.isSignedIn.get()) {
+            console.log("Requesting user authorization...");
+            await authInstance.signIn();
+          }
+  
+          console.log("User authorized successfully.");
+  
+          // Prepare the payload
+          const data = {
+            branch: document.querySelector('.branchContainer')?.textContent.trim(),
+            subdivision: document.querySelector('.subdivisionContainer')?.textContent.trim(),
+            builder: document.querySelector('.builderContainer')?.textContent.trim(),
+            projectType: document.querySelector('.briqProjectTypeContainer')?.textContent.trim(),
+            materialType: document.querySelector('.materialTypeContainer')?.textContent.trim(),
+            anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
+            numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
+            managementEmails: ["richard.mcgirt@vanirinstalledsales.com"],
+            subcontractorEmails: ["example1@subcontractor.com", "example2@subcontractor.com"],
+          };
+  
+          console.log("Payload prepared for export:", data);
+  
+          // Call the Apps Script API
+          const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbwwYMClY37e1TlDSYEMC1L_JI2qrXMCf7Ud78Khs18wYIIjVOWPkrLoquB0YN019o1J_Q:run";
+  
+          const response = await gapi.client.request({
+            path: apiUrl,
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+  
+          console.log("Response from Google Apps Script:", response);
+          alert("Data exported to Gmail successfully!");
+        } catch (error) {
+          console.error("Error during authorization or data export:", error);
+          alert("An error occurred: " + error.message);
+        }
+      });
+    });
+  });
+  
+  
+  
 
 // Function to show the redirect animation
 function showRedirectAnimation() {
