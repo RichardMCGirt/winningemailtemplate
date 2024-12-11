@@ -992,26 +992,36 @@ console.log("Management Gmail Link:", managementGmailLink);
 We are pleased to announce a new project in ${subdivision}, partnering with ${builder}. We are seeking your expertise to deliver exceptional results.
 
 Project Details:
-- Project Type: ${projectType}
-- Material Type: ${materialType}
-- Number of Lots: ${numberOfLots}
-- Anticipated Start Date: ${anticipatedStartDate}
 
+Project Type: ${projectType}
+Material Type: ${materialType}
+Number of Lots: ${numberOfLots}
+Anticipated Start Date: ${anticipatedStartDate}
 Please review the details and let us know if you have any questions or require additional information.
-If you're interested in working with us on this exciting opportunity, please reach out to <strong><span class="gmEmailContainer"></span></strong>.
+If you're interested in working with us on this exciting opportunity, please reach out to [Insert Contact Information].
 
 Best regards,  
 
-<div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
-                                                    <img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
-                                                    <div>
-                                                    <strong>Vanir Installed Sales, LLC</strong><br>
-                                                    Phone: <br>
-                                                    Email: <br>
-                                                    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
-                                                    <em>Better Look. Better Service. Best Choice.</em>
+<div style="margin-top: 20px; display: table;">
+  <div style="display: table-cell; vertical-align: middle; padding-right: 10px;">
+    <img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" 
+         
+         style="height: 60px;">
+  </div>
+
+  <div style="display: table-cell; vertical-align: middle; font-family: Arial, sans-serif; color: #000;">
+    <strong style="font-size: 14px;">Vanir Installed Sales, LLC</strong><br>
+    <span style="font-size: 12px;">Phone: [Insert Phone Number]</span><br>
+    <span style="font-size: 12px;">Email: <a href="mailto:contact@vanirinstalledsales.com" 
+                                               style="text-decoration: none; color: #000;">contact@vanirinstalledsales.com</a></span><br>
+    <a href="https://www.vanirinstalledsales.com" 
+       style="font-size: 12px; text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
+    <em style="font-size: 12px; color: #555;">Better Look. Better Service. Best Choice.</em>
   </div>
 </div>
+
+
+
 
 
 <div>
