@@ -10,16 +10,12 @@ const VendorTableName = 'tblLEYdDi0hfD9fT3';
 const googleApiKey = "AIzaSyAe4p3dK30Kb3YHK5cnz8CQMS18wKeCOeM";
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
-let vendorSuggestions = []; // Store vendor names
 let city = [];
 let subcontractors = []; // Initialize an empty array for subcontractors
-let selectedVendorEmails = [];
 
 let bidLoadingProgress = 0;
-let vendorLoadingProgress = 0;
 let totalLoadingProgress = 0;
 let mailtoOpened = false;
-let vendorNames = [];  // Initialize vendorNames as an empty array
 
 const MAX_PROGRESS = 100;
 
@@ -61,6 +57,32 @@ function hideLoadingAnimation() {
     }
 }
 
+function addCitySpan() {
+    const container = document.querySelector("#dynamicContainer"); // Parent container
+    if (!container) {
+        console.error("Container #dynamicContainer not found.");
+        return;
+    }
+    const citySpan = document.createElement("span");
+    citySpan.className = "city";
+    container.appendChild(citySpan);
+}
+
+async function ensureDynamicContainerExists() {
+    try {
+        await waitForElement("#dynamicContainer");
+        addCitySpan();
+    } catch (error) {
+        console.error("Error ensuring #dynamicContainer exists:", error.message);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    ensureDynamicContainerExists();
+});
+
+
+
 // Simulate Live Progress Updates (e.g., for data loading)
 function simulateLiveProgressUpdates() {
     let percentage = 0;
@@ -93,224 +115,18 @@ async function fetchBidSuggestions() {
         
         // Simulate progress update for bid fetching
         bidLoadingProgress = 55;
-        totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average of both progress
+        totalLoadingProgress = Math.round((bidLoadingProgress) / 2);  // Average of both progress
         updateLoadingProgress(totalLoadingProgress);
     } catch (error) {
         console.error("Error fetching bid suggestions:", error);
     }
 }
 
-// Fetch "Vendor Name" suggestions
-async function fetchVendorSuggestions() {
-    try {
-        const records = await fetchAirtableData(VendorBaseName, VendorTableName, 'Name');
-        vendorSuggestions = records.map(record => record.fields['Name']).filter(Boolean);
-        
-        // Simulate progress update for vendor fetching
-        vendorLoadingProgress = 45;  // After fetching bids, vendor progress is set to 45%
-        totalLoadingProgress = Math.round((bidLoadingProgress + vendorLoadingProgress) / 2);  // Average progress
-        updateLoadingProgress(totalLoadingProgress);
-    } catch (error) {
-        console.error("Error fetching vendor suggestions:", error);
-    }
-}
-
-// Function to create vendor autocomplete input
-function createVendorAutocompleteInput() {
-    // Check if the input field already exists
-    const existingInput = document.querySelector('.vendor-autocomplete-input');
-    if (existingInput) {
-        return;  // If the input already exists, do nothing
-    }
-
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("vendor-input-wrapper");
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = "Enter Vendor Name";
-    input.classList.add("vendor-autocomplete-input", "autocomplete-input");
-
-    const dropdown = document.createElement("div");
-    dropdown.classList.add("autocomplete-dropdown");
-
-    // Event listener for showing suggestions in the dropdown as the user types
-    input.addEventListener("input", function () {
-        const inputValue = input.value.toLowerCase();
-        dropdown.innerHTML = ''; // Clear previous suggestions
-
-        if (inputValue) {
-            const filteredSuggestions = vendorSuggestions.filter(vendor =>
-                vendor.toLowerCase().includes(inputValue)
-            );
-
-            filteredSuggestions.forEach(suggestion => {
-                const option = document.createElement("div");
-                option.classList.add("autocomplete-option");
-                option.textContent = suggestion;
-
-                // When a user clicks on a suggestion, select it and fetch emails
-                option.onclick = () => {
-                    // Fetch vendor emails after selecting the vendor
-                    fetchVendorEmails(suggestion);
-
-                    // Optionally, you can add the vendor to a list or perform any other action
-
-                    // Clear input field after selection
-                    input.value = '';
-                    dropdown.style.display = 'none';  // Hide the dropdown
-                };
-
-                dropdown.appendChild(option);
-            });
-
-            dropdown.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
-        } else {
-            dropdown.style.display = 'none';
-        }
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!wrapper.contains(e.target)) {
-            dropdown.style.display = 'none';
-        }
-    });
-
-    wrapper.appendChild(input);
-    wrapper.appendChild(dropdown);
-    return wrapper;
-}
-
-// Function to clear vendor emails
-function clearVendorEmails() {
-    selectedVendorEmails = [];  // Clear the selected vendor emails array
-    updateEmailCC();  // Update the CC section to reflect the cleared emails
-}
-
-// Function to update the CC section with vendor emails
-function updateEmailCC() {
-    const ccContainer = document.querySelector('.cc-email-container');
-    if (ccContainer) {
-        const allEmails = selectedVendorEmails.map(vendor => vendor.emails).flat();
-        ccContainer.textContent = allEmails.join(', ');
-        console.log("CC Email Container Updated:", ccContainer.textContent);
-    } else {
-        console.error("CC container not found.");
-    }
-}
-
-
-/// Add the selected vendor to the container and update the CC section
-function addVendorToContainer(vendorName) {
-    console.log("Adding vendor:", vendorName);
-
-    const vendorContainer = document.querySelector('.VendoeContainer');
-
-    // Check if the container exists
-    if (!vendorContainer) {
-        console.error("Vendor container not found.");
-        return;
-    }
-
-    // Create a container for the vendor entry
-    const vendorEntryWrapper = document.createElement("div");
-    vendorEntryWrapper.classList.add("vendor-entry-wrapper");
-
-    // Create a paragraph for the vendor name
-    const vendorEntry = document.createElement("p");
-    vendorEntry.classList.add("vendor-entry");
-    vendorEntry.textContent = vendorName;
-
-    // Create a delete button for the vendor entry
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
-    deleteButton.classList.add("delete-vendor-button");
-    
-    deleteButton.onclick = () => {
-        console.log("Delete button clicked for vendor:", vendorName);
-    
-        // Remove the vendor entry from the container
-        vendorEntryWrapper.remove();
-    
-        // Remove vendor from the selectedVendorEmails array
-        selectedVendorEmails = selectedVendorEmails.filter(vendor => vendor.name !== vendorName);
-    
-        // Remove vendor from the vendorNames array
-        vendorNames = vendorNames.filter(name => name !== vendorName);  // Correctly remove from vendorNames
-    
-        // Update the CC section
-        updateEmailCC();
-    
-        // Add the vendor back to suggestions list (if needed)
-        vendorSuggestions.push(vendorName);
-        updateVendorDisplay();
-
-    };
-    
-
-    // Append vendor entry and delete button
-    vendorEntryWrapper.appendChild(vendorEntry);
-    vendorEntryWrapper.appendChild(deleteButton);
-
-    // Append to vendor container
-    vendorContainer.appendChild(vendorEntryWrapper);
-
-    // Fetch and add vendor emails to the CC section
-    fetchVendorEmails(vendorName);
-
-    // Add the vendor name to the list of vendorNames
-    vendorNames.push(vendorName);
-
-
-    // Clear the input field after selection
-    const inputField = document.querySelector('.vendor-autocomplete-input');
-    if (inputField) {
-        inputField.value = '';
-        inputField.placeholder = 'Enter Vendor Name';
-    } else {
-        console.error("Input field not found for clearing.");
-    }
-
-
-    // Check if the input field is still holding the old value and log it after a delay
-    setTimeout(() => {
-        const postClearInputField = document.querySelector('.vendor-autocomplete-input');
-        console.log("After clearing input, current value (after delay):", postClearInputField ? postClearInputField.value : "Input field not found");
-    }, 100);
-}
-
-// Function to handle vendor removal
-function removeVendor(vendorEmail) {
-    selectedVendorEmails = selectedVendorEmails.filter(email => email !== vendorEmail);
-    console.log(`Removed vendor email: ${vendorEmail}`);
-    updateCCEmailContainer(); // Update the email container
-    generateManagementGmailLink(); // Regenerate the Gmail link
-}
-
-
-
-// Function to clear vendor input field
-function clearVendorInput(inputField) {
-    if (inputField) {
-        inputField.value = ''; // Clear the input field
-        inputField.placeholder = 'Enter Vendor Name'; // Reset the placeholder
-        console.log("Vendor input field cleared successfully.");
-    } else {
-        console.error("Input field is null or undefined, cannot clear.");
-    }
-}
-
 // Simulate loading step by step, showing progress incrementally
 async function startLoadingProcess() {
     await fetchBidSuggestions();
-    await fetchVendorSuggestions();
 
-    // Once everything is loaded, enable the vendor input and populate from localStorage
-    const vendorInput = document.querySelector('.vendor-input');
-    if (vendorInput) {
-        vendorInput.disabled = false;
-    }
+
 
     // Load data from localStorage to populate the page
     loadDataFromLocalStorage();
@@ -323,17 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     startLoadingProcess(); // Trigger loading process after page load
 });
 
-// Ensure vendor input is added only once
-function initializeVendorInputArea() {
-    const vendorContainer = document.getElementById('vendorInputContainer');
 
-    if (!vendorContainer) {
-        console.error("Vendor container not found.");
-        return;
-    }
-
-
-}
 
 
 // Simulate loading step by step, showing progress incrementally
@@ -342,15 +148,8 @@ async function startLoadingProcess() {
     // Step 1: Load bids
     await fetchBidSuggestions();
     
-    // Step 2: Load vendors (after bids are loaded)
-    await fetchVendorSuggestions();
-    await fetchVendorEmails
 
-    // Once everything is loaded, we can enable the vendor input
-    const vendorInput = document.querySelector('.vendor-input');
-    if (vendorInput) {
-        vendorInput.disabled = false;  // Enable vendor input after all data is loaded
-    }
+
 
     // Complete loading and hide the loading animation
     hideLoadingAnimation();
@@ -405,6 +204,58 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     return allRecords;
 }
 
+async function fetchVendorEmails(vendorName) {
+    if (!vendorName) {
+        console.error("Vendor name is missing.");
+        return;
+    }
+
+    try {
+        // Properly escape and wrap the vendor name in quotes for Airtable
+        const escapedVendorName = vendorName.replace(/"/g, '\\"');
+        const filterFormula = `AND({Vendor Name} = "${escapedVendorName}")`;
+
+        const records = await fetchAirtableData(
+            VendorBaseName,
+            VendorTableName,
+            'Email, Secondary Email',
+            filterFormula
+        );
+
+        if (records.length > 0) {
+            const vendorDetails = records[0].fields;
+            const primaryEmail = vendorDetails['Email'] || null;
+            const secondaryEmail = vendorDetails['Secondary Email'] || null;
+
+            // Append to CC list
+            const ccEmailContainer = document.querySelector('.cc-email-container');
+            if (!ccEmailContainer) {
+                console.error("CC email container not found.");
+                return;
+            }
+
+            const existingEmails = ccEmailContainer.textContent.split(/[\s,;]+/).filter(Boolean);
+            if (primaryEmail && !existingEmails.includes(primaryEmail)) {
+                existingEmails.push(primaryEmail);
+            }
+            if (secondaryEmail && !existingEmails.includes(secondaryEmail)) {
+                existingEmails.push(secondaryEmail);
+            }
+
+            ccEmailContainer.textContent = existingEmails.join(', ');
+
+            console.log("Updated CC emails with vendor details:", existingEmails);
+        } else {
+            console.warn("No vendor details found for:", vendorName);
+        }
+    } catch (error) {
+        console.error("Error fetching vendor details:", error);
+    }
+}
+
+
+
+
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
@@ -438,84 +289,166 @@ async function fetchSubcontractorSuggestions(branchFilter) {
         console.error("Error fetching subcontractor suggestions:", error);
     }
 }
+async function waitForElement(selector, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+        const interval = 100;
+        let elapsed = 0;
 
-let cityUpdated = false;  // Flag to track if the city has been updated
+        const intervalId = setInterval(() => {
+            const element = document.querySelector(selector);
+            if (element) {
+                clearInterval(intervalId);
+                resolve(element);
+            }
+            elapsed += interval;
+            if (elapsed >= timeout) {
+                clearInterval(intervalId);
+                reject(new Error(`Element "${selector}" not found within ${timeout}ms`));
+            }
+        }, interval);
+    });
+}
+document.addEventListener("DOMContentLoaded", () => {
+    const dynamicContainer = document.querySelector("#dynamicContainer");
+    console.log("Dynamic container found:", dynamicContainer !== null);
+    if (!dynamicContainer) {
+        console.warn("#dynamicContainer is missing. Check HTML structure or DOM load timing.");
+    }
+});
 
-async function updateCityForSubdivision() {
-    const subdivisionElement = document.querySelector('.subdivisionContainer');
-    const subdivisionName = subdivisionElement ? subdivisionElement.textContent.trim() : "";
 
-    if (subdivisionName && !cityUpdated) {  // Check if city is not yet updated
-        const branchContainer = document.querySelector('.branchContainer');
 
-        if (branchContainer) {
-            branchContainer.textContent = city;  // Set only the city
-            console.log("Branch container updated with city:", city);
-            cityUpdated = true;  // Mark that the city has been updated
-        } else {
-            console.error("Branch container element not found.");
+
+async function fetchPlaceDetails(query) {
+    try {
+        const response = await fetch(`http://localhost:6008/api/placeSearch?query=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+            throw new Error(`Server returned an error: ${response.statusText}`);
         }
+        const data = await response.json();
+        console.log("Fetched place details:", data);
+        return data; // Use this data in your frontend logic
+    } catch (error) {
+        console.error("Error fetching place details:", error);
+        return null;
     }
 }
+
+
+
 
 async function fetchDetailsByBidName(bidName) {
-    const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
-    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date', filterFormula);
+    try {
+        // Fetch place details and update city/zip code
+        const placeDetails = await fetchPlaceDetails(bidName);
+        if (placeDetails) {
+            console.log("Place details fetched from server:", placeDetails);
 
-    if (records.length > 0) {
-        const fields = records[0].fields;
-        
-        // Log the entire fields object to inspect all data
-        console.log("Fetched fields from Airtable:", fields);
-        
-        const builder = fields['Builder'] || 'Unknown Builder';
-        const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
-        const branch = fields['Branch'] || 'Unknown Branch';
-        const projectType = fields['Project Type'] || ''; // Define projectType
-        const materialType = fields['Material Type'] || '';
-        const attachments = fields['Attachments'] || []; // Directly use the URLs array
-        const numberOfLots = fields['Number of Lots'] || '';
-        const anticipatedStartDate = fields['Anticipated Start Date'] || '';
+            // Wait for the city span to exist, then update it
+            const citySpan = await waitForElement(".city");
+            citySpan.innerText = placeDetails.city || "N/A";
 
-        // Check if attachments are an array and log their details
-        if (Array.isArray(attachments)) {
-            attachments.forEach((attachment, index) => {
-                console.log(`Attachment ${index + 1}:`);
-                console.log(`ID: ${attachment.id}`);
-                console.log(`URL: ${attachment.url}`);
-                console.log(`Filename: ${attachment.filename}`);
-                console.log(`Width: ${attachment.width}`);
-                console.log(`Height: ${attachment.height}`);
-            });
+            // Wait for the zip code span to exist, then update it
+            const zipSpan = await waitForElement(".zip_code");
+            zipSpan.innerText = placeDetails.zip_code || "N/A";
         } else {
-            console.log("No attachments found.");
+            console.warn("No place details found for:", bidName);
         }
 
-        // Update the email template with new fields
-        updateTemplateText(bidName, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate);
+        // Fetch Airtable data
+        const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
+        const records = await fetchAirtableData(
+            bidBaseName,
+            bidTableName,
+            'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, vendor',
+            filterFormula
+        );
 
-        // Fetch and update subcontractor suggestions
-        await fetchSubcontractorSuggestions(branch);
-        updateSubcontractorAutocomplete();
+        if (records.length > 0) {
+            const fields = records[0].fields;
 
-        // Update city information
-        await updateCityForSubdivision();
+            // Log the fetched Airtable fields
+            console.log("Fetched fields from Airtable:", fields);
 
-        return { builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate };
-    } else {
-        console.warn("No records found for bid:", bidName);
-        return {
-            builder: 'Unknown Builder',
-            gmEmail: 'Branch Staff@Vanir.com',
-            branch: 'Unknown Branch',
-            projectType: 'Default Project Type',
-            materialType: 'General Materials',
-            attachments: [],
-            numberOfLots: 'Unknown',
-            anticipatedStartDate: 'Unknown'
-        };
+            const builder = fields['Builder'] || 'Unknown Builder';
+            const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
+            const branch = fields['Branch'] || 'Unknown Branch';
+            const projectType = fields['Project Type'] || '';
+            const materialType = fields['Material Type'] || '';
+            const attachments = fields['Attachments'] || [];
+            const numberOfLots = fields['Number of Lots'] || '';
+            const anticipatedStartDate = fields['Anticipated Start Date'] || '';
+            const vendor = fields['vendor'] || null;
+
+            // Fetch vendor emails and update CC list if vendor exists
+            if (vendor) {
+                await fetchVendorEmails(vendor);
+            }
+
+            // Log and process attachments
+            if (Array.isArray(attachments)) {
+                attachments.forEach((attachment, index) => {
+                    console.log(`Attachment ${index + 1}:`);
+                    console.log(`ID: ${attachment.id}`);
+                    console.log(`URL: ${attachment.url}`);
+                    console.log(`Filename: ${attachment.filename}`);
+                    console.log(`Width: ${attachment.width}`);
+                    console.log(`Height: ${attachment.height}`);
+                });
+            } else {
+                console.log("No attachments found.");
+            }
+
+            // Update the email template with retrieved fields
+            updateTemplateText(
+                bidName,
+                builder,
+                gmEmail,
+                branch,
+                projectType,
+                materialType,
+                attachments,
+                numberOfLots,
+                anticipatedStartDate,
+                vendor
+            );
+
+            // Fetch and update subcontractor suggestions
+            await fetchSubcontractorSuggestions(branch);
+            updateSubcontractorAutocomplete();
+
+            return {
+                builder,
+                gmEmail,
+                branch,
+                projectType,
+                materialType,
+                attachments,
+                numberOfLots,
+                anticipatedStartDate,
+                vendor,
+            };
+        } else {
+            console.warn("No records found for bid:", bidName);
+            return {
+                builder: 'Unknown Builder',
+                gmEmail: 'Branch Staff@Vanir.com',
+                branch: 'Unknown Branch',
+                projectType: 'Default Project Type',
+                materialType: 'General Materials',
+                attachments: [],
+                numberOfLots: 'Unknown',
+                anticipatedStartDate: 'Unknown',
+                vendor: 'Unknown',
+            };
+        }
+    } catch (error) {
+        console.error("Error in fetchDetailsByBidName:", error);
+        return null;
     }
 }
+
+
 
 function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
@@ -536,9 +469,9 @@ function updateSubcontractorAutocomplete() {
 }
 
 
-// Function to create a unified autocomplete input
-function createAutocompleteInput(placeholder, suggestions, type, onSelection) {
-    // Check if type is valid
+// Unified function to create an autocomplete input
+function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback) {
+    // Validate the `type` parameter
     if (typeof type !== "string" || !type.trim()) {
         console.error("Invalid type provided for createAutocompleteInput:", type);
         return null;
@@ -551,34 +484,60 @@ function createAutocompleteInput(placeholder, suggestions, type, onSelection) {
     input.type = "text";
     input.placeholder = placeholder;
     input.classList.add(`${type}-autocomplete-input`, "autocomplete-input");
+    input.dataset.type = type;
 
     const dropdown = document.createElement("div");
     dropdown.classList.add(`${type}-autocomplete-dropdown`, "autocomplete-dropdown");
 
-    input.addEventListener("input", function () {
+    input.addEventListener("input", async function () {
         const inputValue = input.value.toLowerCase();
         dropdown.innerHTML = ''; // Clear previous suggestions
 
-        const filteredSuggestions = suggestions.filter(item => {
-            const text = typeof item === 'string' ? item : item.companyName;
-            return text.toLowerCase().includes(inputValue);
-        });
+        // Filter suggestions if a suggestion list is provided
+        if (suggestions && Array.isArray(suggestions)) {
+            const filteredSuggestions = suggestions.filter(item => {
+                const text = typeof item === 'string' ? item : item.companyName;
+                return text.toLowerCase().includes(inputValue);
+            });
 
-        filteredSuggestions.forEach(suggestion => {
-            const option = document.createElement("div");
-            option.classList.add(`${type}-autocomplete-option`, "autocomplete-option");
-            option.textContent = typeof suggestion === 'string' ? suggestion : suggestion.companyName;
+            // Populate the dropdown with filtered suggestions
+            filteredSuggestions.forEach(suggestion => {
+                const text = typeof suggestion === 'string' ? suggestion : suggestion.companyName;
+                const option = document.createElement("div");
+                option.classList.add(`${type}-autocomplete-option`, "autocomplete-option");
+                option.textContent = text;
 
-            option.onclick = () => {
-                input.value = option.textContent;
-                dropdown.innerHTML = '';
-                if (onSelection) onSelection(suggestion);
-            };
+                option.onclick = () => {
+                    input.value = text;
+                    dropdown.innerHTML = '';
+                    if (fetchDetailsCallback) {
+                        fetchDetailsCallback(suggestion).then(details => {
+                            if (details && details.city) {
+                                const citySpan = document.querySelector(".city");
+                                if (citySpan) {
+                                    citySpan.innerText = details.city; // Update city span
+                                }
+                            }
+                        });
+                    }
+                };
 
-            dropdown.appendChild(option);
-        });
+                dropdown.appendChild(option);
+            });
 
-        dropdown.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
+            dropdown.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
+        }
+
+        // Fetch additional details dynamically
+        if (fetchDetailsCallback && inputValue.length > 0) {
+            const details = await fetchDetailsCallback(inputValue);
+            if (details && details.city) {
+                const citySpan = document.querySelector(".city");
+                if (citySpan) {
+                    citySpan.innerText = details.city; // Update city span
+                }
+            }
+        }
     });
 
     wrapper.appendChild(input);
@@ -594,8 +553,8 @@ function selectSuggestion(suggestion, input, dropdown) {
     dropdown.innerHTML = ''; // Clear dropdown after selection
 }
 
-function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails) {
-    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails });
+function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails, vendor) {
+    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails, vendor });
 
     if (subdivision) {
         document.querySelectorAll('.subdivisionContainer').forEach(el => el.textContent = subdivision);
@@ -628,6 +587,11 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
         document.querySelectorAll('.numberOfLotsContainer').forEach(el => el.textContent = numberOfLots);
     }
 
+    if (vendor) {
+        document.querySelectorAll('.vendorContainer').forEach(el => el.textContent = vendor);
+    }
+    
+
     if (anticipatedStartDate) {
         // Parse the anticipatedStartDate into a Date object
         const date = new Date(anticipatedStartDate);
@@ -654,8 +618,9 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
     } else {
         document.querySelectorAll('.additionalDetailsContainer').forEach(el => el.textContent = "No additional details provided.");
     }
+    console.log("Vendor field value:", vendor);
 
-    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails });
+    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails, vendor });
 }
 
 // Monitor subdivisionContainer for changes and trigger city lookup
@@ -678,92 +643,6 @@ function monitorSubdivisionChanges() {
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     monitorSubdivisionChanges();
-    fetchVendorEmails
-});
-
-// Function to fetch vendor emails for only the selected vendor
-async function fetchVendorEmails(vendorName) {
-    try {
-        // Fetch all vendor records from Airtable
-        const records = await fetchAirtableData(VendorBaseName, VendorTableName, 'Name, Email, Secondary Email');
-        
-        // Find the vendor record that matches the selected vendor name
-        const selectedVendor = records.find(record => record.fields['Name'] === vendorName);
-
-        if (selectedVendor) {
-            // Get both the primary and secondary emails
-            const email = selectedVendor.fields['Email'];
-            const secondaryEmail = selectedVendor.fields['Secondary Email'];
-
-            // Check if the vendor is already in the selectedVendorEmails array
-            if (!selectedVendorEmails.some(vendor => vendor.name === vendorName)) {
-                selectedVendorEmails.push({ name: vendorName, emails: [email, secondaryEmail].filter(Boolean) });
-            } else {
-                // If the vendor is already added, update their email list
-                const vendor = selectedVendorEmails.find(vendor => vendor.name === vendorName);
-                if (vendor && secondaryEmail && !vendor.emails.includes(secondaryEmail)) {
-                    vendor.emails.push(secondaryEmail); // Add the secondary email if it's missing
-                }
-            }
-
-            // Update the CC section with the selected vendor's emails
-            updateEmailCC();
-        } else {
-            console.log("Vendor not found.");
-        }
-    } catch (error) {
-        console.error("Error fetching vendor emails:", error);
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    function updateVendorDisplay() {
-        console.log("updateVendorDisplay called");
-
-        // Select the vendor container and header
-        const vendorContainer = document.querySelector('.VendoeContainer');
-        const vendorsHeader = document.getElementById('vendorsHeader');
-
-        // Check if vendorsHeader exists
-        if (vendorsHeader) {
-            vendorsHeader.textContent = 'Vendor'; // Default text on page startup
-            console.log("Initialized vendorsHeader to 'Vendor'");
-        } else {
-            console.error("vendorsHeader element not found");
-            return; // Exit if vendorsHeader is missing
-        }
-
-        // Get the number of vendors
-        const vendorCount = vendorContainer ? vendorContainer.children.length : 0;
-        console.log("Vendor Count:", vendorCount);
-
-        // Update the header based on the number of vendors
-        if (vendorCount === 0) {
-            console.log("No vendors found, keeping header as 'Vendor'");
-        } else if (vendorCount === 1) {
-            console.log("One vendor found, keeping header as 'Vendor'");
-            vendorsHeader.textContent = 'Vendor';
-        } else {
-            console.log("Multiple vendors found, setting header to 'Vendors'");
-            vendorsHeader.textContent = 'Vendors';
-        }
-
-        // Hide or show the container based on the vendor count
-        if (vendorContainer) {
-            if (vendorCount === 0) {
-                console.log("Hiding vendor container");
-                vendorContainer.style.display = 'none';
-            } else {
-                console.log("Showing vendor container");
-                vendorContainer.style.display = 'block';
-            }
-        } else {
-            console.error("Vendor container not found");
-        }
-    }
-
-    // Call the function every five minutes (100,000 milliseconds)
-    setInterval(updateVendorDisplay, 50000);
 });
 
 
@@ -826,54 +705,10 @@ async function exportTextareaToEmail() {
         return;
     }
 }
-// Function to add event listeners to dynamically created inputs and handle localStorage
-function addDynamicInputListeners() {
-    // Get input fields and signature spans
-    const userPhoneInput = document.getElementById('userPhone');
-    const userEmailInput = document.getElementById('userEmail');
-    const signaturePhone2 = document.getElementById('signaturePhone2');
-    const signatureEmail2 = document.getElementById('signatureEmail2');
-
-    if (!userPhoneInput || !userEmailInput) {
-        console.error('User input fields not found. Ensure they are created before calling this function.');
-        return;
-    }
-
-    // Check if data exists in localStorage and set them to the inputs
-    if (localStorage.getItem('userPhone')) {
-        userPhoneInput.value = localStorage.getItem('userPhone');
-        signaturePhone2.textContent = userPhoneInput.value; // Update the signature when the page loads
-    }
-    if (localStorage.getItem('userEmail')) {
-        userEmailInput.value = localStorage.getItem('userEmail');
-        signatureEmail2.textContent = userEmailInput.value; // Update the signature when the page loads
-    }
-
-    // Event listener to update signatures dynamically and store input values in localStorage
-    userPhoneInput.addEventListener('input', () => {
-        signaturePhone2.textContent = userPhoneInput.value;
-        localStorage.setItem('userPhone', userPhoneInput.value);
-    });
-
-    userEmailInput.addEventListener('input', () => {
-        signatureEmail2.textContent = userEmailInput.value;
-        localStorage.setItem('userEmail', userEmailInput.value);
-
-        // Auto-complete domain when "@" is entered
-        if (userEmailInput.value.includes('@') && !userEmailInput.value.endsWith('@vanirinstalledsales.com')) {
-            userEmailInput.value = userEmailInput.value.split('@')[0] + '@vanirinstalledsales.com';
-            localStorage.setItem('userEmail', userEmailInput.value); // Update localStorage with the auto-completed value
-            signatureEmail2.textContent = userEmailInput.value; // Update the signature
-        }
-    });
-}
-
-// Call the function to initialize the event listeners
-addDynamicInputListeners();
 
 
 async function sendEmailData() {
-    const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; // Replace with your Apps Script URL
+    const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; 
   
 
       const data = {
@@ -934,15 +769,14 @@ function displayEmailContent() {
         <p>Dear Team,</p>
 
         <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong></h4>
-        <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
+        <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="city"></span></strong>, <strong><span class="zip_code"></span></strong>.</p>
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
-        <div id="vendorInputContainer"></div>
 
         <h2>Here's the breakdown:</h2>
-<h4 id="vendorsHeader">Vendor</h4>
-        <div class="VendoeContainer"></div>
          <p><strong>Attachments:</strong> <span class="attachmentsContainer"></span></p>
     <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
+        <p><strong>Vendor:</strong> <span class="vendorContainer"></span></p>
+
     <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
         <br>
@@ -998,8 +832,7 @@ function displayEmailContent() {
     const emailContainer = document.getElementById('emailTemplate');
     emailContainer.innerHTML = emailContent;
 
-        // Add event listeners after the content is added
-        addDynamicInputListeners();
+     
     
 }
 
@@ -1008,15 +841,6 @@ document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
 
-
-// Function to handle vendor selection
-function selectVendor(vendorName, vendorEmail) {
-    if (!selectedVendorEmails.includes(vendorEmail)) {
-        selectedVendorEmails.push(vendorEmail);
-        console.log(`Added vendor email: ${vendorEmail}`);
-    }
-    generateManagementGmailLink(); // Regenerate the Gmail link
-}
 
 const textarea = document.getElementById('additionalInfoInput');
 const additionalDetails = textarea ? textarea.value.trim() : null;
@@ -1438,21 +1262,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeBidAutocomplete();
 });
 
-// Initialize bid and vendor autocomplete
+// Initialize bid autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
     // Fetch suggestions
     await fetchBidNameSuggestions();
-    await fetchVendorSuggestions();
-        initializeVendorInputArea(); // Set up initial input area
   
-    // Initialize autocomplete for vendor names
-    const vendorContainer = document.getElementById('vendorInputContainer');
-    if (vendorContainer) {
-        const vendorInput = createAutocompleteInput("Enter Vendor Name", vendorSuggestions, "vendor", addVendorToContainer);
-        vendorContainer.appendChild(vendorInput);
-    } else {
-        console.error("Vendor container not found.");
-    }
+   
 });
 
 function initializeBidAutocomplete() {
@@ -1507,10 +1322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-// Fetch vendors on page load and initialize input area
-document.addEventListener('DOMContentLoaded', async () => {
-    initializeVendorInputArea(); // Set up initial input area
-});
+
 
 // Load the email content and start fetching bid name suggestions on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -1540,4 +1352,3 @@ toggleDarkModeCheckbox.addEventListener('change', () => {
         localStorage.removeItem('darkMode');
     }
 });
-
