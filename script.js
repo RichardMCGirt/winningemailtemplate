@@ -12,6 +12,7 @@ let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 let city = [];
 let subcontractors = []; // Initialize an empty array for subcontractors
+let vendorData = [];
 
 let bidLoadingProgress = 0;
 let totalLoadingProgress = 0;
@@ -68,6 +69,32 @@ function addCitySpan() {
     container.appendChild(citySpan);
 }
 
+async function fetchAllVendorData() {
+    try {
+        console.log("Fetching all vendor data...");
+
+        // Fetch all vendor records from Airtable
+        const records = await fetchAirtableData(
+            VendorBaseName,
+            VendorTableName,
+            'Vendor Name, Email, Secondary Email'
+        );
+
+        // Store vendor data globally
+        vendorData = records.map(record => ({
+            name: record.fields['Vendor Name'] || "Unknown Vendor",
+            email: record.fields['Email'] || null,
+            secondaryEmail: record.fields['Secondary Email'] || null
+        }));
+
+        console.log("All vendor data fetched and stored:", vendorData);
+    } catch (error) {
+        console.error("Error fetching vendor data:", error);
+    }
+}
+console.log("Vendor Data:", vendorData);
+
+
 async function ensureDynamicContainerExists() {
     try {
         await waitForElement("#dynamicContainer");
@@ -122,42 +149,8 @@ async function fetchBidSuggestions() {
     }
 }
 
-// Simulate loading step by step, showing progress incrementally
-async function startLoadingProcess() {
-    await fetchBidSuggestions();
 
 
-
-    // Load data from localStorage to populate the page
-    loadDataFromLocalStorage();
-
-    // Complete loading and hide the loading animation
-    hideLoadingAnimation();
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    startLoadingProcess(); // Trigger loading process after page load
-});
-
-
-
-
-// Simulate loading step by step, showing progress incrementally
-async function startLoadingProcess() {
-
-    // Step 1: Load bids
-    await fetchBidSuggestions();
-    
-
-
-
-    // Complete loading and hide the loading animation
-    hideLoadingAnimation();
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    startLoadingProcess();  // Trigger loading process after page load
-});
 
 // Fetch data from Airtable with detailed logging and loading progress
 async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '') {
@@ -204,51 +197,68 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     return allRecords;
 }
 
-async function fetchVendorEmails(vendorName) {
-    if (!vendorName) {
-        console.error("Vendor name is missing.");
+function appendEmailsForSelectedBid(selectedBid) {
+    if (!selectedBid) {
+        console.error("No bid selected.");
         return;
     }
 
-    try {
-        const filterFormula = `{Vendor Name} = "${vendorName.replace(/"/g, '\\"')}"`;
-        const records = await fetchAirtableData(
-            VendorBaseName,
-            VendorTableName,
-            'Email, Secondary Email',
-            filterFormula
-        );
+    console.log("Appending emails for selected bid:", selectedBid);
 
-        if (records.length > 0) {
-            const vendorDetails = records[0].fields;
-            const primaryEmail = vendorDetails['Email'] || null;
-            const secondaryEmail = vendorDetails['Secondary Email'] || null;
+    // Extract the first word from the selected bid
+    const firstWord = selectedBid.split(/\s+/)[0].toLowerCase();
+    console.log("First word extracted:", firstWord);
 
-            // Append to CC list
-            const ccEmailContainer = document.querySelector('.cc-email-container');
-            if (!ccEmailContainer) {
-                console.error("CC email container not found.");
-                return;
-            }
+    if (!firstWord) {
+        console.error("Invalid bid name provided.");
+        return;
+    }
 
-            const existingEmails = ccEmailContainer.textContent.split(/[\s,;]+/).filter(Boolean);
-            if (primaryEmail && !existingEmails.includes(primaryEmail)) {
-                existingEmails.push(primaryEmail);
-            }
-            if (secondaryEmail && !existingEmails.includes(secondaryEmail)) {
-                existingEmails.push(secondaryEmail);
-            }
+    // Filter vendor data to match the first word
+    const matchingVendors = vendorData.filter(vendor =>
+        vendor.name.toLowerCase().startsWith(firstWord)
+    );
 
-            ccEmailContainer.textContent = existingEmails.join(', ');
+    console.log("Matching vendors:", matchingVendors);
 
-            console.log("Updated CC emails with vendor details:", existingEmails);
-        } else {
-            console.warn("No vendor details found for:", vendorName);
+    if (matchingVendors.length > 0) {
+        const emails = [];
+
+        // Collect all primary and secondary emails
+        matchingVendors.forEach(vendor => {
+            if (vendor.email) emails.push(vendor.email);
+            if (vendor.secondaryEmail) emails.push(vendor.secondaryEmail);
+        });
+
+        // Ensure emails are unique
+        const uniqueEmails = [...new Set(emails)];
+        console.log("Unique emails to append:", uniqueEmails);
+
+        // Find or create the <p> and <span> container dynamically
+        let ccContainer = document.querySelector('.cc-email-container');
+        if (!ccContainer) {
+            console.log("CC container not found. Creating dynamically...");
+            const emailSection = document.createElement('p');
+            emailSection.innerHTML = `CC: <span class="cc-email-container"></span>`;
+            document.body.appendChild(emailSection); // Adjust to append in the correct location
+            ccContainer = emailSection.querySelector('.cc-email-container');
         }
-    } catch (error) {
-        console.error("Error fetching vendor details:", error);
+
+        // Append emails to the container
+        const existingEmails = ccContainer.textContent.split(/[\s,;]+/).filter(Boolean);
+        console.log("Existing emails in CC:", existingEmails);
+
+        const updatedEmails = [...new Set([...existingEmails, ...uniqueEmails])];
+        ccContainer.textContent = updatedEmails.join(', ');
+
+        console.log("Updated CC emails with vendor details:", updatedEmails);
+    } else {
+        console.warn("No matching vendors found for bid:", selectedBid);
     }
 }
+
+
+
 
 
 
@@ -378,9 +388,7 @@ async function fetchDetailsByBidName(bidName) {
             const vendor = fields['vendor'];
             console.log("Vendor field fetched:", vendor);
 
-            if (vendor) {
-                await fetchVendorEmails(vendor);
-            }
+         
 
             // Check and log attachments
             if (Array.isArray(attachments)) {
@@ -618,6 +626,8 @@ function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, 
 
     console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails, vendor });
 }
+
+
 
 // Monitor subdivisionContainer for changes and trigger city lookup
 function monitorSubdivisionChanges() {
@@ -982,7 +992,6 @@ console.log("Management Gmail Link:", managementGmailLink);
 We are pleased to announce a new project in ${subdivision}, partnering with ${builder}. We are seeking your expertise to deliver exceptional results.
 
 Project Details:
-- Branch: ${branch}
 - Project Type: ${projectType}
 - Material Type: ${materialType}
 - Number of Lots: ${numberOfLots}
@@ -1090,75 +1099,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 60000); // 60000 milliseconds = 1 minute
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-    const sendButton = document.getElementById("sendManagementEmailButton");
-  
-    if (!sendButton) {
-      console.error("Send Management Email button not found.");
-      return;
+document.addEventListener('DOMContentLoaded', () => {
+    const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
+
+    if (sendManagementEmailButton) {
+        sendManagementEmailButton.addEventListener('click', function () {
+            console.log("Redirecting to Gmail...");
+            showRedirectAnimation(); // Trigger animation
+            generateMailtoLinks(); // Trigger the mailto generation
+        });
+    } else {
+        console.error("Button with ID 'sendManagementEmailButton' not found.");
     }
-  
-    sendButton.addEventListener("click", () => {
-      console.log("Export to Gmail button clicked.");
-  
-      // Load the Google API Client Library
-      gapi.load("client:auth2", async () => {
-        try {
-          // Initialize the client
-          await gapi.client.init({
-            apiKey: "AIzaSyCkS1tVW-Z7vuuymmd69h9LMJ7w2PzVdjM", // Replace with your API Key
-            clientId: "882687108659-lmbcqc7c9hk2p6jbidnlei43ecc1r4qv.apps.googleusercontent.com", // Replace with your Client ID
-            scope: "https://www.googleapis.com/auth/script.projects", // Adjust scope as needed
-            discoveryDocs: [
-              "https://script.googleapis.com/$discovery/rest?version=v1",
-            ],
-          });
-  
-          // Check if the user is already signed in
-          const authInstance = gapi.auth2.getAuthInstance();
-          if (!authInstance.isSignedIn.get()) {
-            console.log("Requesting user authorization...");
-            await authInstance.signIn();
-          }
-  
-          console.log("User authorized successfully.");
-  
-          // Prepare the payload
-          const data = {
-            branch: document.querySelector('.branchContainer')?.textContent.trim(),
-            subdivision: document.querySelector('.subdivisionContainer')?.textContent.trim(),
-            builder: document.querySelector('.builderContainer')?.textContent.trim(),
-            projectType: document.querySelector('.briqProjectTypeContainer')?.textContent.trim(),
-            materialType: document.querySelector('.materialTypeContainer')?.textContent.trim(),
-            anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
-            numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
-            managementEmails: ["richard.mcgirt@vanirinstalledsales.com"],
-            subcontractorEmails: ["example1@subcontractor.com", "example2@subcontractor.com"],
-          };
-  
-          console.log("Payload prepared for export:", data);
-  
-          // Call the Apps Script API
-          const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbwwYMClY37e1TlDSYEMC1L_JI2qrXMCf7Ud78Khs18wYIIjVOWPkrLoquB0YN019o1J_Q:run";
-  
-          const response = await gapi.client.request({
-            path: apiUrl,
-            method: "POST",
-            body: JSON.stringify(data),
-          });
-  
-          console.log("Response from Google Apps Script:", response);
-          alert("Data exported to Gmail successfully!");
-        } catch (error) {
-          console.error("Error during authorization or data export:", error);
-          alert("An error occurred: " + error.message);
-        }
-      });
-    });
-  });
-  
-  
-  
+});
 
 // Function to show the redirect animation
 function showRedirectAnimation() {
@@ -1258,12 +1211,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeBidAutocomplete();
 });
 
-// Initialize bid autocomplete
+// Initialize bid and vendor autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
     // Fetch suggestions
     await fetchBidNameSuggestions();
   
-   
+  
 });
 
 function initializeBidAutocomplete() {
