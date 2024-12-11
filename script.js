@@ -211,10 +211,7 @@ async function fetchVendorEmails(vendorName) {
     }
 
     try {
-        // Properly escape and wrap the vendor name in quotes for Airtable
-        const escapedVendorName = vendorName.replace(/"/g, '\\"');
-        const filterFormula = `AND({Vendor Name} = "${escapedVendorName}")`;
-
+        const filterFormula = `{Vendor Name} = "${vendorName.replace(/"/g, '\\"')}"`;
         const records = await fetchAirtableData(
             VendorBaseName,
             VendorTableName,
@@ -339,21 +336,21 @@ async function fetchPlaceDetails(query) {
 
 async function fetchDetailsByBidName(bidName) {
     try {
-        // Fetch place details and update city/zip code
         const placeDetails = await fetchPlaceDetails(bidName);
         if (placeDetails) {
             console.log("Place details fetched from server:", placeDetails);
 
             // Wait for the city span to exist, then update it
             const citySpan = await waitForElement(".city");
-            citySpan.innerText = placeDetails.city || "N/A";
+            citySpan.innerText = placeDetails.city || "N/A"; // Update city
 
             // Wait for the zip code span to exist, then update it
             const zipSpan = await waitForElement(".zip_code");
-            zipSpan.innerText = placeDetails.zip_code || "N/A";
+            zipSpan.innerText = placeDetails.zip_code || "N/A"; // Update zip code
         } else {
             console.warn("No place details found for:", bidName);
         }
+   
 
         // Fetch Airtable data
         const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
@@ -367,7 +364,7 @@ async function fetchDetailsByBidName(bidName) {
         if (records.length > 0) {
             const fields = records[0].fields;
 
-            // Log the fetched Airtable fields
+            // Log the entire fields object to inspect all data
             console.log("Fetched fields from Airtable:", fields);
 
             const builder = fields['Builder'] || 'Unknown Builder';
@@ -378,14 +375,14 @@ async function fetchDetailsByBidName(bidName) {
             const attachments = fields['Attachments'] || [];
             const numberOfLots = fields['Number of Lots'] || '';
             const anticipatedStartDate = fields['Anticipated Start Date'] || '';
-            const vendor = fields['vendor'] || null;
+            const vendor = fields['vendor'];
+            console.log("Vendor field fetched:", vendor);
 
-            // Fetch vendor emails and update CC list if vendor exists
             if (vendor) {
                 await fetchVendorEmails(vendor);
             }
 
-            // Log and process attachments
+            // Check and log attachments
             if (Array.isArray(attachments)) {
                 attachments.forEach((attachment, index) => {
                     console.log(`Attachment ${index + 1}:`);
@@ -399,7 +396,7 @@ async function fetchDetailsByBidName(bidName) {
                 console.log("No attachments found.");
             }
 
-            // Update the email template with retrieved fields
+            // Update the email template with new fields
             updateTemplateText(
                 bidName,
                 builder,
@@ -447,7 +444,6 @@ async function fetchDetailsByBidName(bidName) {
         return null;
     }
 }
-
 
 
 function updateSubcontractorAutocomplete() {
