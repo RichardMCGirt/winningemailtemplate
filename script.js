@@ -967,7 +967,7 @@ Vanir Installed Sales Team
 `.trim();
 
 // Define a maximum size for the email body (e.g., 2000 characters)
-const MAX_BODY_SIZE = 2000;
+const MAX_BODY_SIZE = 2500;
 
 // Truncate the body if it exceeds the maximum size
 const truncatedManagementBody = managementBody.length > MAX_BODY_SIZE 
@@ -1009,6 +1009,7 @@ Best regards,
          style="height: 60px;">
   </div>
 
+
   <div style="display: table-cell; vertical-align: middle; font-family: Arial, sans-serif; color: #000;">
     <strong style="font-size: 14px;">Vanir Installed Sales, LLC</strong><br>
     <span style="font-size: 12px;">Phone: [Insert Phone Number]</span><br>
@@ -1020,11 +1021,6 @@ Best regards,
   </div>
 </div>
 
-
-
-
-
-<div>
 `.trim();
 
         // Combine emails for the "To" and "CC" sections
