@@ -92,7 +92,6 @@ async function fetchAllVendorData() {
         console.error("Error fetching vendor data:", error);
     }
 }
-console.log("Vendor Data:", vendorData);
 
 
 async function ensureDynamicContainerExists() {
@@ -257,12 +256,6 @@ function appendEmailsForSelectedBid(selectedBid) {
     }
 }
 
-
-
-
-
-
-
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
@@ -317,14 +310,10 @@ async function waitForElement(selector, timeout = 5000) {
 }
 document.addEventListener("DOMContentLoaded", () => {
     const dynamicContainer = document.querySelector("#dynamicContainer");
-    console.log("Dynamic container found:", dynamicContainer !== null);
     if (!dynamicContainer) {
         console.warn("#dynamicContainer is missing. Check HTML structure or DOM load timing.");
     }
 });
-
-
-
 
 async function fetchPlaceDetails(query) {
     try {
@@ -341,117 +330,72 @@ async function fetchPlaceDetails(query) {
     }
 }
 
-
-
-
 async function fetchDetailsByBidName(bidName) {
-    try {
-        const placeDetails = await fetchPlaceDetails(bidName);
-        if (placeDetails) {
-            console.log("Place details fetched from server:", placeDetails);
-
-            // Wait for the city span to exist, then update it
-            const citySpan = await waitForElement(".city");
-            citySpan.innerText = placeDetails.city || "N/A"; // Update city
-
-            // Wait for the zip code span to exist, then update it
-            const zipSpan = await waitForElement(".zip_code");
-            zipSpan.innerText = placeDetails.zip_code || "N/A"; // Update zip code
-        } else {
-            console.warn("No place details found for:", bidName);
-        }
-   
-
-        // Fetch Airtable data
-        const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
-        const records = await fetchAirtableData(
-            bidBaseName,
-            bidTableName,
-            'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, vendor',
-            filterFormula
-        );
-
-        if (records.length > 0) {
-            const fields = records[0].fields;
-
-            // Log the entire fields object to inspect all data
-            console.log("Fetched fields from Airtable:", fields);
-
-            const builder = fields['Builder'] || 'Unknown Builder';
-            const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : "Branch Staff@Vanir.com";
-            const branch = fields['Branch'] || 'Unknown Branch';
-            const projectType = fields['Project Type'] || '';
-            const materialType = fields['Material Type'] || '';
-            const attachments = fields['Attachments'] || [];
-            const numberOfLots = fields['Number of Lots'] || '';
-            const anticipatedStartDate = fields['Anticipated Start Date'] || '';
-            const vendor = fields['vendor'];
-            console.log("Vendor field fetched:", vendor);
-
-         
-
-            // Check and log attachments
-            if (Array.isArray(attachments)) {
-                attachments.forEach((attachment, index) => {
-                    console.log(`Attachment ${index + 1}:`);
-                    console.log(`ID: ${attachment.id}`);
-                    console.log(`URL: ${attachment.url}`);
-                    console.log(`Filename: ${attachment.filename}`);
-                    console.log(`Width: ${attachment.width}`);
-                    console.log(`Height: ${attachment.height}`);
-                });
-            } else {
-                console.log("No attachments found.");
-            }
-
-            // Update the email template with new fields
-            updateTemplateText(
-                bidName,
-                builder,
-                gmEmail,
-                branch,
-                projectType,
-                materialType,
-                attachments,
-                numberOfLots,
-                anticipatedStartDate,
-                vendor
-            );
-
-            // Fetch and update subcontractor suggestions
-            await fetchSubcontractorSuggestions(branch);
-            updateSubcontractorAutocomplete();
-
-            return {
-                builder,
-                gmEmail,
-                branch,
-                projectType,
-                materialType,
-                attachments,
-                numberOfLots,
-                anticipatedStartDate,
-                vendor,
-            };
-        } else {
-            console.warn("No records found for bid:", bidName);
-            return {
-                builder: 'Unknown Builder',
-                gmEmail: 'Branch Staff@Vanir.com',
-                branch: 'Unknown Branch',
-                projectType: 'Default Project Type',
-                materialType: 'General Materials',
-                attachments: [],
-                numberOfLots: 'Unknown',
-                anticipatedStartDate: 'Unknown',
-                vendor: 'Unknown',
-            };
-        }
-    } catch (error) {
-        console.error("Error in fetchDetailsByBidName:", error);
-        return null;
+    const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
+    const records = await fetchAirtableData(
+      bidBaseName,
+      bidTableName,
+      'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor',
+      filterFormula
+    );
+  
+    if (records.length > 0) {
+      const fields = records[0].fields;
+      const bvalue = fields['Bid Value'] || 'Unknown Value';
+      const builder = fields['Builder'] || 'Unknown Builder';
+      const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : 'Branch Staff@Vanir.com';
+      const branch = fields['Branch'] || 'Unknown Branch';
+      const projectType = fields['Project Type'] || '';
+      const materialType = fields['Material Type'] || '';
+      const numberOfLots = fields['Number of Lots'] || '';
+      const anticipatedStartDate = fields['Anticipated Start Date'] || '';
+      const vendor = fields['vendor'];
+  
+      console.log('Fetched fields from Airtable:', fields);
+  
+      updateTemplateText(
+        bidName,
+        builder,
+        bvalue,
+        gmEmail,
+        branch,
+        projectType,
+        materialType,
+        numberOfLots,
+        anticipatedStartDate,
+        vendor
+      );
+  
+      await fetchSubcontractorSuggestions(branch);
+      updateSubcontractorAutocomplete();
+  
+      return {
+        builder,
+        bvalue,
+        gmEmail,
+        branch,
+        projectType,
+        materialType,
+        numberOfLots,
+        anticipatedStartDate,
+        vendor,
+      };
+    } else {
+      console.warn('No records found for bid:', bidName);
+      return {
+        builder: 'Unknown Builder',
+        bvalue: 'Unknown Value',
+        gmEmail: 'Branch Staff@Vanir.com',
+        branch: 'Unknown Branch',
+        projectType: 'Default Project Type',
+        materialType: 'General Materials',
+        numberOfLots: 'Unknown',
+        anticipatedStartDate: 'Unknown',
+        vendor: 'Unknown',
+      };
     }
-}
+  }
+  
 
 
 function updateSubcontractorAutocomplete() {
@@ -557,75 +501,79 @@ function selectSuggestion(suggestion, input, dropdown) {
     dropdown.innerHTML = ''; // Clear dropdown after selection
 }
 
-function updateTemplateText(subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails, vendor) {
-    console.log('Updating Template Text:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails, vendor });
-
+function updateTemplateText(
+    subdivision,
+    builder,
+    bvalue,
+    gmEmail,
+    branch,
+    projectType,
+    materialType,
+    numberOfLots,
+    anticipatedStartDate,
+    vendor
+  ) {
+    console.log('Updating Template Text:', {
+      subdivision,
+      builder,
+      bvalue,
+      gmEmail,
+      branch,
+      projectType,
+      materialType,
+      numberOfLots,
+      anticipatedStartDate,
+      vendor,
+    });
+  
     if (subdivision) {
-        document.querySelectorAll('.subdivisionContainer').forEach(el => el.textContent = subdivision);
+      document.querySelectorAll('.subdivisionContainer').forEach(el => (el.textContent = subdivision));
     }
     if (builder) {
-        document.querySelectorAll('.builderContainer').forEach(el => el.textContent = builder);
+      document.querySelectorAll('.builderContainer').forEach(el => (el.textContent = builder));
     }
+    if (bvalue) {
+        // Format bvalue as currency
+        const formattedValue = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(bvalue);
+    
+        document.querySelectorAll('.valueContainer').forEach(el => (el.textContent = formattedValue));
+      }
     if (gmEmail) {
-        document.querySelectorAll('.gmEmailContainer').forEach(el => el.textContent = gmEmail);
+      document.querySelectorAll('.gmEmailContainer').forEach(el => (el.textContent = gmEmail));
     }
     if (branch) {
-        document.querySelectorAll('.branchContainer').forEach(el => el.textContent = branch);
+      document.querySelectorAll('.branchContainer').forEach(el => (el.textContent = branch));
     }
     if (projectType) {
-        document.querySelectorAll('.briqProjectTypeContainer').forEach(el => el.textContent = projectType);
+      document.querySelectorAll('.briqProjectTypeContainer').forEach(el => (el.textContent = projectType));
     }
     if (materialType) {
-        document.querySelectorAll('.materialTypeContainer').forEach(el => el.textContent = materialType);
+      document.querySelectorAll('.materialTypeContainer').forEach(el => (el.textContent = materialType));
     }
-
-    // Display attachment links or image previews in the UI
-    if (attachments && attachments.length > 0) {
-        const attachmentLinks = attachments.map(att => `<a href="${att.url}" target="_blank">${att.filename}</a>`).join('<br>');
-        document.querySelector('.attachmentsContainer').innerHTML = attachmentLinks;
-    } else {
-        document.querySelector('.attachmentsContainer').textContent = 'No attachments available';
-    }
-
     if (numberOfLots) {
-        document.querySelectorAll('.numberOfLotsContainer').forEach(el => el.textContent = numberOfLots);
+      document.querySelectorAll('.numberOfLotsContainer').forEach(el => (el.textContent = numberOfLots));
     }
-
     if (vendor) {
-        document.querySelectorAll('.vendorContainer').forEach(el => el.textContent = vendor);
+      document.querySelectorAll('.vendorContainer').forEach(el => (el.textContent = vendor));
     }
-    
-
     if (anticipatedStartDate) {
-        // Parse the anticipatedStartDate into a Date object
-        const date = new Date(anticipatedStartDate);
-
-        // Check if the date is valid
-        if (!isNaN(date.getTime())) {
-            // Format the date as "Month day, yyyy"
-            const formattedDate = date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-
-            // Update the UI with the formatted date
-            document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => el.textContent = formattedDate);
-        } else {
-            console.error("Invalid date format:", anticipatedStartDate);
-        }
+      const date = new Date(anticipatedStartDate);
+      if (!isNaN(date.getTime())) {
+        const formattedDate = date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => (el.textContent = formattedDate));
+      } else {
+        console.error('Invalid date format:', anticipatedStartDate);
+      }
     }
-
-    // Update the "Additional Details" section
-    if (additionalDetails) {
-        document.querySelectorAll('.additionalDetailsContainer').forEach(el => el.textContent = additionalDetails);
-    } else {
-        document.querySelectorAll('.additionalDetailsContainer').forEach(el => el.textContent = "No additional details provided.");
-    }
-    console.log("Vendor field value:", vendor);
-
-    console.log('Template updated with:', { subdivision, builder, gmEmail, branch, projectType, materialType, attachments, numberOfLots, anticipatedStartDate, additionalDetails, vendor });
-}
+  }
+  
 
 
 
@@ -676,7 +624,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-async function waitForElement(selector, timeout = 5000, interval = 100) {
+async function waitForElement(selector, timeout = 5000) {
     return new Promise((resolve, reject) => {
         let elapsed = 0;
         const intervalId = setInterval(() => {
@@ -685,14 +633,15 @@ async function waitForElement(selector, timeout = 5000, interval = 100) {
                 clearInterval(intervalId);
                 resolve(element);
             }
-            elapsed += interval;
+            elapsed += 100;
             if (elapsed >= timeout) {
                 clearInterval(intervalId);
                 reject(new Error(`Element "${selector}" not found within ${timeout}ms`));
             }
-        }, interval);
+        }, 100);
     });
 }
+
 
 async function exportTextareaToEmail() {
     const textarea = document.getElementById('additionalInfoInput');
@@ -775,39 +724,42 @@ function displayEmailContent() {
         <p>Dear Team,</p>
 
         <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong></h4>
-        <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <strong><span class="city"></span></strong>, <strong><span class="zip_code"></span></strong>.</p>
+        <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <input type="text" class="city" placeholder="Enter city">
+</p>
         <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
 
         <h2>Here's the breakdown:</h2>
-         <p><strong>Attachments:</strong> <span class="attachmentsContainer"></span></p>
+<p><strong>Customer Name:</strong> <input type="text" class="cname" /></p>
+<p><strong>What kind of product do they build:</strong> <input type="text" class="whatbuild" /></p>
+
+<p><strong>Expected Pace:</strong>
+  <input type="text" class="epace" />
+</p>
+<div id="paceContainer"></div> <!-- Container for dynamic content -->
     <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
-        <p><strong>Vendor:</strong> <span class="vendorContainer"></span></p>
+    <p><strong>Do they have special pricing:</strong> 
+    <label>
+    <input type="radio" name="sprice" value="Yes" class="sprice" /> Yes
+  </label>
+  <label>
+    <input type="radio" name="sprice" value="No" class="sprice" /> No
+  </label>
+</p>
+    
+<p><strong>PO Customer:</strong>
+  <label>
+    <input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes
+  </label>
+  <label>
+    <input type="radio" name="poCustomer" value="No" class="pcustomer" /> No
+  </label>
+</p>
+
 
     <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
-        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>. Bid value is <strong><span class="valueContainer"></span></strong>.</p>
         <br>
-<div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
-<img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
 
-
-    <div style="border-left: 1px solid #ccc; height: 80px; margin: 0 10px;"></div>
-    <div>
-        <strong>Vanir Installed Sales, LLC</strong><br>
-        <div class="input-container" style="display: flex; align-items: center; gap: 10px;">
-            <label for="userPhone" style="min-width: 60px;">Phone:</label>
-            <input type="text" id="userPhone" placeholder="Enter your phone number" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div class="input-container" style="display: flex; align-items: center; gap: 10px;">
-            <label for="userEmail" style="min-width: 60px;">Email:</label>
-            <input type="text" id="userEmail" placeholder="Enter your email" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-            </div>
-            </div>
-     <br>
-                                                
-                                                    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
-                                                    <em>Better Look. Better Service. Best Choice.</em>
-  </div>
-</div>
 <hr>
 
             <hr>
@@ -820,14 +772,6 @@ function displayEmailContent() {
         <p>Kind regards,<br>Vanir Installed Sales Team</p>
 
 
-      <div style="display: flex; align-items: center; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px;">
-<img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
-                                                    <div>
-                                                    <strong>Vanir Installed Sales, LLC</strong><br>
-                                                    Phone: <span id="signaturePhone2"></span><br>
-                                                    Email: <span id="signatureEmail2"></span><br>
-                                                    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
-                                                    <em>Better Look. Better Service. Best Choice.</em>
   </div>
 </div>
 
@@ -846,6 +790,48 @@ function displayEmailContent() {
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.querySelector('.epace');
+  
+    if (!slider) {
+      console.error('Slider element with class "epace" not found.');
+      return;
+    }
+  
+    // Function to ensure the container exists or create it dynamically
+    const getOrCreatePaceContainer = () => {
+      let paceContainer = document.querySelector('#paceContainer');
+      if (!paceContainer) {
+        paceContainer = document.createElement('div');
+        paceContainer.id = 'paceContainer';
+        document.body.appendChild(paceContainer); // Append it to the body or a specific parent
+      }
+      return paceContainer;
+    };
+  
+    // Function to update the days display
+    const updatePaceDisplay = () => {
+      const paceContainer = getOrCreatePaceContainer();
+  
+      // Clear previous content
+      paceContainer.innerHTML = '';
+  
+      // Create a new <p> element
+      const pTag = document.createElement('p');
+      pTag.textContent = `Selected pace: ${slider.value} ${slider.value > 1 ? 'days' : 'day'}`;
+  
+      // Append the new <p> element to the container
+      paceContainer.appendChild(pTag);
+    };
+  
+    // Initialize the display
+    updatePaceDisplay();
+  
+    // Update display on slider input
+    slider.addEventListener('input', updatePaceDisplay);
+  });
+  
 
 
 const textarea = document.getElementById('additionalInfoInput');
@@ -869,6 +855,12 @@ async function generateMailtoLinks() {
         const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
+        const city = document.querySelector('.city')?.value.trim() || 'Unknown City';
+        const cname = document.querySelector('.cname')?.value.trim() || 'Unknown Customer Name';
+        const whatbuild = document.querySelector('.whatbuild')?.value.trim() || 'Unknown Product';
+        const epace = document.querySelector('.epace')?.value.trim() || 'Unknown Pace';
+        const sprice = document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified';
+        const poCustomer = document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified';
 
         // Extract CC emails from the cc-email-container
         const ccEmails = ccEmailContainer.textContent
@@ -877,157 +869,58 @@ async function generateMailtoLinks() {
 
         const ccEmailsString = ccEmails.join(',');
 
-        // Log the extracted CC emails and the formatted string
-        console.log("Extracted CC emails:", ccEmails);
-        console.log("Formatted CC emails string:", ccEmailsString);
-
-        // Subcontractor container logic
-        const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
-        if (!subcontractorContainer) {
-            console.error("Subcontractor container not found.");
-            alert("Subcontractor information is missing.");
-            return;
-        }
-
-        // Extract subcontractor emails
-        const subcontractorEmails = Array.from(subcontractorContainer.querySelectorAll(".email"))
-            .map(emailElement => emailElement.textContent.trim())
-            .join(", ");
-
-        console.log("Extracted subcontractor emails:", subcontractorEmails);
-
-        const subcontractorEmailsFromSuggestions = subcontractorSuggestions
-            .map(suggestion => suggestion.email)  // Extract the email addresses
-            .join(', ');  // Join them into a comma-separated string
-
-        console.log("Subcontractor emails from suggestions:", subcontractorEmailsFromSuggestions);
-
-        // Combine both the extracted emails (from the container and suggestions)
-        const allSubcontractorEmails = [subcontractorEmails, subcontractorEmailsFromSuggestions]
-            .filter(Boolean)  // Filter out any empty values
-            .join(', ');  // Join them into a single string
-
-        // Fetch and format the attachments into a mailto-friendly format
-        const attachments = await fetchAttachments();
-        
-        // Log the fetched attachments to ensure correct structure
-        console.log("Fetched attachments:", attachments);
-
-        // Format the attachments properly
-        const formattedAttachments = attachments
-            .map(att => {
-                // Ensure the attachment object contains a filename and URL
-                if (att && att.filename && att.url) {
-                    return `${att.filename}: ${att.url}`;  // Format as "filename: url"
-                } else {
-                    console.warn("Attachment missing filename or url", att);
-                    return null;  // Return null for invalid attachments
-                }
-            })
-            .filter(Boolean)  // Remove null or undefined entries
-            .join('\n');  // Join the formatted attachments into a string
-
         // Management Email
-        const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
-
-// Replace unwanted symbols and decode if needed
-const managementSubject = `New Project Awarded: ${branch} - ${subdivision} - ${builder}`
-  .replace(/[:@\-]/g, ' ') // Replace problematic symbols with spaces
-  .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
-  .trim();
-
-console.log(managementSubject);
-  
-const managementBody = `
+        const managementSubject = `New Project Awarded: ${branch} - ${subdivision} - ${builder}`;
+        const managementBody = `
 Dear Team,
 
-We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This is an excellent opportunity to showcase our expertise and drive further growth.
+We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This project is located in ${city}.
 
 Project Details:
+- Customer Name: ${cname}
+- Product Built: ${whatbuild}
 - Project Type: ${projectType}
 - Material Type: ${materialType}
+- Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
 - Number of Lots: ${numberOfLots}
+- Special Pricing: ${sprice}
+- PO Customer: ${poCustomer}
 - Anticipated Start Date: ${anticipatedStartDate}
 
 Let's continue this momentum and deliver exceptional results.
 
 Best regards,  
 Vanir Installed Sales Team
-
-<div style="display: flex; align-items: center; margin-top: 20px;">
-<img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" alt="Vanir Logo" style="height: 60px; margin-right: 10px;">
-  <div>
-    <strong>Vanir Installed Sales, LLC</strong><br>
-    Phone: <br>
-    Email: contact@vanirinstalledsales.com<br>
-    <a href="https://www.vanirinstalledsales.com" style="text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
-    <em>Better Look. Better Service. Best Choice.</em>
-  </div>
-</div>
-`.trim();
-
-// Define a maximum size for the email body (e.g., 2000 characters)
-const MAX_BODY_SIZE = 2500;
-
-// Truncate the body if it exceeds the maximum size
-const truncatedManagementBody = managementBody.length > MAX_BODY_SIZE 
-    ? managementBody.slice(0, MAX_BODY_SIZE) + '... (truncated)' 
-    : managementBody;
-
-// Replace line breaks with '%0A' for URL encoding
-const formattedManagementBody = truncatedManagementBody.replace(/\n/g, '%0A');
-
-// For the subject, there is no need to change anything, just encode it.
-const formattedManagementSubject = encodeURIComponent(managementSubject);
-
-// Define the "mailto" link with formatted body and subject
-const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-
-console.log("Management Gmail Link:", managementGmailLink);
+        `.trim();
 
         // Subcontractor Email
-        const subcontractorSubject = `Project Opportunity: ${branch} - ${builder}`;
+        const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
+Dear Subcontractor,
 
 We are pleased to announce a new project in ${subdivision}, partnering with ${builder}. We are seeking your expertise to deliver exceptional results.
 
 Project Details:
+- Product Built: ${whatbuild}
+- Project Type: ${projectType}
+- Material Type: ${materialType}
+- Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
+- Number of Lots: ${numberOfLots}
+- Anticipated Start Date: ${anticipatedStartDate}
 
-Project Type: ${projectType}
-Material Type: ${materialType}
-Number of Lots: ${numberOfLots}
-Anticipated Start Date: ${anticipatedStartDate}
-Please review the details and let us know if you have any questions or require additional information.
 If you're interested in working with us on this exciting opportunity, please reach out to [Insert Contact Information].
 
 Best regards,  
-
-<div style="margin-top: 20px; display: table;">
-  <div style="display: table-cell; vertical-align: middle; padding-right: 10px;">
-    <img src="https://chambermaster.blob.core.windows.net/images/customers/9572/members/204494/logos/MEMBER_PAGE_HEADER/Logo.jpg" 
-         
-         style="height: 60px;">
-  </div>
-
-
-  <div style="display: table-cell; vertical-align: middle; font-family: Arial, sans-serif; color: #000;">
-    <strong style="font-size: 14px;">Vanir Installed Sales, LLC</strong><br>
-    <span style="font-size: 12px;">Phone: [Insert Phone Number]</span><br>
-    <span style="font-size: 12px;">Email: <a href="mailto:contact@vanirinstalledsales.com" 
-                                               style="text-decoration: none; color: #000;">contact@vanirinstalledsales.com</a></span><br>
-    <a href="https://www.vanirinstalledsales.com" 
-       style="font-size: 12px; text-decoration: none; color: #000;">www.vanirinstalledsales.com</a><br>
-    <em style="font-size: 12px; color: #555;">Better Look. Better Service. Best Choice.</em>
-  </div>
-</div>
-
-`.trim();
+Vanir Installed Sales Team
+        `.trim();
 
         // Combine emails for the "To" and "CC" sections
-        const toEmails = [teamEmails, subcontractorEmails].filter(Boolean).join(', ');
+        const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
+        const toEmails = [teamEmails].filter(Boolean).join(', ');
 
         // Generate Gmail links for both Management and Subcontractor emails
-        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmails)}&cc=${encodeURIComponent(allSubcontractorEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+        const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
+        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
@@ -1040,33 +933,14 @@ Best regards,
             alert("Pop-ups were blocked. Please enable pop-ups for this site.");
         }
 
-        return managementGmailLink; // Return the link for further use
+        return { managementGmailLink, subcontractorGmailLink }; // Return the links for further use
 
     } catch (error) {
         console.error("Error generating mailto links:", error.message);
     }
 }
 
-// Function to fetch attachments from Airtable (make sure this returns an array of attachment objects)
-async function fetchAttachments() {
-    try {
-        // Fetch the data from Airtable (adjusting field name based on your Airtable setup)
-        const records = await fetchAirtableData(bidBaseName, bidTableName, 'Attachments');
 
-        // Flatten the array and extract only the attachment objects
-        const attachments = records
-            .map(record => record.fields['Attachments'])
-            .flat();  // Flatten in case multiple attachments are returned per record
-
-        // Log the structure of attachments to check the data
-        console.log("Fetched Attachments:", attachments);
-
-        return attachments;  // Return the list of attachments
-    } catch (error) {
-        console.error("Error fetching attachments:", error);
-        return [];  // Return an empty array in case of failure
-    }
-}
 
 
 let ccObserver = null;
@@ -1166,8 +1040,6 @@ function showRedirectAnimation() {
         document.body.removeChild(animationOverlay);
     }, 15000); // Adjust duration as needed
 }
-
-
 
 // Function to get subcontractor emails by branch
 function getSubcontractorsByBranch(subcontractors, branch) {
@@ -1277,33 +1149,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-
-
 // Load the email content and start fetching bid name suggestions on page load
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     fetchAndUpdateAutocomplete();
-    
 });
 
-// Toggle Dark Mode
-const toggleDarkModeCheckbox = document.getElementById('toggleDarkMode');
-
-// Check if dark mode is enabled in localStorage
-if (localStorage.getItem('darkMode') === 'enabled') {
-    document.body.classList.add('dark-mode');
-    toggleDarkModeCheckbox.checked = true; // Set the switch to 'on' position
-}
-
-// Event listener to toggle dark mode on checkbox change
-toggleDarkModeCheckbox.addEventListener('change', () => {
-    const body = document.body;
-    body.classList.toggle('dark-mode');
-
-    // Save the user's preference in localStorage
-    if (body.classList.contains('dark-mode')) {
-        localStorage.setItem('darkMode', 'enabled');
-    } else {
-        localStorage.removeItem('darkMode');
-    }
-});
