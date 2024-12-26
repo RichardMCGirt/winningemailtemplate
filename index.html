@@ -6,39 +6,50 @@
     <title>Email Template</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- Content Security Policy should be in the <head> -->
-        <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://www.gstatic.com https://apis.google.com 'unsafe-inline' 'unsafe-eval';">
-    </head>
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://www.gstatic.com https://apis.google.com 'unsafe-inline' 'unsafe-eval';">
+</head>
 <body>
-    <label class="switch">
-        <input type="checkbox" id="toggleDarkMode">
-        <span class="slider"></span>
-    </label>
-    <p>toggleDarkMode</p>
+    <!-- Dark Mode Toggle -->
+    <div class="dark-mode-toggle">
+        <label class="switch">
+            <input type="checkbox" id="toggleDarkMode">
+            <span class="slider"></span>
+        </label>
+        <span id="toggleLabel">Dark Mode</span>
+    </div>
     
+    
+    
+    <!-- Email Template Container -->
     <div id="emailTemplate">
         <!-- Email content will be populated here by JavaScript -->
     </div>
-    <button id="sendEmailButton" style="display: none;"></button>
+
+    <!-- Send Email Button -->
     <div id="sendEmailButtonContainer">
         <button id="sendManagementEmailButton">Export to Gmail</button>
     </div>
 
+    <!-- Translation Section -->
     <div class="translate-container">
         <div class="textarea-row">
             <textarea id="inputText" placeholder="Enter text to translate" rows="5"></textarea>
             <textarea id="translatedText" placeholder="Translated text will appear here" rows="5"></textarea>
         </div>
         <button id="translateButton">Translate to Spanish</button>
-        <div id="dynamicContainer"></div>
     </div>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+    <!-- Dynamic Content Container -->
+    <div id="dynamicContainer"></div>
+
+    <!-- Google APIs -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
 
+    <!-- Custom Scripts -->
     <script src="script.js"></script>
     <script src="translate.js"></script>
     <script src="darkmode.js"></script>
-    <script src="usersignedin.js"></script>
 </body>
 </html>

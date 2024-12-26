@@ -1,456 +1,34 @@
-/* General email template styling */
+/* General Styles */
 body {
     font-family: Arial, sans-serif;
-    color: #333;
     line-height: 1.6;
-    padding-left: 20px; /* Adds margin on the left */
-    background-color: #f9f9f9; /* Light background for better contrast */
-}
-
-h2 {
-    color: #00274d;
-    font-size: 1.5em;
-    margin-bottom: 0.5em;
-}
-
-p {
-    font-size: 1em;
-    margin: 0.5em 0;
-}
-
-strong {
-    color: #004080;
-}
-
-/* Autocomplete wrapper with left margin */
-.autocomplete-wrapper {
-    position: relative;
-    width: auto;
-    margin: 1em 0;
-    margin-left: 20px; /* Adds margin on the left */
-}
-
-/* Autocomplete input styling */
-.autocomplete-input {
-    width: auto;
-    padding: 12px;
-    border-radius: 5px;
-    font-size: 1em;
-    box-sizing: border-box;
-    transition: border-color 0.3s ease;
-}
-
-/* Make the VendoeContainer scrollable */
-.VendoeContainer {
-    max-height: 150px; /* Set a max height for the container */
-    overflow-y: auto;  /* Enable vertical scrolling when content overflows */
-    padding: 10px;  /* Optional: padding inside the container */
-    margin-top: 10px; /* Optional: margin to create space from other elements */
-    width: auto;
-}
-
-/* Optional: Style the scroll bar */
-.VendoeContainer::-webkit-scrollbar {
-    width: 8px; /* Set the width of the scrollbar */
-}
-
-.VendoeContainer::-webkit-scrollbar-thumb {
-    background-color: #888; /* Set the color of the scroll thumb */
-    border-radius: 4px; /* Round the corners of the scrollbar thumb */
-}
-
-.VendoeContainer::-webkit-scrollbar-thumb:hover {
-    background-color: #555; /* Darker color when hovering over the scrollbar thumb */
-}
-
-
-.autocomplete-input:focus {
-    border-color: #004080; /* Blue focus effect */
-}
-
-/* Autocomplete dropdown styling */
-.autocomplete-dropdown {
-    position: absolute;
-    top: 100%;
-    background-color: rgb(255, 250, 241);
-    left: 0;
-    width: auto;
-    border-top: none;
-    color: #121212;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1000;
-    border-radius: 0 0 5px 5px;
-}
-
-/* Autocomplete dropdown option styling */
-.autocomplete-option {
-    padding: 12px;
-    cursor: pointer;
-    font-size: 1em;
-    color: black;
-    transition: background-color 0.3s ease;
-}
-
-.autocomplete-option:hover {
-    background-color: #e6f7ff;
-    color: #004080;
-}
-
-/* Emphasis styling */
-.subdivisionContainer, .builderContainer {
-    color: #00274d;
-    font-weight: bold;
-}
-
-#sendEmailButton {
-    display: none;
-}
-
-/* Email footer styling */
-#emailTemplate {
-    border-top: 2px solid #004080;
-    padding: 1em 0 0 20px; /* Adds padding to the top and left */
-    margin-top: 2em;
-    background-color: #fff; /* Light background for the email section */
-}
-
-#emailTemplate p {
-    margin-bottom: 1em;
-}
-
-/* Disabled input styling */
-.autocomplete-input:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-/* Email row styling with left margin for alignment */
-.email-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-left: 20px; /* Adds left margin */
-}
-
-.email-row h2 {
     margin: 0;
     padding: 0;
-    font-weight: normal;
-}
-
-#subcontractorEmailInput {
-    width: auto;
-    min-width: 250px;
-    max-width: 100%;
-    padding: 2px 4px;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-/* Loading overlay styles */
-#loadingOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.loading-content {
-    text-align: center;
-    font-size: 18px;
-    color: #004080;
-}
-
-.loading-bar {
-    width: 100%;
-    height: 10px;
-    background: #ddd;
-    margin-top: 10px;
-    border-radius: 5px;
-}
-
-.loading-progress {
-    height: 100%;
-    background: #4caf50;
-    width: 0;
-    border-radius: 5px;
-}
-
-/* Button styling */
-#sendEmailButton2 {
-    background-color: #004080; /* Primary color */
-    color: #fff; /* Text color */
-    font-size: 1em;
-    font-weight: bold;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.1s ease-in-out;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-#sendEmailButton2:hover {
-    background-color: #00274d; /* Darker shade on hover */
-}
-
-#sendEmailButton2:active {
-    background-color: #003366;
-    transform: scale(0.98); /* Slight press effect */
-}
-
-#sendEmailButton2:focus {
-    outline: 2px solid #80bfff; /* Light blue outline for accessibility */
-    outline-offset: 2px;
-}
-
-/* Vendor input styling */
-.vendor-input-wrapper {
-    position: relative;
-    width: 100%;
-    margin-bottom: 1em;
-}
-
-.vendor-input-wrapper input {
-    max-width: 20%;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1em;
-    box-sizing: border-box;
-    transition: border-color 0.3s ease;
-}
-
-.vendor-input-wrapper input:focus {
-    border-color: #004080; /* Highlight input field on focus */
-}
-
-/* Vendor container for displaying added vendors */
-.VendoeContainer {
-    margin-top: 20px;
-    padding-left: 20px;
-    list-style-type: none;
-    max-width: 50%;
-}
-
-.vendor-entry-wrapper {
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 50%;
-}
-
-.vendor-entry-wrapper p {
-    font-size: 1em;
-    color: #00274d;
-    font-weight: normal;
-}
-
-.delete-vendor-button {
-    background-color: #ff4c4c;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.delete-vendor-button:hover {
-    background-color: #cc2f2f;
-}
-
-.loading-animation {
-    display: none;
-    font-size: 16px;
-}
-
-.autocomplete-container {
-    margin: 20px 0;
-}
-
-.autocomplete-container input {
-    width: 100%;
-    padding: 8px;
-    font-size: 14px;
-}
-
-#translateButton {
-    margin-top: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: #fff;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-#translateButton:hover {
-    background-color: #0056b3;
-}
-
-
-/* Email input field styling */
-#subcontractorEmailInput {
-    width: 100%;
-    min-width: 250px;
-    padding: 6px 10px;
-    font-size: 1em;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    transition: border-color 0.3s ease;
-}
-
-#subcontractorEmailInput:focus {
-    border-color: #004080;
-}
-
-/* Add some padding for the email template */
-#emailTemplate {
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Main button styling */
-#sendEmailButton2.google-btn {
-    background-color: #4285F4; /* Google Blue */
-    color: white; /* White text */
-    font-size: 16px; /* Slightly larger font size for readability */
-    padding: 12px 24px; /* Padding for the button */
-    border: none; /* Remove default border */
-    border-radius: 4px; /* Rounded corners for a smooth look */
-    display: flex;
-    left: 50%;
-    align-items: center;
-    justify-content: center;
-    gap: 12px; /* Space between icon and text */
-    cursor: pointer; /* Pointer cursor on hover */
-    transition: background-color 0.3s, box-shadow 0.2s; /* Smooth transition effects */
-}
-
-.dynamic-textarea {
-    display: block;
-    margin-top: 10px;
-    margin-bottom: 15px;
-    padding: 12px;
-    font-size: 16px;
-    width: 100%;
-    max-width: 800px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    background-color: #f9f9f9;
+    background-color: #f4f4f9;
     color: #333;
-    resize: none; /* Disable manual resizing */
-    overflow: hidden; /* Prevent scrollbars */
 }
 
-.dynamic-textarea:focus {
-    border-color: #007BFF;
-    box-shadow: 0 0 6px rgba(0, 123, 255, 0.5);
-    outline: none;
+/* Title and Labels */
+h2, h4, p {
+    color: #0056b3;
 }
 
-.dynamic-textarea::placeholder {
-    color: #aaa;
-    font-style: italic;
-}
-
-
-
-
-/* Add a Google icon to the button */
-#sendEmailButton2 .google-icon {
-    width: 18px;
-    height: 18px;
-    background-image: url('/gmail.ico'); /* Google icon */
-    background-size: cover;
-    background-position: center;
-}
-
-/* Button hover state */
-#sendEmailButton2.google-btn:hover {
-    background-color: #3367D6; /* Slightly darker Google blue when hovered */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle shadow on hover */
-}
-
-/* Button active state (when clicked) */
-#sendEmailButton2.google-btn:active {
-    background-color: #2c56b1; /* Even darker shade on click */
-    transform: translateY(2px); /* Slight movement when clicked */
-}
-
-/* Button focus state for accessibility */
-#sendEmailButton2.google-btn:focus {
-    outline: 2px solid #80bfff; /* Light blue outline for focus */
-    outline-offset: 2px;
-}
-
-/* Text styling for the button */
-#sendEmailButton2.google-btn span {
-    font-weight: bold;
-    text-transform: uppercase; /* Optional: make text uppercase for a cleaner look */
-}
-
-/* Optional: add some margin to the button container to position it */
-#sendEmailButton2 {
-    margin-top: 20px;
-}
-/* Make the subcontractorCompanyContainer scrollable */
-#subcontractorCompanyContainer {
-    max-height: 150px; /* Set a max height for the container */
-    max-width: 1200px;
-    overflow-y: auto;  /* Enable vertical scrolling when content overflows */
-    border: 1px solid #ccc; /* Optional: border around the container */
-    padding: 10px;  /* Optional: padding inside the container */
-    margin-top: 10px; /* Optional: margin to create space from other elements */
-}
-
-/* Optional: Style the scroll bar */
-#subcontractorCompanyContainer::-webkit-scrollbar {
-    width: 8px; /* Set the width of the scrollbar */
-}
-
-#subcontractorCompanyContainer::-webkit-scrollbar-thumb {
-    background-color: #888; /* Set the color of the scroll thumb */
-    border-radius: 4px; /* Round the corners of the scrollbar thumb */
-}
-
-#subcontractorCompanyContainer::-webkit-scrollbar-thumb:hover {
-    background-color: #555; /* Darker color when hovering over the scrollbar thumb */
-}
-
-/* The switch container */
+/* Dark Mode Toggle */
+/* Toggle Switch Styles */
 .switch {
     position: relative;
     display: inline-block;
-    width: 50px;
-    height: 24px;
+    width: 34px;
+    height: 20px;
+    margin-right: 10px; /* Space between the switch and the label */
 }
 
-/* Hide the checkbox input (it will be controlled by the label) */
 .switch input {
     opacity: 0;
     width: 0;
     height: 0;
 }
 
-/* The slider */
 .slider {
     position: absolute;
     cursor: pointer;
@@ -459,321 +37,386 @@ strong {
     right: 0;
     bottom: 0;
     background-color: #ccc;
+    border-radius: 20px;
     transition: 0.4s;
-    border-radius: 34px;
 }
 
-/* The circle inside the slider */
 .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    left: 4px;
-    bottom: 4px;
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
     background-color: white;
+    border-radius: 50%;
     transition: 0.4s;
 }
 
-/* When the checkbox is checked, change the background and circle position */
 input:checked + .slider {
-    background-color: #4caf50; /* Green color for the switch when on */
+    background-color: #007bff;
 }
 
 input:checked + .slider:before {
-    transform: translateX(26px); /* Move the circle to the right */
+    transform: translateX(14px);
 }
 
-/* When the switch is hovered */
-.slider:hover {
-    background-color: #bbb;
-}
-
-
-/* Dark mode
-
-
-/* Global Dark Mode Styles */
-body.dark-mode {
-    background-color: #121212; /* Dark background */
-    color: #ddd; /* Light text */
-    font-family: Arial, sans-serif; /* Set a consistent font */
-}
-
-/* Add some padding for the email template */
-/* Email Template Styling in Dark Mode */
-body.dark-mode #emailTemplate {
-    padding: 20px;
-    background-color: #333; /* Dark background for email template */
-    color: #ddd; /* Lighter text color for readability */
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Darker shadow for better contrast */
-}
-
-/* Adjust text color within email template in dark mode */
-body.dark-mode #emailTemplate h2, 
-body.dark-mode #emailTemplate p, 
-body.dark-mode #emailTemplate strong {
-    color: #ddd; /* Light text color for headings and body */
-}
-
-/* Add link styling in dark mode */
-body.dark-mode #emailTemplate a {
-    color: #00bcd4; /* Light blue color for links */
-}
-
-body.dark-mode #emailTemplate a:hover {
-    color: #fff; /* White text for links on hover */
-}
-
-body.dark-mode .autocomplete-option {
-    padding: 12px;
-    cursor: pointer;
-    font-size: 1em;
-    color: white;
-    transition: background-color 0.3s ease;
-}
-
-/* Headings */
-body.dark-mode h2, body.dark-mode h3 {
-    color: #fff; /* White text for headings */
-}
-
-/* Inputs and Autocomplete */
-body.dark-mode .autocomplete-input {
-    background-color: black; /* Dark background for inputs */
-    color: #fff; /* White text */
-    border: 1px solid #444; /* Border color */
-}
-
-body.dark-mode .autocomplete-input:focus {
-    border-color: #00bcd4; /* Light blue border when focused */
-}
-
-body.dark-mode .autocomplete-dropdown {
-    background-color: #222; /* Dropdown background */
-    color: #ddd; /* Light text in dropdown */
-}
-
-body.dark-mode .autocomplete-option:hover {
-    background-color: black; /* Highlight option with blue on hover */
-    color: #fff; /* White text on hover */
-}
-
-/* Vendor Container */
-body.dark-mode .VendoeContainer {
-    background-color: #222; /* Dark background */
-    color: white; /* Light text */
-    padding: 10px;
-    border-radius: 5px; /* Rounded corners */
-    max-width: 600px;
-}
-
-/* Vendor Entry in Dark Mode */
-body.dark-mode .vendor-entry {
-    text-align: center !important; /* Center the text inside the vendor entry */
-    color: white !important; /* Ensure the text is white in dark mode */
-}
-
-
-
-/* Loading Overlay */
-body.dark-mode #loadingOverlay {
-    background: rgba(0, 0, 0, 0.8); /* Semi-transparent dark overlay */
-}
-
-body.dark-mode #loadingOverlay .loading-content {
-    color: #fff; /* Light text for loading message */
-}
-
-/* Buttons */
-body.dark-mode #sendEmailButton2 {
-    background-color: #008080; /* Teal color for the button */
-    color: #fff; /* White text */
-}
-
-body.dark-mode #sendEmailButton2:hover {
-    background-color: #004d47; /* Darker teal on hover */
-}
-
-/* Switch (Dark Mode Toggle) */
-body.dark-mode .switch {
-    background-color: #4caf50; /* Green color for switch when on */
-}
-
-body.dark-mode .switch .slider:before {
-    background-color: #fff; /* White circle for the switch */
-}
-
-/* Adjustments for the dark mode toggle button */
-body.dark-mode .slider {
-    background-color: #888; /* Neutral slider background */
-}
-
-body.dark-mode input:checked + .slider {
-    background-color: #4caf50; /* Green when checked */
-}
-
-/* Apply a more defined text color on dark mode for better contrast */
-body.dark-mode p, body.dark-mode .vendor-entry, body.dark-mode .subdivisionContainer, body.dark-mode .builderContainer {
-    color: #ddd; /* Lighter text color */
-}
-
-/* Links in Dark Mode */
-body.dark-mode a {
-    color: #00bcd4; /* Light blue color for links */
-}
-
-body.dark-mode a:hover {
-    color: #fff; /* White text for links on hover */
-}
-
-/* Dark mode styles for email template */
-body.dark-mode #emailTemplate {
-    background-color: #121212; /* Dark background for the email section */
-    color: white; /* White text for dark mode */
-    border-top: 2px solid white; /* Change border color to a lighter one for dark mode */
-}
-
-/* Scrollbars */
-body.dark-mode .VendoeContainer::-webkit-scrollbar-thumb {
-    background-color: #888; /* Scroll thumb color */
-}
-
-body.dark-mode .VendoeContainer::-webkit-scrollbar-thumb:hover {
-    background-color: #555; /* Darker scroll thumb on hover */
-}
-
-/* Switch styling for dark mode */
-body.dark-mode .switch input:checked + .slider {
-    background-color: #00bcd4; /* Light blue for dark mode switch on */
-}
-
-body.dark-mode .switch .slider {
-    background-color: #666; /* Darker grey background for the slider */
-}
-
-body.dark-mode .switch .slider:before {
-    background-color: #333; /* Darker circle for the slider */
-}
-
-/* Switch circle when activated */
-body.dark-mode .switch input:checked + .slider:before {
-    background-color: #fff; /* White circle when the switch is on */
-}
-
-/* Hover effect for dark mode */
-body.dark-mode .switch .slider:hover {
-    background-color: #555; /* Slightly darker grey when hovered */
-}
-
-/* Optional: Add a transition effect for dark mode when switching states */
-body.dark-mode .switch input:checked + .slider {
-    transition: background-color 0.4s ease;
-}
-
-body.dark-mode .switch .slider:before {
-    transition: transform 0.4s ease, background-color 0.4s ease;
-}
-
-/* Add this to your CSS file */
-body {
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* You can also add specific styles for the dark mode */
-body.dark-mode {
-    background-color: #121212; /* Dark background */
-    color: white; /* White text */
-}
-
-.translate-container {
+/* Dark Mode Toggle Container */
+.dark-mode-toggle {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 20px;
+    justify-content: center; /* Center the toggle on the page */
+    margin: 20px 0;
+}
+
+/* Toggle Label */
+#toggleLabel {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    transition: color 0.3s;
+}
+
+body.dark-mode #toggleLabel {
+    color: #f4f4f9;
+}
+
+
+/* Email Template Container */
+#emailTemplate {
     max-width: 800px;
-    width: 100%;
+    margin: 20px auto;
     padding: 20px;
+    background: #ffffff;
     border: 1px solid #ccc;
-    border-radius: 10px;
-    background: #fff;
+    border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.textarea-row {
-    display: flex;
-    gap: 20px;
-    width: 100%;
+/* Dynamic Elements */
+.subdivisionContainer,
+.builderContainer,
+.branchContainer,
+.briqProjectTypeContainer,
+.materialTypeContainer,
+.valueContainer,
+.gmEmailContainer,
+.numberOfLotsContainer,
+.AnticipatedDurationContainer,
+.anticipatedStartDateContainer {
+    font-weight: bold;
+    color: #007bff;
 }
 
-textarea {
-    flex: 1;
-    padding: 10px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    resize: none;
-}
-
+/* Buttons */
 button {
+    display: inline-block;
     padding: 10px 20px;
+    margin: 10px 0;
     font-size: 16px;
+    font-weight: bold;
+    color: #fff;
     background-color: #007bff;
-    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 button:hover {
     background-color: #0056b3;
 }
 
-h2 {
-    font-size: 18px;
-    color: #333;
+/* Translation Section */
+.translate-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-p {
-    font-size: 16px;
-    color: #555;
-}
-
-.additionalDetailsContainer {
-    max-width: 100%; /* Ensures the textarea doesn't go beyond the container's width */
-    width: 50%;     /* Makes the textarea take up the full width available within its parent container */
-    height: 150px;   /* Adjust the height as needed */
-    padding: 10px;   /* Adds some padding inside the textarea */
-    border: 1px solid #ccc; /* Adds a border around the textarea */
-    border-radius: 5px; /* Rounds the corners of the textarea */
-    font-size: 14px; /* Adjust font size */
-    resize: vertical; /* Allows the user to resize the height but not the width */
-    box-sizing: border-box; /* Ensures padding is included in the width and height */
-}
-
-.additionalDetailsContainer:focus {
-    border-color: #4D90FE; /* Changes the border color when the textarea is focused */
-    outline: none; /* Removes the default outline */
-}
-
-.input-container {
+.textarea-row {
     display: flex;
-    align-items: center; /* Align items vertically in the center */
-    gap: 10px; /* Adds space between items */
-    margin-bottom: 10px; /* Optional: Adds space between rows */
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
 }
 
-.input-container label {
-    min-width: 50px; /* Ensures labels have consistent width */
-    text-align: right; /* Aligns the label text to the right */
+textarea {
+    width: 100%;
+    height: 100px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    resize: vertical;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.input-container input {
-    flex: 1; /* Makes the input field take up the remaining space */
-    padding: 5px; /* Optional: Adds padding for better usability */
-    border: 1px solid #ccc; /* Optional: Border for inputs */
-    border-radius: 4px; /* Optional: Rounded corners for inputs */
-    max-width: 50%;
+/* Spinner for Loading Animation */
+.spinner {
+    margin: 20px auto;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ffffff;
+    border-top: 4px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Dynamic Container */
+#dynamicContainer {
+    margin-top: 20px;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px dashed #ddd;
+    border-radius: 4px;
+}
+
+/* Redirect Overlay */
+#redirectOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    font-size: 20px;
+}
+
+#redirectOverlay .spinner {
+    border-color: white;
+    border-top-color: transparent;
+}
+
+/* Highlight for Major Wins Section */
+h4 {
+    margin: 20px 0;
+    padding: 10px;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    color: #155724;
+}
+/* Scrollable Dropdown */
+.autocomplete-dropdown {
+    max-height: 200px; /* Limit the height of the dropdown */
+    overflow-y: auto; /* Enable vertical scrolling */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    width: 100%; /* Match the input field's width */
+    z-index: 1000; /* Ensure it stays above other elements */
+}
+
+.autocomplete-option {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.autocomplete-option:hover {
+    background-color: #f0f0f0;
+}
+
+/* Wrapper to position dropdown properly */
+.autocomplete-wrapper {
+    position: relative;
+}
+
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #f4f4f9;
+}
+
+/* Containers */
+#emailTemplate,
+.translate-container {
+    background-color: #ffffff;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+body.dark-mode #emailTemplate,
+body.dark-mode .translate-container {
+    background-color: #1e1e1e;
+    color: #f4f4f9;
+    border-color: #333;
+}
+
+/* Inputs and Textareas */
+input[type="text"],
+textarea {
+    background-color: #ffffff;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode textarea {
+    background-color: #333;
+    color: #f4f4f9;
+    border-color: #555;
+}
+
+body.dark-mode button {
+    background-color: #444;
+    color: #fff;
+}
+
+body.dark-mode button:hover {
+    background-color: #666;
+}
+
+/* Dropdown */
+.autocomplete-dropdown {
+    background-color: #ffffff;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+body.dark-mode .autocomplete-dropdown {
+    background-color: #1e1e1e;
+    color: #f4f4f9;
+    border-color: #333;
+}
+
+.autocomplete-option {
+    background-color: #ffffff;
+    color: #333;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+body.dark-mode .autocomplete-option {
+    background-color: #1e1e1e;
+    color: #f4f4f9;
+}
+
+.autocomplete-option:hover {
+    background-color: #f0f0f0;
+}
+
+body.dark-mode .autocomplete-option:hover {
+    background-color: #333;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 20px;
+    margin: 10px 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 20px;
+    transition: 0.4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #007bff;
+}
+
+body.dark-mode input:checked + .slider {
+    background-color: #555;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar {
+    width: 8px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+/* Dark Mode Text */
+body.dark-mode h2, 
+body.dark-mode h4, 
+body.dark-mode p {
+    color: #ffffff; /* White for dark mode */
+}
+
+body.dark-mode h4 {
+    background: #2a3d2f; /* Darker green background for dark mode */
+    border: 1px solid #1f2d24; /* Darker border for contrast */
+    color: #b5d3ba; /* Light green text color for dark mode */
+}
+#sendEmailButtonContainer {
+    display: flex;
+    justify-content: center; /* Horizontally center the content */
+    align-items: center; /* Vertically center the content (if applicable) */
+    margin: 20px 0; /* Add some spacing above and below */
+}
+
+#sendManagementEmailButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#sendManagementEmailButton:hover {
+    background-color: #0056b3;
 }

@@ -335,7 +335,7 @@ async function fetchDetailsByBidName(bidName) {
     const records = await fetchAirtableData(
       bidBaseName,
       bidTableName,
-      'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor',
+      'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, AnticipatedDuration',
       filterFormula
     );
   
@@ -350,6 +350,8 @@ async function fetchDetailsByBidName(bidName) {
       const numberOfLots = fields['Number of Lots'] || '';
       const anticipatedStartDate = fields['Anticipated Start Date'] || '';
       const vendor = fields['vendor'];
+      const AnticipatedDuration = fields ['Anticipated Duration'];
+
   
       console.log('Fetched fields from Airtable:', fields);
   
@@ -363,7 +365,9 @@ async function fetchDetailsByBidName(bidName) {
         materialType,
         numberOfLots,
         anticipatedStartDate,
-        vendor
+        vendor,
+        AnticipatedDuration
+
       );
   
       await fetchSubcontractorSuggestions(branch);
@@ -379,6 +383,7 @@ async function fetchDetailsByBidName(bidName) {
         numberOfLots,
         anticipatedStartDate,
         vendor,
+        AnticipatedDuration,
       };
     } else {
       console.warn('No records found for bid:', bidName);
@@ -392,6 +397,8 @@ async function fetchDetailsByBidName(bidName) {
         numberOfLots: 'Unknown',
         anticipatedStartDate: 'Unknown',
         vendor: 'Unknown',
+        AnticipatedDuration: 'Unknown days',
+
       };
     }
   }
@@ -511,9 +518,10 @@ function updateTemplateText(
     materialType,
     numberOfLots,
     anticipatedStartDate,
-    vendor
+    vendor,
+    AnticipatedDuration,
   ) {
-    console.log('Updating Template Text:', {
+    console.log('Updating Template Text with the following parameters:', {
       subdivision,
       builder,
       bvalue,
@@ -524,42 +532,66 @@ function updateTemplateText(
       numberOfLots,
       anticipatedStartDate,
       vendor,
+      AnticipatedDuration,
     });
   
     if (subdivision) {
+      console.log('Updating subdivision to:', subdivision);
       document.querySelectorAll('.subdivisionContainer').forEach(el => (el.textContent = subdivision));
     }
+  
     if (builder) {
+      console.log('Updating builder to:', builder);
       document.querySelectorAll('.builderContainer').forEach(el => (el.textContent = builder));
     }
+  
     if (bvalue) {
-        // Format bvalue as currency
-        const formattedValue = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(bvalue);
-    
-        document.querySelectorAll('.valueContainer').forEach(el => (el.textContent = formattedValue));
-      }
+      console.log('Formatting and updating bvalue:', bvalue);
+      const formattedValue = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(bvalue);
+      console.log('Formatted bvalue:', formattedValue);
+      document.querySelectorAll('.valueContainer').forEach(el => (el.textContent = formattedValue));
+    }
+  
     if (gmEmail) {
+      console.log('Updating gmEmail to:', gmEmail);
       document.querySelectorAll('.gmEmailContainer').forEach(el => (el.textContent = gmEmail));
     }
+  
     if (branch) {
+      console.log('Updating branch to:', branch);
       document.querySelectorAll('.branchContainer').forEach(el => (el.textContent = branch));
     }
+  
     if (projectType) {
+      console.log('Updating projectType to:', projectType);
       document.querySelectorAll('.briqProjectTypeContainer').forEach(el => (el.textContent = projectType));
     }
+  
     if (materialType) {
+      console.log('Updating materialType to:', materialType);
       document.querySelectorAll('.materialTypeContainer').forEach(el => (el.textContent = materialType));
     }
+  
     if (numberOfLots) {
+      console.log('Updating numberOfLots to:', numberOfLots);
       document.querySelectorAll('.numberOfLotsContainer').forEach(el => (el.textContent = numberOfLots));
     }
+  
+    if (AnticipatedDuration) {
+      console.log('Updating AnticipatedDuration to:', AnticipatedDuration);
+      document.querySelectorAll('.AnticipatedDurationContainer').forEach(el => (el.textContent = AnticipatedDuration));
+    }
+  
     if (vendor) {
+      console.log('Updating vendor to:', vendor);
       document.querySelectorAll('.vendorContainer').forEach(el => (el.textContent = vendor));
     }
+  
     if (anticipatedStartDate) {
+      console.log('Processing anticipatedStartDate:', anticipatedStartDate);
       const date = new Date(anticipatedStartDate);
       if (!isNaN(date.getTime())) {
         const formattedDate = date.toLocaleDateString('en-US', {
@@ -567,12 +599,14 @@ function updateTemplateText(
           month: 'long',
           day: 'numeric',
         });
+        console.log('Formatted anticipatedStartDate:', formattedDate);
         document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => (el.textContent = formattedDate));
       } else {
         console.error('Invalid date format:', anticipatedStartDate);
       }
     }
   }
+  
   
 
 
@@ -716,123 +750,67 @@ async function sendEmailData() {
   
 
 
-function displayEmailContent() {
-    const emailContent = `
-        <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
-        <p>CC: <span class="cc-email-container">Vendor</span></p>
-        <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-        <p>Dear Team,</p>
-
-        <h4> Major Wins for Team <strong><span class="branchContainer"></span></strong></h4>
-        <p>All - I am excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in <input type="text" class="city" placeholder="Enter city">
-</p>
-        <p>This will be <strong><span class="briqProjectTypeContainer"></span></strong>.</p>
-
-        <h2>Here's the breakdown:</h2>
-<p><strong>Customer Name:</strong> <input type="text" class="cname" /></p>
-<p><strong>What kind of product do they build:</strong> <input type="text" class="whatbuild" /></p>
-
-<p><strong>Expected Pace:</strong>
-  <input type="text" class="epace" />
-</p>
-<div id="paceContainer"></div> <!-- Container for dynamic content -->
-    <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
-    <p><strong>Do they have special pricing:</strong> 
-    <label>
-    <input type="radio" name="sprice" value="Yes" class="sprice" /> Yes
-  </label>
-  <label>
-    <input type="radio" name="sprice" value="No" class="sprice" /> No
-  </label>
-</p>
+    function displayEmailContent() {
+        const emailContent = `
+            <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
+            <p>CC: <span class="cc-email-container">Vendor</span></p>
+            <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
+            <p>Dear Team,</p>
     
-<p><strong>PO Customer:</strong>
-  <label>
-    <input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes
-  </label>
-  <label>
-    <input type="radio" name="poCustomer" value="No" class="pcustomer" /> No
-  </label>
-</p>
-
-
-    <p><strong>Anticipated Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
-        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>. Bid value is <strong><span class="valueContainer"></span></strong>.</p>
-        <br>
-
-<hr>
-
+            <h4>Major Wins for Team <strong><span class="branchContainer"></span></strong></h4>
+            <p>We are excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
+            <input type="text" class="city" placeholder="Enter city"></p>
+    
+            <h2>Here's the breakdown:</h2>
+            <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
+            <p><strong>What kind of product do they build:</strong> <strong><span class="briqProjectTypeContainer"></span></strong></p>
+            <p><strong>Expected Pace:</strong> <strong><span class="AnticipatedDurationContainer"></span></strong></p>
+            <p><strong>Expected Start Date:</strong> <strong><span class="anticipatedStartDateContainer"></span></strong></p>
+            <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
+            <p><strong>Do they have special pricing:</strong> 
+                <label>
+                    <input type="radio" name="sprice" value="Yes" class="sprice" /> Yes
+                </label>
+                <label>
+                    <input type="radio" name="sprice" value="No" class="sprice" /> No
+                </label>
+            </p>
+            <p><strong>PO Customer:</strong> 
+                <label>
+                    <input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes
+                </label>
+                <label>
+                    <input type="radio" name="poCustomer" value="No" class="pcustomer" /> No
+                </label>
+            </p>
+            
+            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>. 
+            Bid value is <strong><span class="valueContainer"></span></strong>.</p>
+    
             <hr>
-        <div id="subcontractorCompanyContainer"></div>
-        <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
-       <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-<p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
-<p>If you're interested in working with us on this exciting opportunity, please reach out to <strong><span class="gmEmailContainer"></span></strong>.</p>
-
-        <p>Kind regards,<br>Vanir Installed Sales Team</p>
-
-
-  </div>
-</div>
-
-
-<div>
-    `;
-
-    const emailContainer = document.getElementById('emailTemplate');
-    emailContainer.innerHTML = emailContent;
-
-     
+            <div id="subcontractorCompanyContainer"></div>
+            <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
+            <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
+            <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
+            <p>If you're interested in working with us on this exciting opportunity, please reach out to <strong><span class="gmEmailContainer"></span></strong>.</p>
     
-}
+            <p>Kind regards,<br>Vanir Installed Sales Team</p>
+        `;
+    
+        const emailContainer = document.getElementById('emailTemplate');
+        if (emailContainer) {
+            emailContainer.innerHTML = emailContent;
+        } else {
+            console.error("Email template container not found in the DOM.");
+        }
+    }
+    
 
 // Trigger the display of email content once vendor emails are fetched
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
-
-document.addEventListener('DOMContentLoaded', () => {
-    const slider = document.querySelector('.epace');
-  
-    if (!slider) {
-      console.error('Slider element with class "epace" not found.');
-      return;
-    }
-  
-    // Function to ensure the container exists or create it dynamically
-    const getOrCreatePaceContainer = () => {
-      let paceContainer = document.querySelector('#paceContainer');
-      if (!paceContainer) {
-        paceContainer = document.createElement('div');
-        paceContainer.id = 'paceContainer';
-        document.body.appendChild(paceContainer); // Append it to the body or a specific parent
-      }
-      return paceContainer;
-    };
-  
-    // Function to update the days display
-    const updatePaceDisplay = () => {
-      const paceContainer = getOrCreatePaceContainer();
-  
-      // Clear previous content
-      paceContainer.innerHTML = '';
-  
-      // Create a new <p> element
-      const pTag = document.createElement('p');
-      pTag.textContent = `Selected pace: ${slider.value} ${slider.value > 1 ? 'days' : 'day'}`;
-  
-      // Append the new <p> element to the container
-      paceContainer.appendChild(pTag);
-    };
-  
-    // Initialize the display
-    updatePaceDisplay();
-  
-    // Update display on slider input
-    slider.addEventListener('input', updatePaceDisplay);
-  });
-  
-
 
 const textarea = document.getElementById('additionalInfoInput');
 const additionalDetails = textarea ? textarea.value.trim() : null;
@@ -1099,18 +1077,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function initializeBidAutocomplete() {
     const bidContainer = document.getElementById('bidInputContainer');
+
     if (bidContainer) {
-        const bidInput = createAutocompleteInput(
-            "Enter Bid Name",
-            bidNameSuggestions,
-            "bid",
-            fetchDetailsByBidName
-        );
-        bidContainer.appendChild(bidInput);
+        // Create autocomplete wrapper
+        const autocompleteWrapper = document.createElement("div");
+        autocompleteWrapper.classList.add("autocomplete-wrapper");
+
+        // Create input field
+        const bidInput = document.createElement("input");
+        bidInput.type = "text";
+        bidInput.placeholder = "Enter Bid Name";
+        bidInput.classList.add("autocomplete-input");
+        autocompleteWrapper.appendChild(bidInput);
+
+        // Create dropdown container
+        const dropdown = document.createElement("div");
+        dropdown.classList.add("autocomplete-dropdown");
+        autocompleteWrapper.appendChild(dropdown);
+
+        // Add wrapper to container
+        bidContainer.appendChild(autocompleteWrapper);
+
+        // Populate dropdown dynamically
+        bidInput.addEventListener("input", function () {
+            const query = bidInput.value.toLowerCase();
+            dropdown.innerHTML = ""; // Clear previous suggestions
+
+            // Filter suggestions
+            const filteredSuggestions = bidNameSuggestions.filter(suggestion =>
+                suggestion.toLowerCase().includes(query)
+            );
+
+            // Add filtered suggestions to dropdown
+            filteredSuggestions.forEach(suggestion => {
+                const option = document.createElement("div");
+                option.classList.add("autocomplete-option");
+                option.textContent = suggestion;
+
+                option.addEventListener("click", () => {
+                    bidInput.value = suggestion; // Set input value to selected suggestion
+                    dropdown.innerHTML = ""; // Clear dropdown
+                    fetchDetailsByBidName(suggestion); // Fetch details for selected suggestion
+                });
+
+                dropdown.appendChild(option);
+            });
+
+            // Show or hide the dropdown based on the filtered suggestions
+            dropdown.style.display = filteredSuggestions.length > 0 ? "block" : "none";
+        });
     } else {
         console.error("Bid container not found.");
     }
 }
+
 
 // Function to wait for the cc-email-container to exist in the DOM
 async function waitForElement(selector, timeout = 5000) {
