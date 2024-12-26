@@ -100,7 +100,6 @@ body.dark-mode #toggleLabel {
 .briqProjectTypeContainer,
 .materialTypeContainer,
 .valueContainer,
-.gmEmailContainer,
 .numberOfLotsContainer,
 .AnticipatedDurationContainer,
 .anticipatedStartDateContainer {
@@ -226,6 +225,7 @@ h4 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: absolute;
     width: 100%; /* Match the input field's width */
+    font-size: 25px;
     z-index: 1000; /* Ensure it stays above other elements */
 }
 
@@ -272,6 +272,7 @@ textarea {
     background-color: #ffffff;
     color: #333;
     border: 1px solid #ccc;
+    font-size: 25px;
 }
 
 body.dark-mode input[type="text"],
@@ -279,6 +280,7 @@ body.dark-mode textarea {
     background-color: #333;
     color: #f4f4f9;
     border-color: #555;
+    font-size: 25px;
 }
 
 body.dark-mode button {
