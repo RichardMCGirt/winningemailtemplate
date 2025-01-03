@@ -764,7 +764,7 @@ async function sendEmailData() {
             <h2>Here's the breakdown:</h2>
             <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
             <p><strong>What kind of product do they build:</strong> <strong><span class="briqProjectTypeContainer"></span></strong></p>
-            <p><strong>Expected Pace:</strong> <strong><span class="AnticipatedDurationContainer"></span></strong></p>
+<p><strong>Expected Pace:</strong> <strong><span class="AnticipatedDurationContainer"></span> days</strong></p>
             <p><strong>Expected Start Date:</strong> <strong><span class="anticipatedStartDateContainer"></span></strong></p>
             <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
             <p><strong>Do they have special pricing:</strong> 
@@ -918,9 +918,6 @@ Vanir Installed Sales Team
     }
 }
 
-
-
-
 let ccObserver = null;
 
 function observeCCContainer() {
@@ -1071,8 +1068,6 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', async () => {
     // Fetch suggestions
     await fetchBidNameSuggestions();
-  
-  
 });
 
 let offset = null; // Offset for Airtable pagination
@@ -1206,7 +1201,6 @@ async function waitForElement(selector, timeout = 5000) {
     });
 }
 
-
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Ensure email template is displayed
@@ -1220,7 +1214,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
     }
 });
-
 
 // Load the email content and start fetching bid name suggestions on page load
 document.addEventListener('DOMContentLoaded', () => {

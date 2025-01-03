@@ -14,13 +14,19 @@ h2, h4, p {
 }
 
 #subcontractorCompanyContainer {
-    width: 100%; /* Adjust the width as needed */
+    width: 95%; /* Adjust the width as needed */
     max-height: 100px; /* Set the maximum height */
     overflow-y: auto; /* Enable vertical scrolling */
     border: 1px solid #ccc; /* Optional: Add a border */
-    padding: 10px; /* Optional: Add padding */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow */
+    
+    /* Center the container */
+    margin: 0 auto; /* Horizontal centering */
+    display: flex;
+    justify-content: center; /* Center content horizontally inside the container */
+    align-items: center; /* Center content vertically inside the container */
 }
+
 
 /* Toggle Switch Styles */
 .switch {
@@ -75,6 +81,7 @@ input:checked + .slider:before {
     align-items: center;
     justify-content: center; /* Center the toggle on the page */
     margin: 20px 0;
+    gap: 15px; /* Add gap between the switch and label */
 }
 
 /* Toggle Label */
@@ -85,6 +92,7 @@ input:checked + .slider:before {
     transition: color 0.3s;
 }
 
+
 body.dark-mode #toggleLabel {
     color: #f4f4f9;
 }
@@ -92,7 +100,7 @@ body.dark-mode #toggleLabel {
 
 /* Email Template Container */
 #emailTemplate {
-    max-width: 800px;
+    max-width: 1540px;
     margin: 20px auto;
     padding: 20px;
     background: #ffffff;
@@ -137,12 +145,20 @@ button:hover {
 /* Translation Section */
 .translate-container {
     max-width: 800px;
-    margin: 20px auto;
+    margin: 20px auto; /* Center the container horizontally */
     padding: 20px;
     background: #ffffff;
     border: 1px solid #ccc;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+    /* Flexbox for centering content inside */
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    justify-content: center; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+    text-align: center; /* Center text inside */
+    gap: 15px; /* Add spacing between elements */
 }
 
 .textarea-row {
@@ -153,7 +169,7 @@ button:hover {
 }
 
 textarea {
-    width: 100%;
+    width: 80%;
     height: 100px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -217,11 +233,7 @@ textarea {
 /* Highlight for Major Wins Section */
 h4 {
     margin: 20px 0;
-    padding: 10px;
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 4px;
-    color: #155724;
+    padding: 10px; 
 }
 /* Scrollable Dropdown */
 .autocomplete-dropdown {
@@ -294,6 +306,8 @@ body.dark-mode textarea {
 body.dark-mode button {
     background-color: #444;
     color: #fff;
+    padding: 10px 20px;
+
 }
 
 body.dark-mode button:hover {
@@ -403,11 +417,6 @@ body.dark-mode p {
     color: #ffffff; /* White for dark mode */
 }
 
-body.dark-mode h4 {
-    background: #2a3d2f; /* Darker green background for dark mode */
-    border: 1px solid #1f2d24; /* Darker border for contrast */
-    color: #b5d3ba; /* Light green text color for dark mode */
-}
 #sendEmailButtonContainer {
     display: flex;
     justify-content: center; /* Horizontally center the content */

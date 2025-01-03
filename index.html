@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Template</title>
     <link rel="stylesheet" href="style.css">
-
-    <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://www.gstatic.com https://apis.google.com 'unsafe-inline' 'unsafe-eval';">
 </head>
+
 <body>
     <!-- Dark Mode Toggle -->
     <div class="dark-mode-toggle">
@@ -18,13 +18,9 @@
         </label>
         <span id="toggleLabel">Dark Mode</span>
     </div>
-    
-    
-    
+
     <!-- Email Template Container -->
-    <div id="emailTemplate">
-        <!-- Email content will be populated here by JavaScript -->
-    </div>
+    <div id="emailTemplate"></div>
 
     <!-- Send Email Button -->
     <div id="sendEmailButtonContainer">
@@ -33,10 +29,8 @@
 
     <!-- Translation Section -->
     <div class="translate-container">
-        <div class="textarea-row">
-            <textarea id="inputText" placeholder="Enter text to translate" rows="5"></textarea>
-            <textarea id="translatedText" placeholder="Translated text will appear here" rows="5"></textarea>
-        </div>
+        <textarea id="inputText" placeholder="Enter text to translate" rows="5"></textarea>
+        <textarea id="translatedText" placeholder="Translated text will appear here" rows="5" readonly></textarea>
         <button id="translateButton">Translate to Spanish</button>
     </div>
 
@@ -52,4 +46,5 @@
     <script src="translate.js"></script>
     <script src="darkmode.js"></script>
 </body>
+
 </html>
