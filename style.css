@@ -13,7 +13,15 @@ h2, h4, p {
     color: #0056b3;
 }
 
-/* Dark Mode Toggle */
+#subcontractorCompanyContainer {
+    width: 100%; /* Adjust the width as needed */
+    max-height: 100px; /* Set the maximum height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    border: 1px solid #ccc; /* Optional: Add a border */
+    padding: 10px; /* Optional: Add padding */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow */
+}
+
 /* Toggle Switch Styles */
 .switch {
     position: relative;

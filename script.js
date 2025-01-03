@@ -1075,62 +1075,115 @@ document.addEventListener('DOMContentLoaded', async () => {
   
 });
 
+let offset = null; // Offset for Airtable pagination
+const PAGE_SIZE = 20; // Adjust as needed
+
+// Function to fetch paginated bid names from Airtable
+async function fetchLazyBidSuggestions(query = "", isInitialLoad = false) {
+    try {
+        let url = `https://api.airtable.com/v0/${bidBaseName}/${bidTableName}?pageSize=${PAGE_SIZE}`;
+        if (offset) url += `&offset=${offset}`;
+        if (query) url += `&filterByFormula=SEARCH("${query}", {Bid Name})`;
+
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`,
+            },
+        });
+
+        if (!response.ok) {
+            console.error("Error fetching bid suggestions:", response.statusText);
+            return [];
+        }
+
+        const data = await response.json();
+        if (isInitialLoad) bidNameSuggestions = []; // Clear suggestions on initial load
+        bidNameSuggestions.push(...data.records.map(record => record.fields["Bid Name"]).filter(Boolean));
+
+        offset = data.offset || null; // Update offset for next fetch
+        console.log("Fetched suggestions:", bidNameSuggestions);
+
+        return data.records;
+    } catch (error) {
+        console.error("Error during lazy loading of bid suggestions:", error);
+        return [];
+    }
+}
+
+// Debounce utility to limit API calls
+function debounce(func, delay) {
+    let timer;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => func(...args), delay);
+    };
+}
+
 function initializeBidAutocomplete() {
-    const bidContainer = document.getElementById('bidInputContainer');
+    const bidContainer = document.getElementById("bidInputContainer");
 
     if (bidContainer) {
-        // Create autocomplete wrapper
         const autocompleteWrapper = document.createElement("div");
         autocompleteWrapper.classList.add("autocomplete-wrapper");
 
-        // Create input field
         const bidInput = document.createElement("input");
         bidInput.type = "text";
         bidInput.placeholder = "Enter Bid Name";
         bidInput.classList.add("autocomplete-input");
         autocompleteWrapper.appendChild(bidInput);
 
-        // Create dropdown container
         const dropdown = document.createElement("div");
         dropdown.classList.add("autocomplete-dropdown");
         autocompleteWrapper.appendChild(dropdown);
 
-        // Add wrapper to container
         bidContainer.appendChild(autocompleteWrapper);
 
-        // Populate dropdown dynamically
-        bidInput.addEventListener("input", function () {
-            const query = bidInput.value.toLowerCase();
-            dropdown.innerHTML = ""; // Clear previous suggestions
+        // Handle input with debounce
+        bidInput.addEventListener(
+            "input",
+            debounce(async function () {
+                const query = bidInput.value.toLowerCase();
+                dropdown.innerHTML = ""; // Clear existing dropdown
 
-            // Filter suggestions
-            const filteredSuggestions = bidNameSuggestions.filter(suggestion =>
-                suggestion.toLowerCase().includes(query)
-            );
+                await fetchLazyBidSuggestions(query, true);
 
-            // Add filtered suggestions to dropdown
-            filteredSuggestions.forEach(suggestion => {
-                const option = document.createElement("div");
-                option.classList.add("autocomplete-option");
-                option.textContent = suggestion;
+                // Populate dropdown
+                bidNameSuggestions.forEach(suggestion => {
+                    const option = document.createElement("div");
+                    option.classList.add("autocomplete-option");
+                    option.textContent = suggestion;
 
-                option.addEventListener("click", () => {
-                    bidInput.value = suggestion; // Set input value to selected suggestion
-                    dropdown.innerHTML = ""; // Clear dropdown
-                    fetchDetailsByBidName(suggestion); // Fetch details for selected suggestion
+                    option.addEventListener("click", () => {
+                        bidInput.value = suggestion; // Set input value
+                        dropdown.innerHTML = ""; // Clear dropdown
+                        fetchDetailsByBidName(suggestion); // Fetch details for the bid
+                    });
+
+                    dropdown.appendChild(option);
                 });
 
-                dropdown.appendChild(option);
-            });
+                dropdown.style.display = bidNameSuggestions.length > 0 ? "block" : "none";
+            }, 300)
+        );
+ // Lazy load on scroll within the dropdown
+ dropdown.addEventListener("scroll", async function () {
+    if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight && offset) {
+        console.log("Fetching more suggestions...");
+        await fetchLazyBidSuggestions(bidInput.value);
 
-            // Show or hide the dropdown based on the filtered suggestions
-            dropdown.style.display = filteredSuggestions.length > 0 ? "block" : "none";
+        bidNameSuggestions.forEach(suggestion => {
+            const option = document.createElement("div");
+            option.classList.add("autocomplete-option");
+            option.textContent = suggestion;
+
+            dropdown.appendChild(option);
         });
-    } else {
-        console.error("Bid container not found.");
     }
+});
+} else {
+console.error("Bid container not found.");
 }
-
+}
 
 // Function to wait for the cc-email-container to exist in the DOM
 async function waitForElement(selector, timeout = 5000) {
@@ -1175,3 +1228,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchAndUpdateAutocomplete();
 });
 
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", async () => {
+    await fetchLazyBidSuggestions("", true); // Initial load with no query
+    initializeBidAutocomplete();
+});
