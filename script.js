@@ -793,7 +793,7 @@ async function sendEmailData() {
             <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
             <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
             <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
-            <p>If you're interested in working with us on this exciting opportunity, please reach out to <strong><span class="gmEmailContainer"></span></strong>.</p>
+            <p>If you're interested in working with us on this exciting opportunity, please reach email <strong><span class="gmEmailContainer"></span></strong>.</p>
     
             <p>Kind regards,<br>Vanir Installed Sales Team</p>
         `;
@@ -811,6 +811,20 @@ async function sendEmailData() {
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const gmEmailElement = document.querySelector('.gmEmailContainer');
+    const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
+    console.log('GM Email Value:', gmEmail);
+});
+
+
+async function validateAndExportBidDetails(bidName) {
+    const bidDetails = await fetchDetailsByBidName(bidName);
+    console.log('Validated bid details for export:', bidDetails);
+    exportData(bidDetails);
+}
+
 
 const textarea = document.getElementById('additionalInfoInput');
 const additionalDetails = textarea ? textarea.value.trim() : null;
@@ -839,6 +853,12 @@ async function generateMailtoLinks() {
         const epace = document.querySelector('.epace')?.value.trim() || 'Unknown Pace';
         const sprice = document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified';
         const poCustomer = document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified';
+        const gmEmailElement = document.querySelector('.gmEmailContainer');
+        const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
+        console.log('GM Email Value:', gmEmail);
+        
+        console.log('Element:', document.querySelector('.gmEmailContainer'));
+
 
         // Extract CC emails from the cc-email-container
         const ccEmails = ccEmailContainer.textContent
@@ -886,7 +906,7 @@ Project Details:
 - Number of Lots: ${numberOfLots}
 - Anticipated Start Date: ${anticipatedStartDate}
 
-If you're interested in working with us on this exciting opportunity, please reach out to [Insert Contact Information].
+If you're interested in working with us on this exciting opportunity, please email ${gmEmail}.
 
 Best regards,  
 Vanir Installed Sales Team
@@ -1176,7 +1196,6 @@ function initializeBidAutocomplete() {
     }
 });
 } else {
-console.error("Bid container not found.");
 }
 }
 
