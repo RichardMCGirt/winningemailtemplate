@@ -40,15 +40,31 @@ function showLoadingAnimation() {
 function updateLoadingProgress(percentage) {
     const loadingPercentage = document.getElementById("loadingPercentage");
     const loadingProgress = document.getElementById("loadingProgress");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+
+    // Ensure percentage is within bounds (0 - 100)
+    const safePercentage = Math.min(100, Math.max(0, percentage));
 
     if (loadingPercentage) {
-        loadingPercentage.textContent = `${percentage}%`;
+        loadingPercentage.textContent = `${safePercentage}%`;
     }
 
     if (loadingProgress) {
-        loadingProgress.style.width = `${percentage}%`;
+        loadingProgress.style.width = `${safePercentage}%`;
+        loadingProgress.style.transition = "width 0.3s ease-in-out";
+    }
+
+    // Remove loading overlay when progress reaches 100%
+    if (safePercentage === 100 && loadingOverlay) {
+        setTimeout(() => {
+            loadingOverlay.style.opacity = "0";
+            setTimeout(() => {
+                loadingOverlay.remove();
+            }, 300); // Allow fade-out effect
+        }, 500); // Delay to ensure progress bar reaches 100%
     }
 }
+
 
 // Hide Loading Animation
 function hideLoadingAnimation() {
@@ -405,23 +421,30 @@ async function fetchDetailsByBidName(bidName) {
   
 
 
-function updateSubcontractorAutocomplete() {
+  function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
 
     // Collect all emails into an array
     const emailArray = subcontractorSuggestions.map(sub => sub.email);
 
-    // Join the emails with commas for a formatted "email to" field style
+    // Join the emails with commas
     const formattedEmails = emailArray.join(', ');
 
-    // Create a single text node with formatted emails
-    const emailTextNode = document.createElement("div");
-    emailTextNode.textContent = formattedEmails;
+    if (formattedEmails.trim() === '') {
+        subcontractorContainer.style.border = "none"; // Hide border if empty
+    } else {
+        subcontractorContainer.style.border = "1px solid #ccc"; // Show border if content exists
 
-    // Append the formatted emails to the container
-    subcontractorContainer.appendChild(emailTextNode);
+        // Create a single text node with formatted emails
+        const emailTextNode = document.createElement("div");
+        emailTextNode.textContent = formattedEmails;
+
+        // Append the formatted emails to the container
+        subcontractorContainer.appendChild(emailTextNode);
+    }
 }
+
 
 
 // Unified function to create an autocomplete input

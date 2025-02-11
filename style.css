@@ -17,7 +17,6 @@ h2, h4, p {
     width: 95%; /* Adjust the width as needed */
     max-height: 100px; /* Set the maximum height */
     overflow-y: auto; /* Enable vertical scrolling */
-    border: 1px solid #ccc; /* Optional: Add a border */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow */
     
     /* Center the container */
@@ -160,6 +159,44 @@ button:hover {
     text-align: center; /* Center text inside */
     gap: 15px; /* Add spacing between elements */
 }
+
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-content {
+    background: transparent;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.loading-bar {
+    width: 100%;
+    height: 10px;
+    background: #ddd;
+    margin-top: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.loading-progress {
+    height: 100%;
+    width: 0;
+    background: #007bff;
+    transition: width 0.3s ease;
+}
+
 
 .textarea-row {
     display: flex;
