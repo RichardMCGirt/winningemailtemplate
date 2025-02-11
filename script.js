@@ -109,7 +109,6 @@ async function fetchAllVendorData() {
     }
 }
 
-
 async function ensureDynamicContainerExists() {
     try {
         await waitForElement("#dynamicContainer");
@@ -122,8 +121,6 @@ async function ensureDynamicContainerExists() {
 document.addEventListener("DOMContentLoaded", () => {
     ensureDynamicContainerExists();
 });
-
-
 
 // Simulate Live Progress Updates (e.g., for data loading)
 function simulateLiveProgressUpdates() {
@@ -163,9 +160,6 @@ async function fetchBidSuggestions() {
         console.error("Error fetching bid suggestions:", error);
     }
 }
-
-
-
 
 // Fetch data from Airtable with detailed logging and loading progress
 async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '') {
@@ -419,8 +413,6 @@ async function fetchDetailsByBidName(bidName) {
     }
   }
   
-
-
   function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
@@ -444,8 +436,6 @@ async function fetchDetailsByBidName(bidName) {
         subcontractorContainer.appendChild(emailTextNode);
     }
 }
-
-
 
 // Unified function to create an autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback) {
@@ -522,7 +512,6 @@ function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCal
     wrapper.appendChild(dropdown);
     return wrapper;
 }
-
 
 // Select suggestion to update email field
 function selectSuggestion(suggestion, input, dropdown) {
@@ -630,10 +619,6 @@ function updateTemplateText(
     }
   }
   
-  
-
-
-
 // Monitor subdivisionContainer for changes and trigger city lookup
 function monitorSubdivisionChanges() {
     const subdivisionElement = document.querySelector('.subdivisionContainer');
@@ -655,7 +640,6 @@ document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     monitorSubdivisionChanges();
 });
-
 
 document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver((mutationsList) => {
@@ -680,7 +664,6 @@ document.addEventListener("DOMContentLoaded", () => {
     observer.observe(document.body, { childList: true, subtree: true });
 });
 
-
 async function waitForElement(selector, timeout = 5000) {
     return new Promise((resolve, reject) => {
         let elapsed = 0;
@@ -699,7 +682,6 @@ async function waitForElement(selector, timeout = 5000) {
     });
 }
 
-
 async function exportTextareaToEmail() {
     const textarea = document.getElementById('additionalInfoInput');
     const additionalDetails = textarea.value.trim();
@@ -717,7 +699,6 @@ async function exportTextareaToEmail() {
         return;
     }
 }
-
 
 async function sendEmailData() {
     const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; 
@@ -771,8 +752,6 @@ async function sendEmailData() {
       }
     }
   
-
-
     function displayEmailContent() {
         const emailContent = `
             <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
@@ -823,9 +802,13 @@ async function sendEmailData() {
              <div class="signature-container">
         <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
         <div class="signature-content">
-            <p><input type="text" id="userName" placeholder="Your Name"> | Vanir Installed Sales, LLC</p>
-            <p>Phone: <input type="text" id="userPhone" placeholder=""></p>
-            <p>Email: <input type="text" id="userEmail" placeholder="@vanirinstalledsales.com"></p>
+        <p>
+    <input type="text" id="inputUserName" placeholder="Your Name"> | Vanir Installed Sales, LLC
+</p>
+<p>
+    Phone: <input type="text" id="inputUserPhone" placeholder="Your Phone">
+</p>
+
             <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
             <p><strong>Better Look. Better Service. Best Choice.</strong></p>
          
@@ -889,12 +872,18 @@ async function generateMailtoLinks() {
         const epace = document.querySelector('.epace')?.value.trim() || 'Unknown Pace';
         const sprice = document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified';
         const poCustomer = document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified';
+
+        // Fetch GM Email
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
-        console.log('GM Email Value:', gmEmail);
-        
-        console.log('Element:', document.querySelector('.gmEmailContainer'));
 
+        // Fetch user signature inputs
+        const userName = document.getElementById('userName')?.value.trim() || 'Your Name';
+        const userPhone = document.getElementById('userPhone')?.value.trim() || 'Your Phone';
+        const userEmail = document.getElementById('userEmail')?.value.trim() || 'yourname@vanirinstalledsales.com';
+
+        console.log('GM Email Value:', gmEmail);
+        console.log('User Info:', { userName, userPhone, userEmail });
 
         // Extract CC emails from the cc-email-container
         const ccEmails = ccEmailContainer.textContent
@@ -924,7 +913,9 @@ Project Details:
 Let's continue this momentum and deliver exceptional results.
 
 Best regards,  
-Vanir Installed Sales Team
+${userName}  
+Vanir Installed Sales, LLC  
+Phone: ${userPhone}  
         `.trim();
 
         // Subcontractor Email
@@ -945,7 +936,9 @@ Project Details:
 If you're interested in working with us on this exciting opportunity, please email ${gmEmail}.
 
 Best regards,  
-Vanir Installed Sales Team
+${userName}  
+Vanir Installed Sales, LLC  
+Phone: ${userPhone}  
         `.trim();
 
         // Combine emails for the "To" and "CC" sections
@@ -973,6 +966,7 @@ Vanir Installed Sales Team
         console.error("Error generating mailto links:", error.message);
     }
 }
+
 
 let ccObserver = null;
 
@@ -1026,17 +1020,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const userNameInput = document.getElementById('userName');
-    const userEmailInput = document.getElementById('userEmail');
 
     userNameInput.addEventListener('input', updateSignature);
-    userEmailInput.addEventListener('input', updateSignature);
 
     function updateSignature() {
         const name = userNameInput.value || "Your Name";
-        const email = userEmailInput.value || "yourname@vanirinstalledsales.com";
 
         document.querySelector('.signature-content p:first-child').innerHTML = `${name} | Vanir Installed Sales, LLC`;
-        document.querySelector('.signature-content p:nth-child(3)').innerHTML = `Email: ${email}`;
     }
 });
 
