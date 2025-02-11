@@ -819,6 +819,19 @@ async function sendEmailData() {
             <p>If you're interested in working with us on this exciting opportunity, please reach email <strong><span class="gmEmailContainer"></span></strong>.</p>
     
             <p>Kind regards,<br>Vanir Installed Sales Team</p>
+
+             <div class="signature-container">
+        <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
+        <div class="signature-content">
+            <p><input type="text" id="userName" placeholder="Your Name"> | Vanir Installed Sales, LLC</p>
+            <p>Phone: <input type="text" id="userPhone" placeholder=""></p>
+            <p>Email: <input type="text" id="userEmail" placeholder="@vanirinstalledsales.com"></p>
+            <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
+            <p><strong>Better Look. Better Service. Best Choice.</strong></p>
+         
+        </div>
+    </div>
+
         `;
     
         const emailContainer = document.getElementById('emailTemplate');
@@ -1010,6 +1023,23 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Button with ID 'sendManagementEmailButton' not found.");
     }
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const userNameInput = document.getElementById('userName');
+    const userEmailInput = document.getElementById('userEmail');
+
+    userNameInput.addEventListener('input', updateSignature);
+    userEmailInput.addEventListener('input', updateSignature);
+
+    function updateSignature() {
+        const name = userNameInput.value || "Your Name";
+        const email = userEmailInput.value || "yourname@vanirinstalledsales.com";
+
+        document.querySelector('.signature-content p:first-child').innerHTML = `${name} | Vanir Installed Sales, LLC`;
+        document.querySelector('.signature-content p:nth-child(3)').innerHTML = `Email: ${email}`;
+    }
+});
+
 
 // Function to show the redirect animation
 function showRedirectAnimation() {
