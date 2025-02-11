@@ -26,7 +26,7 @@ function showLoadingAnimation() {
     loadingOverlay.id = "loadingOverlay";
     loadingOverlay.innerHTML = `
         <div class="loading-content">
-            <p>Loading... </p>
+            <p>Fetching Winning Bids </p>
             <p id="loadingPercentage">0%</p>
             <div class="loading-bar">
                 <div class="loading-progress" id="loadingProgress"></div>
@@ -761,7 +761,7 @@ async function sendEmailData() {
     
             <h4>Major Wins for Team <strong><span class="branchContainer"></span></strong></h4>
             <p>We are excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
-            <input type="text" class="city" placeholder="Enter city"></p>
+            <input type="text" class="city" placeholder="    Enter city"></p>
     
             <h2>Here's the breakdown:</h2>
             <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
@@ -803,10 +803,10 @@ async function sendEmailData() {
         <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
         <div class="signature-content">
         <p>
-    <input type="text" id="inputUserName" placeholder="Your Name"> | Vanir Installed Sales, LLC
+    <input type="text" id="inputUserName" placeholder=""> | Vanir Installed Sales, LLC
 </p>
 <p>
-    Phone: <input type="text" id="inputUserPhone" placeholder="Your Phone">
+    Phone: <input type="text" id="inputUserPhone" placeholder="">
 </p>
 
             <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
@@ -1100,7 +1100,7 @@ async function fetchAndUpdateAutocomplete() {
 
     // Correctly pass "bid" as the type
     const bidAutocompleteInput = createAutocompleteInput(
-        "Enter Bid Name",
+        "    Enter Bid Name",
         bidNameSuggestions,
         "bid", // Pass a string as type
         fetchDetailsByBidName
