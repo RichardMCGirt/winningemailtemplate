@@ -882,7 +882,8 @@ async function generateMailtoLinks() {
         const userPhoneInput = await waitForElement('#inputUserPhone');
         const userName = userNameInput.value.trim() || 'Your Name';
         const userPhone = userPhoneInput.value.trim() || 'Your Phone';
-        
+        const logoURL = "https://raw.githubusercontent.com/RichardMCGirt/winningemailtemplate/main/VANIR-transparent.png";
+
         
 
         console.log('GM Email Value:', gmEmail);
@@ -918,7 +919,10 @@ Let's continue this momentum and deliver exceptional results.
 Best regards,  
 ${userName}  
 Vanir Installed Sales, LLC  
-Phone: ${userPhone}  
+Phone: ${userPhone} 
+
+<a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a><br>
+<strong>Better Look. Better Service. Best Choice.</strong> 
         `.trim();
 
         // Subcontractor Email
@@ -942,6 +946,9 @@ Best regards,
 ${userName}  
 Vanir Installed Sales, LLC  
 Phone: ${userPhone}  
+
+        <a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a><br>
+<strong>Better Look. Better Service. Best Choice.</strong> 
         `.trim();
 
         // Combine emails for the "To" and "CC" sections
