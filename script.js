@@ -757,15 +757,15 @@ async function sendEmailData() {
             <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
             <p>CC: <span class="cc-email-container">Vendor</span></p>
             <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-            <p>Dear Team,</p>
+            <p>Go <strong><span class="branchContainer"></span></strong>,</p>
     
-            <h4>Major Wins for Team <strong><span class="branchContainer"></span></strong></h4>
-            <p>We are excited to announce that we have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
+            <h4>Major Win for Team <strong><span class="branchContainer"></span></strong></h4>
+            <p>We have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
             <input type="text" class="city" placeholder="    Enter city"></p>
     
             <h2>Here's the breakdown:</h2>
             <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
-            <p><strong>What kind of product do they build:</strong> <strong><span class="briqProjectTypeContainer"></span></strong></p>
+            <p> <strong><span class="briqProjectTypeContainer"></span></strong></p>
 <p><strong>Expected Pace:</strong> <strong><span class="AnticipatedDurationContainer"></span> days</strong></p>
             <p><strong>Expected Start Date:</strong> <strong><span class="anticipatedStartDateContainer"></span></strong></p>
             <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
@@ -787,7 +787,7 @@ async function sendEmailData() {
             </p>
             
             <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>. 
-            Bid value is <strong><span class="valueContainer"></span></strong>.</p>
+            </p>
     
             <hr>
             <div id="subcontractorCompanyContainer"></div>
@@ -878,12 +878,15 @@ async function generateMailtoLinks() {
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
 
         // Fetch user signature inputs
-        const userName = document.getElementById('userName')?.value.trim() || 'Your Name';
-        const userPhone = document.getElementById('userPhone')?.value.trim() || 'Your Phone';
-        const userEmail = document.getElementById('userEmail')?.value.trim() || 'yourname@vanirinstalledsales.com';
+        const userNameInput = await waitForElement('#inputUserName');
+        const userPhoneInput = await waitForElement('#inputUserPhone');
+        const userName = userNameInput.value.trim() || 'Your Name';
+        const userPhone = userPhoneInput.value.trim() || 'Your Phone';
+        
+        
 
         console.log('GM Email Value:', gmEmail);
-        console.log('User Info:', { userName, userPhone, userEmail });
+        console.log('User Info:', { userName, userPhone });
 
         // Extract CC emails from the cc-email-container
         const ccEmails = ccEmailContainer.textContent
@@ -1019,16 +1022,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const userNameInput = document.getElementById('userName');
+    const userNameInput = document.getElementById('inputUserName');
 
-    userNameInput.addEventListener('input', updateSignature);
+    if (userNameInput) {
+        userNameInput.addEventListener('input', updateSignature);
+    }
 
     function updateSignature() {
-        const name = userNameInput.value || "Your Name";
-
-        document.querySelector('.signature-content p:first-child').innerHTML = `${name} | Vanir Installed Sales, LLC`;
+        const name = userNameInput?.value || "Your Name";
+        const firstLine = document.querySelector('.signature-content p:first-child');
+        if (firstLine) {
+            firstLine.innerHTML = `${name} | Vanir Installed Sales, LLC`;
+        }
     }
 });
+
 
 
 // Function to show the redirect animation
@@ -1267,7 +1275,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Ensure email template is displayed
         displayEmailContent();
-
+        fetchAndUpdateAutocomplete();
+        await fetchLazyBidSuggestions("", true); // Initial load with no query
+        initializeBidAutocomplete();
         // Wait for bidInputContainer to be dynamically created
         await waitForElement('#bidInputContainer');
 
@@ -1277,14 +1287,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Load the email content and start fetching bid name suggestions on page load
-document.addEventListener('DOMContentLoaded', () => {
-    displayEmailContent();
-    fetchAndUpdateAutocomplete();
-});
 
-// Initialize on page load
-document.addEventListener("DOMContentLoaded", async () => {
-    await fetchLazyBidSuggestions("", true); // Initial load with no query
-    initializeBidAutocomplete();
-});
+
