@@ -65,6 +65,19 @@ function updateLoadingProgress(percentage) {
     }
 }
 
+function deriveNameFromEmail(email) {
+    if (!email || typeof email !== "string") return "Unknown Name";
+
+    const [namePart] = email.split("@");
+    const [first, last] = namePart.split(".");
+    if (!first || !last) return "Unknown Name";
+
+    const capitalize = (word) => word.charAt(0).toUpperCase() + word.slice(1);
+
+    return `${capitalize(first)} ${capitalize(last)}`;
+}
+
+
 
 // Hide Loading Animation
 function hideLoadingAnimation() {
@@ -361,8 +374,13 @@ async function fetchDetailsByBidName(bidName) {
       const anticipatedStartDate = fields['Anticipated Start Date'] || '';
       const vendor = fields['vendor'];
       const AnticipatedDuration = fields ['Anticipated Duration'];
-
-  
+      const gm = fields['GM Named']
+          ? Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named']
+          : deriveNameFromEmail(gmEmail);
+      
+      console.log("All field keys:", Object.keys(fields)); // shows what Airtable returned
+      console.log("Raw GM name value:", fields['GM name']); // shows what you're trying to access
+      
       console.log('Fetched fields from Airtable:', fields);
   
       updateTemplateText(
@@ -376,13 +394,13 @@ async function fetchDetailsByBidName(bidName) {
         numberOfLots,
         anticipatedStartDate,
         vendor,
-        AnticipatedDuration
-
+        AnticipatedDuration,
+        gm
       );
   
       await fetchSubcontractorSuggestions(branch);
       updateSubcontractorAutocomplete();
-  
+
       return {
         builder,
         bvalue,
@@ -394,6 +412,7 @@ async function fetchDetailsByBidName(bidName) {
         anticipatedStartDate,
         vendor,
         AnticipatedDuration,
+        gm,
       };
     } else {
       console.warn('No records found for bid:', bidName);
@@ -408,9 +427,11 @@ async function fetchDetailsByBidName(bidName) {
         anticipatedStartDate: 'Unknown',
         vendor: 'Unknown',
         AnticipatedDuration: 'Unknown days',
+        gm: 'Unknown GM',
 
       };
     }
+    
   }
   
   function updateSubcontractorAutocomplete() {
@@ -532,6 +553,7 @@ function updateTemplateText(
     anticipatedStartDate,
     vendor,
     AnticipatedDuration,
+    gm
   ) {
     console.log('Updating Template Text with the following parameters:', {
       subdivision,
@@ -545,12 +567,19 @@ function updateTemplateText(
       anticipatedStartDate,
       vendor,
       AnticipatedDuration,
+      gm
     });
   
     if (subdivision) {
       console.log('Updating subdivision to:', subdivision);
       document.querySelectorAll('.subdivisionContainer').forEach(el => (el.textContent = subdivision));
     }
+
+    if (gm) {
+        document.querySelectorAll('.gmNameContainer').forEach(el => (el.textContent = gm));
+      }
+      
+      
   
     if (builder) {
       console.log('Updating builder to:', builder);
@@ -786,7 +815,7 @@ async function sendEmailData() {
                 </label>
             </p>
             
-            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>. 
+            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation. 
             </p>
     
             <hr>
@@ -794,8 +823,11 @@ async function sendEmailData() {
             <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
             <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
             <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong>.</p>
-            <p>If you're interested in working with us on this exciting opportunity, please reach email <strong><span class="gmEmailContainer"></span></strong>.</p>
+            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
+<p>
+  If you're interested in working with us on this exciting opportunity, please reach out to the <strong><span class="branchContainer"></span></strong> general mananager
+<strong><span class="gmNameContainer"></span> at <span class="gmEmailContainer"></span></strong>
+</p>
     
             <p>Kind regards,<br>Vanir Installed Sales Team</p>
 
@@ -833,6 +865,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const gmEmailElement = document.querySelector('.gmEmailContainer');
+    const gm = document.querySelector('.gmNameContainer')?.textContent || 'GM named';
+
     const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
     console.log('GM Email Value:', gmEmail);
 });
@@ -876,6 +910,7 @@ async function generateMailtoLinks() {
         // Fetch GM Email
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
+        const gm = Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named'];
 
         // Fetch user signature inputs
         const userNameInput = await waitForElement('#inputUserName');
@@ -897,9 +932,9 @@ async function generateMailtoLinks() {
         const ccEmailsString = ccEmails.join(',');
 
         // Management Email
-        const managementSubject = `New Project Awarded: ${branch} - ${subdivision} - ${builder}`;
+        const managementSubject = `Another WIN for Vanir - ${branch} - ${subdivision} - ${builder}`;
         const managementBody = `
-Dear Team,
+Go ${branch},
 
 We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This project is located in ${city}.
 
@@ -940,7 +975,7 @@ Project Details:
 - Number of Lots: ${numberOfLots}
 - Anticipated Start Date: ${anticipatedStartDate}
 
-If you're interested in working with us on this exciting opportunity, please email ${gmEmail}.
+If you're interested in working with us on this exciting opportunity, please email ${gmName} at ${gmEmail}.
 
 Best regards,  
 ${userName}  
