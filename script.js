@@ -934,57 +934,61 @@ async function generateMailtoLinks() {
         // Management Email
         const managementSubject = `Another WIN for Vanir - ${branch} - ${subdivision} - ${builder}`;
         const managementBody = `
-Go ${branch},
-
-We are thrilled to share that our team has secured a new project in ${subdivision} with ${builder}. This project is located in ${city}.
-
-Project Details:
-- Customer Name: ${cname}
-- Product Built: ${whatbuild}
-- Project Type: ${projectType}
-- Material Type: ${materialType}
-- Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
-- Number of Lots: ${numberOfLots}
-- Special Pricing: ${sprice}
-- PO Customer: ${poCustomer}
-- Anticipated Start Date: ${anticipatedStartDate}
-
-Let's continue this momentum and deliver exceptional results.
-
-Best regards,  
-${userName}  
-Vanir Installed Sales, LLC  
-Phone: ${userPhone} 
-
-<a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a><br>
-<strong>Better Look. Better Service. Best Choice.</strong> 
+        Go ${branch},
+        
+        Major Win for Team ${branch}!
+        
+        We have been awarded ${subdivision} with ${builder} in ${city}.
+        
+        Here's the breakdown:
+        - Customer Name: ${cname}
+        - ${projectType}
+        - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
+        - Expected Start Date: ${anticipatedStartDate}
+        - Number of Lots: ${numberOfLots}
+        - Special Pricing: ${sprice}
+        - PO Customer: ${poCustomer}
+        - Material Type: ${materialType}
+        
+        This will be a ${projectType} project, requiring ${materialType} installation.
+        
+        If you're interested in working with us on this exciting opportunity, please reach out to the ${branch} general manager ${gmName} at ${gmEmail}.
+        
+        Kind regards,  
+        ${userName}  
+        Vanir Installed Sales, LLC  
+        Phone: ${userPhone}  
+        https://www.vanirinstalledsales.com  
+        Better Look. Better Service. Best Choice.
         `.trim();
-
-        // Subcontractor Email
+        
         const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
-Dear Subcontractor,
-
-We are pleased to announce a new project in ${subdivision}, partnering with ${builder}. We are seeking your expertise to deliver exceptional results.
-
-Project Details:
-- Product Built: ${whatbuild}
-- Project Type: ${projectType}
-- Material Type: ${materialType}
-- Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
-- Number of Lots: ${numberOfLots}
-- Anticipated Start Date: ${anticipatedStartDate}
-
-If you're interested in working with us on this exciting opportunity, please email ${gmName} at ${gmEmail}.
-
-Best regards,  
-${userName}  
-Vanir Installed Sales, LLC  
-Phone: ${userPhone}  
-
-        <a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a><br>
-<strong>Better Look. Better Service. Best Choice.</strong> 
+        Dear Subcontractor,
+        
+        We are thrilled to inform you that we have been awarded a new community, ${subdivision}, in collaboration with ${builder} in ${branch}. We look forward to working together and maintaining high standards for this project.
+        
+        This will be a ${projectType} project, requiring ${materialType} installation.
+        
+        Project Details:
+        - Product Built: ${whatbuild}
+        - Project Type: ${projectType}
+        - Material Type: ${materialType}
+        - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
+        - Number of Lots: ${numberOfLots}
+        - Anticipated Start Date: ${anticipatedStartDate}
+        
+        If you're interested in working with us on this exciting opportunity, please reach out to the ${branch} general manager ${gmName} at ${gmEmail}.
+        
+        Best regards,  
+        ${userName}  
+        Vanir Installed Sales, LLC  
+        Phone: ${userPhone}  
+        https://www.vanirinstalledsales.com  
+        Better Look. Better Service. Best Choice.
         `.trim();
+        
+        
 
         // Combine emails for the "To" and "CC" sections
         const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
