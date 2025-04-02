@@ -122,75 +122,6 @@ async function fetchAllVendorData() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const emailContainer = document.getElementById('emailTemplate');
-    if (!emailContainer) {
-        console.error("emailTemplate not found in the DOM.");
-        return;
-    }
-
-    // Create container for vendor input
-    const vendorContainer = document.createElement('div');
-    vendorContainer.id = 'vendorInputContainer';
-    vendorContainer.style.marginTop = '15px';
-
-    // Label for clarity
-    const label = document.createElement('label');
-    label.textContent = "Select Vendor:";
-    label.style.display = 'block';
-    label.style.fontWeight = 'bold';
-    label.style.marginBottom = '5px';
-
-    vendorContainer.appendChild(label);
-    emailContainer.appendChild(vendorContainer);
-
-    await fetchAllVendorData(); // Make sure data is available
-    initializeVendorAutocomplete();
-});
-
-function initializeVendorAutocomplete() {
-    const vendorContainer = document.getElementById("vendorInputContainer");
-
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("autocomplete-wrapper");
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = "Start typing vendor name...";
-    input.classList.add("autocomplete-input");
-    wrapper.appendChild(input);
-
-    const dropdown = document.createElement("div");
-    dropdown.classList.add("autocomplete-dropdown");
-    wrapper.appendChild(dropdown);
-
-    vendorContainer.appendChild(wrapper);
-
-    input.addEventListener("input", function () {
-        const value = input.value.toLowerCase();
-        dropdown.innerHTML = "";
-
-        const filtered = vendorData.filter(v => v.name.toLowerCase().includes(value));
-
-        filtered.forEach(vendor => {
-            const option = document.createElement("div");
-            option.classList.add("autocomplete-option");
-            option.textContent = vendor.name;
-
-            option.addEventListener("click", () => {
-                input.value = vendor.name;
-                dropdown.innerHTML = "";
-                appendVendorToCC(vendor); // <-- update CC emails
-            });
-
-            dropdown.appendChild(option);
-        });
-
-        dropdown.style.display = filtered.length > 0 ? "block" : "none";
-    });
-}
-
-
 
 async function ensureDynamicContainerExists() {
     try {
@@ -426,83 +357,97 @@ async function fetchPlaceDetails(query) {
 async function fetchDetailsByBidName(bidName) {
     const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
     const records = await fetchAirtableData(
-      bidBaseName,
-      bidTableName,
-      'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, AnticipatedDuration',
-      filterFormula
+        bidBaseName,
+        bidTableName,
+        'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, AnticipatedDuration',
+        filterFormula
     );
-  
+
     if (records.length > 0) {
-      const fields = records[0].fields;
-      const bvalue = fields['Bid Value'] || 'Unknown Value';
-      const builder = fields['Builder'] || 'Unknown Builder';
-      const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : 'Branch Staff@Vanir.com';
-      const branch = fields['Branch'] || 'Unknown Branch';
-      const projectType = fields['Project Type'] || '';
-      const materialType = fields['Material Type'] || '';
-      const numberOfLots = fields['Number of Lots'] || '';
-      const anticipatedStartDate = fields['Anticipated Start Date'] || '';
-      const vendor = fields['vendor'];
-      const AnticipatedDuration = fields ['Anticipated Duration'];
-      const gm = fields['GM Named']
-          ? Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named']
-          : deriveNameFromEmail(gmEmail);
-      
-      console.log("All field keys:", Object.keys(fields)); // shows what Airtable returned
-      console.log("Raw GM name value:", fields['GM name']); // shows what you're trying to access
-      
-      console.log('Fetched fields from Airtable:', fields);
-  
-      updateTemplateText(
-        bidName,
-        builder,
-        bvalue,
-        gmEmail,
-        branch,
-        projectType,
-        materialType,
-        numberOfLots,
-        anticipatedStartDate,
-        vendor,
-        AnticipatedDuration,
-        gm
-      );
-  
-      await fetchSubcontractorSuggestions(branch);
-      updateSubcontractorAutocomplete();
+        const fields = records[0].fields;
+        const bvalue = fields['Bid Value'] || 'Unknown Value';
+        const builder = fields['Builder'] || 'Unknown Builder';
+        const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : 'Branch Staff@Vanir.com';
+        const branch = fields['Branch'] || 'Unknown Branch';
+        const projectType = fields['Project Type'] || '';
+        const materialType = fields['Material Type'] || '';
+        const numberOfLots = fields['Number of Lots'] || '';
+        const anticipatedStartDate = fields['Anticipated Start Date'] || '';
+        const vendor = fields['vendor'];
 
-      return {
-        builder,
-        bvalue,
-        gmEmail,
-        branch,
-        projectType,
-        materialType,
-        numberOfLots,
-        anticipatedStartDate,
-        vendor,
-        AnticipatedDuration,
-        gm,
-      };
+        console.log("🔍 Raw vendor value from Airtable:", vendor);
+
+        if (vendor && typeof vendor === 'string') {
+            const vendorMatch = vendorData.find(v => v.name.toLowerCase().includes(vendor.toLowerCase()));
+            if (vendorMatch) {
+                console.log("✅ Matched vendor name:", vendorMatch.name);
+                setVendorName(vendorMatch.name);
+            } else {
+                console.warn("⚠️ No vendor match found. Using raw vendor string:", vendor);
+                setVendorName(vendor); // Fallback if no match
+            }
+        } else {
+            console.warn("⚠️ Vendor value is missing or not a string.");
+        }
+
+        const AnticipatedDuration = fields['Anticipated Duration'];
+        const gm = fields['GM Named']
+            ? Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named']
+            : deriveNameFromEmail(gmEmail);
+
+        console.log("🧾 All field keys from Airtable:", Object.keys(fields));
+        console.log("👤 Raw GM name field:", fields['GM name']);
+        console.log("📦 Fetched record fields:", fields);
+
+        updateTemplateText(
+            bidName,
+            builder,
+            bvalue,
+            gmEmail,
+            branch,
+            projectType,
+            materialType,
+            numberOfLots,
+            anticipatedStartDate,
+            vendor,
+            AnticipatedDuration,
+            gm
+        );
+
+        await fetchSubcontractorSuggestions(branch);
+        updateSubcontractorAutocomplete();
+
+        return {
+            builder,
+            bvalue,
+            gmEmail,
+            branch,
+            projectType,
+            materialType,
+            numberOfLots,
+            anticipatedStartDate,
+            vendor,
+            AnticipatedDuration,
+            gm,
+        };
     } else {
-      console.warn('No records found for bid:', bidName);
-      return {
-        builder: 'Unknown Builder',
-        bvalue: 'Unknown Value',
-        gmEmail: 'Branch Staff@Vanir.com',
-        branch: 'Unknown Branch',
-        projectType: 'Default Project Type',
-        materialType: 'General Materials',
-        numberOfLots: 'Unknown',
-        anticipatedStartDate: 'Unknown',
-        vendor: 'Unknown',
-        AnticipatedDuration: 'Unknown days',
-        gm: 'Unknown GM',
-
-      };
+        console.warn('⚠️ No records found for bid:', bidName);
+        return {
+            builder: 'Unknown Builder',
+            bvalue: 'Unknown Value',
+            gmEmail: 'Branch Staff@Vanir.com',
+            branch: 'Unknown Branch',
+            projectType: 'Default Project Type',
+            materialType: 'General Materials',
+            numberOfLots: 'Unknown',
+            anticipatedStartDate: 'Unknown',
+            vendor: 'Unknown',
+            AnticipatedDuration: 'Unknown days',
+            gm: 'Unknown GM',
+        };
     }
-    
-  }
+}
+
   
   function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
@@ -853,11 +798,17 @@ async function sendEmailData() {
 
     function setVendorName(name) {
         const vendorSpan = document.querySelector('.vendorNameContainer');
-        const vendorInput = document.getElementById('vendorNameInput');
         
-        if (vendorSpan) vendorSpan.textContent = name;
-        if (vendorInput) vendorInput.value = name;
+        console.log("Setting vendor name to:", name);
+        
+        if (vendorSpan) {
+            vendorSpan.textContent = name;
+            console.log("✅ Vendor name updated in .vendorNameContainer span.");
+        } else {
+            console.warn("⚠️ Could not find .vendorNameContainer element in the DOM.");
+        }
     }
+    
     
   
     function displayEmailContent() {
@@ -910,8 +861,8 @@ async function sendEmailData() {
             <hr>
     
             <!-- ✅ Vendor Email Section -->
-            <p><strong>Subject:</strong> Vanir | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-<p>Hello <strong><input type="text" id="vendorNameInput" class="vendorNameInput" placeholder="Vendor Name"></strong>,</p>
+            <p><strong>Subject:</strong> Vanir 
+<p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
             <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> has secured the bid for the <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
             <p><strong>Project Summary:</strong></p>
             <ul>
@@ -1374,6 +1325,8 @@ function initializeBidAutocomplete() {
                     option.classList.add("autocomplete-option");
                     option.textContent = suggestion;
 
+                    
+
                     option.addEventListener("click", () => {
                         bidInput.value = suggestion; // Set input value
                         dropdown.innerHTML = ""; // Clear dropdown
@@ -1441,6 +1394,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
     }
 });
-
-
-
