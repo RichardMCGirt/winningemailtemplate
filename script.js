@@ -122,6 +122,76 @@ async function fetchAllVendorData() {
     }
 }
 
+document.addEventListener('DOMContentLoaded', async () => {
+    const emailContainer = document.getElementById('emailTemplate');
+    if (!emailContainer) {
+        console.error("emailTemplate not found in the DOM.");
+        return;
+    }
+
+    // Create container for vendor input
+    const vendorContainer = document.createElement('div');
+    vendorContainer.id = 'vendorInputContainer';
+    vendorContainer.style.marginTop = '15px';
+
+    // Label for clarity
+    const label = document.createElement('label');
+    label.textContent = "Select Vendor:";
+    label.style.display = 'block';
+    label.style.fontWeight = 'bold';
+    label.style.marginBottom = '5px';
+
+    vendorContainer.appendChild(label);
+    emailContainer.appendChild(vendorContainer);
+
+    await fetchAllVendorData(); // Make sure data is available
+    initializeVendorAutocomplete();
+});
+
+function initializeVendorAutocomplete() {
+    const vendorContainer = document.getElementById("vendorInputContainer");
+
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("autocomplete-wrapper");
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Start typing vendor name...";
+    input.classList.add("autocomplete-input");
+    wrapper.appendChild(input);
+
+    const dropdown = document.createElement("div");
+    dropdown.classList.add("autocomplete-dropdown");
+    wrapper.appendChild(dropdown);
+
+    vendorContainer.appendChild(wrapper);
+
+    input.addEventListener("input", function () {
+        const value = input.value.toLowerCase();
+        dropdown.innerHTML = "";
+
+        const filtered = vendorData.filter(v => v.name.toLowerCase().includes(value));
+
+        filtered.forEach(vendor => {
+            const option = document.createElement("div");
+            option.classList.add("autocomplete-option");
+            option.textContent = vendor.name;
+
+            option.addEventListener("click", () => {
+                input.value = vendor.name;
+                dropdown.innerHTML = "";
+                appendVendorToCC(vendor); // <-- update CC emails
+            });
+
+            dropdown.appendChild(option);
+        });
+
+        dropdown.style.display = filtered.length > 0 ? "block" : "none";
+    });
+}
+
+
+
 async function ensureDynamicContainerExists() {
     try {
         await waitForElement("#dynamicContainer");
@@ -780,6 +850,15 @@ async function sendEmailData() {
         alert("An error occurred while sending the data.");
       }
     }
+
+    function setVendorName(name) {
+        const vendorSpan = document.querySelector('.vendorNameContainer');
+        const vendorInput = document.getElementById('vendorNameInput');
+        
+        if (vendorSpan) vendorSpan.textContent = name;
+        if (vendorInput) vendorInput.value = name;
+    }
+    
   
     function displayEmailContent() {
         const emailContent = `
@@ -794,8 +873,8 @@ async function sendEmailData() {
     
             <h2>Here's the breakdown:</h2>
             <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
-            <p> <strong><span class="briqProjectTypeContainer"></span></strong></p>
-<p><strong>Expected Pace:</strong> <strong><span class="AnticipatedDurationContainer"></span> days</strong></p>
+            <p><strong><span class="briqProjectTypeContainer"></span></strong></p>
+            <p><strong>Expected Pace:</strong> <strong><span class="AnticipatedDurationContainer"></span> days</strong></p>
             <p><strong>Expected Start Date:</strong> <strong><span class="anticipatedStartDateContainer"></span></strong></p>
             <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
             <p><strong>Do they have special pricing:</strong> 
@@ -814,39 +893,43 @@ async function sendEmailData() {
                     <input type="radio" name="poCustomer" value="No" class="pcustomer" /> No
                 </label>
             </p>
-            
-            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation. 
-            </p>
+    
+            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
     
             <hr>
+    
+            <!-- Subcontractor Email -->
             <div id="subcontractorCompanyContainer"></div>
             <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
             <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
             <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
             <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
-<p>
-  If you're interested in working with us on this exciting opportunity, please reach out to the <strong><span class="branchContainer"></span></strong> general mananager
-<strong><span class="gmNameContainer"></span> at <span class="gmEmailContainer"></span></strong>
-</p>
+            <p>If you're interested in working with us on this exciting opportunity, please reach out to the <strong><span class="branchContainer"></span></strong> general manager 
+            <strong><span class="gmNameContainer"></span></strong> at <strong><span class="gmEmailContainer"></span></strong>.</p>
     
-            <p>Kind regards,<br>Vanir Installed Sales Team</p>
-
-             <div class="signature-container">
-        <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
-        <div class="signature-content">
-        <p>
-    <input type="text" id="inputUserName" placeholder=""> | Vanir Installed Sales, LLC
-</p>
-<p>
-    Phone: <input type="text" id="inputUserPhone" placeholder="">
-</p>
-
-            <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
-            <p><strong>Better Look. Better Service. Best Choice.</strong></p>
-         
-        </div>
-    </div>
-
+            <hr>
+    
+            <!-- ✅ Vendor Email Section -->
+            <p><strong>Subject:</strong> Vanir | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
+<p>Hello <strong><input type="text" id="vendorNameInput" class="vendorNameInput" placeholder="Vendor Name"></strong>,</p>
+            <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> has secured the bid for the <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
+            <p><strong>Project Summary:</strong></p>
+            <ul>
+                <li>Material Type: <span class="materialTypeContainer"></span></li>
+     
+            </ul>
+    
+<p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong></p>
+    
+            <div class="signature-container">
+                <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
+                <div class="signature-content">
+                    <p><input type="text" id="inputUserName" placeholder=""> | Vanir Installed Sales, LLC</p>
+                    <p>Phone: <input type="text" id="inputUserPhone" placeholder=""></p>
+                    <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
+                    <p><strong>Better Look. Better Service. Best Choice.</strong></p>
+                </div>
+            </div>
         `;
     
         const emailContainer = document.getElementById('emailTemplate');
@@ -856,6 +939,7 @@ async function sendEmailData() {
             console.error("Email template container not found in the DOM.");
         }
     }
+    
     
 
 // Trigger the display of email content once vendor emails are fetched
@@ -987,6 +1071,29 @@ async function generateMailtoLinks() {
         https://www.vanirinstalledsales.com  
         Better Look. Better Service. Best Choice.
         `.trim();
+
+        const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
+const vendorBody = `
+Hello,
+
+We wanted to inform you that Vanir has secured the bid for the ${subdivision} project with ${builder} in ${branch}.
+
+Project Summary:
+- Project Type: ${projectType}
+- Material Type: ${materialType}
+- Expected Start Date: ${anticipatedStartDate}
+- Number of Lots: ${numberOfLots}
+
+Please reach out to ${gm} at ${gmEmail} if you have any questions.
+
+Best,  
+${userName}  
+Vanir Installed Sales, LLC  
+Phone: ${userPhone}  
+https://www.vanirinstalledsales.com  
+Better Look. Better Service. Best Choice.
+`.trim();
+
         
         
 
@@ -997,6 +1104,7 @@ async function generateMailtoLinks() {
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
         const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+        const vendorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`;
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
@@ -1004,6 +1112,7 @@ async function generateMailtoLinks() {
         // Open the Gmail links
         const managementWindow = window.open(managementGmailLink);
         const subcontractorWindow = window.open(subcontractorGmailLink);
+        const vendorWindow = window.open(vendorGmailLink);
 
         if (!managementWindow || !subcontractorWindow) {
             alert("Pop-ups were blocked. Please enable pop-ups for this site.");
