@@ -374,6 +374,8 @@ async function fetchDetailsByBidName(bidName) {
         const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
         const vendor = fields['vendor'];
+        const vendoremail = fields['vendor email'] || '';
+        console.log("📧 Vendor email from Airtable:", vendoremail);
 
         console.log("🔍 Raw vendor value from Airtable:", vendor);
 
@@ -389,6 +391,7 @@ async function fetchDetailsByBidName(bidName) {
         } else {
             console.warn("⚠️ Vendor value is missing or not a string.");
         }
+    window.currentVendorEmail = vendoremail;
 
         const AnticipatedDuration = fields['Anticipated Duration'];
         const gm = fields['GM Named']
@@ -411,7 +414,8 @@ async function fetchDetailsByBidName(bidName) {
             anticipatedStartDate,
             vendor,
             AnticipatedDuration,
-            gm
+            gm, 
+            vendoremail
         );
 
         await fetchSubcontractorSuggestions(branch);
@@ -429,6 +433,7 @@ async function fetchDetailsByBidName(bidName) {
             vendor,
             AnticipatedDuration,
             gm,
+            vendoremail,
         };
     } else {
         console.warn('⚠️ No records found for bid:', bidName);
@@ -444,6 +449,7 @@ async function fetchDetailsByBidName(bidName) {
             vendor: 'Unknown',
             AnticipatedDuration: 'Unknown days',
             gm: 'Unknown GM',
+            vendoremail: 'unknown@example.com',
         };
     }
 }
@@ -568,7 +574,8 @@ function updateTemplateText(
     anticipatedStartDate,
     vendor,
     AnticipatedDuration,
-    gm
+    gm,
+    vendoremail
   ) {
     console.log('Updating Template Text with the following parameters:', {
       subdivision,
@@ -582,72 +589,59 @@ function updateTemplateText(
       anticipatedStartDate,
       vendor,
       AnticipatedDuration,
-      gm
+      gm,
+      vendoremail
     });
   
     if (subdivision) {
-      console.log('Updating subdivision to:', subdivision);
       document.querySelectorAll('.subdivisionContainer').forEach(el => (el.textContent = subdivision));
     }
-
+  
     if (gm) {
-        document.querySelectorAll('.gmNameContainer').forEach(el => (el.textContent = gm));
-      }
-      
-      
+      document.querySelectorAll('.gmNameContainer').forEach(el => (el.textContent = gm));
+    }
   
     if (builder) {
-      console.log('Updating builder to:', builder);
       document.querySelectorAll('.builderContainer').forEach(el => (el.textContent = builder));
     }
   
     if (bvalue) {
-      console.log('Formatting and updating bvalue:', bvalue);
       const formattedValue = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
       }).format(bvalue);
-      console.log('Formatted bvalue:', formattedValue);
       document.querySelectorAll('.valueContainer').forEach(el => (el.textContent = formattedValue));
     }
   
     if (gmEmail) {
-      console.log('Updating gmEmail to:', gmEmail);
       document.querySelectorAll('.gmEmailContainer').forEach(el => (el.textContent = gmEmail));
     }
   
     if (branch) {
-      console.log('Updating branch to:', branch);
       document.querySelectorAll('.branchContainer').forEach(el => (el.textContent = branch));
     }
   
     if (projectType) {
-      console.log('Updating projectType to:', projectType);
       document.querySelectorAll('.briqProjectTypeContainer').forEach(el => (el.textContent = projectType));
     }
   
     if (materialType) {
-      console.log('Updating materialType to:', materialType);
       document.querySelectorAll('.materialTypeContainer').forEach(el => (el.textContent = materialType));
     }
   
     if (numberOfLots) {
-      console.log('Updating numberOfLots to:', numberOfLots);
       document.querySelectorAll('.numberOfLotsContainer').forEach(el => (el.textContent = numberOfLots));
     }
   
     if (AnticipatedDuration) {
-      console.log('Updating AnticipatedDuration to:', AnticipatedDuration);
       document.querySelectorAll('.AnticipatedDurationContainer').forEach(el => (el.textContent = AnticipatedDuration));
     }
   
     if (vendor) {
-      console.log('Updating vendor to:', vendor);
       document.querySelectorAll('.vendorContainer').forEach(el => (el.textContent = vendor));
     }
   
     if (anticipatedStartDate) {
-      console.log('Processing anticipatedStartDate:', anticipatedStartDate);
       const date = new Date(anticipatedStartDate);
       if (!isNaN(date.getTime())) {
         const formattedDate = date.toLocaleDateString('en-US', {
@@ -655,13 +649,21 @@ function updateTemplateText(
           month: 'long',
           day: 'numeric',
         });
-        console.log('Formatted anticipatedStartDate:', formattedDate);
         document.querySelectorAll('.anticipatedStartDateContainer').forEach(el => (el.textContent = formattedDate));
       } else {
-        console.error('Invalid date format:', anticipatedStartDate);
+        console.error('Invalid date format for anticipatedStartDate:', anticipatedStartDate);
+      }
+    }
+  
+    if (vendoremail) {
+      const ccSpan = document.querySelector('.cc-email-container');
+      if (ccSpan) {
+        ccSpan.textContent = vendoremail;
+        console.log("✅ Updated CC field with vendor email:", vendoremail);
       }
     }
   }
+  
   
 // Monitor subdivisionContainer for changes and trigger city lookup
 function monitorSubdivisionChanges() {
@@ -861,16 +863,17 @@ async function sendEmailData() {
             <hr>
     
             <!-- ✅ Vendor Email Section -->
-            <p><strong>Subject:</strong> Vanir 
-<p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
+                        <h2>To: <span class="vendorNameContainer"></span></h2>
+
+            <p><strong>Subject:</strong> Vanir | 
+            <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
             <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> has secured the bid for the <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
             <p><strong>Project Summary:</strong></p>
             <ul>
                 <li>Material Type: <span class="materialTypeContainer"></span></li>
-     
             </ul>
     
-<p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong></p>
+            <p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong></p>
     
             <div class="signature-container">
                 <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
@@ -890,8 +893,6 @@ async function sendEmailData() {
             console.error("Email template container not found in the DOM.");
         }
     }
-    
-    
 
 // Trigger the display of email content once vendor emails are fetched
 document.addEventListener('DOMContentLoaded', () => {
@@ -913,7 +914,6 @@ async function validateAndExportBidDetails(bidName) {
     exportData(bidDetails);
 }
 
-
 const textarea = document.getElementById('additionalInfoInput');
 const additionalDetails = textarea ? textarea.value.trim() : null;
 
@@ -921,6 +921,7 @@ const additionalDetails = textarea ? textarea.value.trim() : null;
 async function generateMailtoLinks() {
     try {
         // Wait for the cc-email-container to be available
+
         const ccEmailContainer = await waitForElement('.cc-email-container');
         if (!ccEmailContainer) {
             console.error('Element with class "cc-email-container" not found.');
@@ -945,8 +946,10 @@ async function generateMailtoLinks() {
         // Fetch GM Email
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
-        const gm = Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named'];
+        const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
+        const vendorEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
 
+       
         // Fetch user signature inputs
         const userNameInput = await waitForElement('#inputUserName');
         const userPhoneInput = await waitForElement('#inputUserPhone');
@@ -968,6 +971,8 @@ async function generateMailtoLinks() {
 
         // Management Email
         const managementSubject = `Another WIN for Vanir - ${branch} - ${subdivision} - ${builder}`;
+        const gmName = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
+
         const managementBody = `
         Go ${branch},
         
@@ -986,9 +991,7 @@ async function generateMailtoLinks() {
         - Material Type: ${materialType}
         
         This will be a ${projectType} project, requiring ${materialType} installation.
-        
-        If you're interested in working with us on this exciting opportunity, please reach out to the ${branch} general manager ${gmName} at ${gmEmail}.
-        
+    
         Kind regards,  
         ${userName}  
         Vanir Installed Sales, LLC  
@@ -1013,7 +1016,8 @@ async function generateMailtoLinks() {
         - Number of Lots: ${numberOfLots}
         - Anticipated Start Date: ${anticipatedStartDate}
         
-        If you're interested in working with us on this exciting opportunity, please reach out to the ${branch} general manager ${gmName} at ${gmEmail}.
+        If you're interested in working with us on this exciting opportunity, please reach out to the ${branch} general manager ${gm} at ${gmEmail}.
+
         
         Best regards,  
         ${userName}  
@@ -1022,8 +1026,10 @@ async function generateMailtoLinks() {
         https://www.vanirinstalledsales.com  
         Better Look. Better Service. Best Choice.
         `.trim();
+        console.log("📨 Vendor email to send to:", vendorEmail);
 
-        const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
+      // Define these before you use them
+const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
 const vendorBody = `
 Hello,
 
@@ -1035,8 +1041,6 @@ Project Summary:
 - Expected Start Date: ${anticipatedStartDate}
 - Number of Lots: ${numberOfLots}
 
-Please reach out to ${gm} at ${gmEmail} if you have any questions.
-
 Best,  
 ${userName}  
 Vanir Installed Sales, LLC  
@@ -1045,8 +1049,8 @@ https://www.vanirinstalledsales.com
 Better Look. Better Service. Best Choice.
 `.trim();
 
-        
-        
+// ✅ Now it's safe to use
+
 
         // Combine emails for the "To" and "CC" sections
         const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
@@ -1055,21 +1059,31 @@ Better Look. Better Service. Best Choice.
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
         const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
-        const vendorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`;
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
-
+        if (!vendorEmail || !vendorEmail.includes('@')) {
+            console.warn("⚠️ No valid vendor email found. Skipping vendor email link.");
+        } else {
+            const vendorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`;
+            const vendorWindow = window.open(vendorGmailLink);
+        }
+        
         // Open the Gmail links
         const managementWindow = window.open(managementGmailLink);
         const subcontractorWindow = window.open(subcontractorGmailLink);
         const vendorWindow = window.open(vendorGmailLink);
 
-        if (!managementWindow || !subcontractorWindow) {
+        if (!managementWindow || !subcontractorWindow || !vendorWindow) {
             alert("Pop-ups were blocked. Please enable pop-ups for this site.");
         }
-
-        return { managementGmailLink, subcontractorGmailLink }; // Return the links for further use
+        
+        return {
+            managementGmailLink,
+            subcontractorGmailLink,
+            vendorGmailLink
+        };
+        
 
     } catch (error) {
         console.error("Error generating mailto links:", error.message);
