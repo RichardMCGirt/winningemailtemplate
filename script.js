@@ -111,7 +111,7 @@ async function fetchAllVendorData() {
 
         // Store vendor data globally
         vendorData = records.map(record => ({
-            name: record.fields['Vendor Name'] || "Unknown Vendor",
+            name: record.fields['Name'] || "Unknown Vendor",
             email: record.fields['Email'] || null,
             secondaryEmail: record.fields['Secondary Email'] || null
         }));
@@ -380,17 +380,23 @@ async function fetchDetailsByBidName(bidName) {
         console.log("🔍 Raw vendor value from Airtable:", vendor);
 
         if (vendor && typeof vendor === 'string') {
-            const vendorMatch = vendorData.find(v => v.name.toLowerCase().includes(vendor.toLowerCase()));
+            const vendorMatch = vendorData.find(v =>
+                v.name.toLowerCase().includes(vendor.toLowerCase()) ||
+                vendor.toLowerCase().includes(v.name.toLowerCase()) // makes it more forgiving
+            );
+        
             if (vendorMatch) {
                 console.log("✅ Matched vendor name:", vendorMatch.name);
                 setVendorName(vendorMatch.name);
+                window.currentVendorEmail = vendorMatch.email || vendorMatch.secondaryEmail || '';
             } else {
                 console.warn("⚠️ No vendor match found. Using raw vendor string:", vendor);
-                setVendorName(vendor); // Fallback if no match
+                setVendorName(vendor); // fallback
             }
         } else {
             console.warn("⚠️ Vendor value is missing or not a string.");
         }
+        
     window.currentVendorEmail = vendoremail;
 
         const AnticipatedDuration = fields['Anticipated Duration'];
@@ -863,10 +869,11 @@ async function sendEmailData() {
             <hr>
     
             <!-- ✅ Vendor Email Section -->
-                        <h2>To: <span class="vendorNameContainer"></span></h2>
+<h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
             <p><strong>Subject:</strong> Vanir | 
             <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
+
             <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> has secured the bid for the <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
             <p><strong>Project Summary:</strong></p>
             <ul>
@@ -947,9 +954,17 @@ async function generateMailtoLinks() {
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
         const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
-        const vendorEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
+        const vendorEmail = window.currentVendorEmail || 'Not Specified';
 
-       
+        const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
+if (vendorEmailWrapper && vendorEmail) {
+    vendorEmailWrapper.textContent = ` <${vendorEmail}>`;
+} else {
+    vendorEmailWrapper.textContent = ''; // avoid showing <>
+}
+
+        
+        
         // Fetch user signature inputs
         const userNameInput = await waitForElement('#inputUserName');
         const userPhoneInput = await waitForElement('#inputUserPhone');
@@ -1062,18 +1077,19 @@ Better Look. Better Service. Best Choice.
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
-        if (!vendorEmail || !vendorEmail.includes('@')) {
-            console.warn("⚠️ No valid vendor email found. Skipping vendor email link.");
-        } else {
-            const vendorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`;
-            const vendorWindow = window.open(vendorGmailLink);
-        }
-        
-        // Open the Gmail links
-        const managementWindow = window.open(managementGmailLink);
-        const subcontractorWindow = window.open(subcontractorGmailLink);
-        const vendorWindow = window.open(vendorGmailLink);
-
+        const vendorGmailLink = vendorEmail && vendorEmail.includes('@')
+        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
+        : null;
+    
+    // Open the Gmail links
+    const managementWindow = window.open(managementGmailLink);
+    const subcontractorWindow = window.open(subcontractorGmailLink);
+    const vendorWindow = vendorGmailLink ? window.open(vendorGmailLink) : null;
+    
+    if (!managementWindow || !subcontractorWindow || (vendorGmailLink && !vendorWindow)) {
+        alert("Pop-ups were blocked. Please enable pop-ups for this site.");
+    }
+    
         if (!managementWindow || !subcontractorWindow || !vendorWindow) {
             alert("Pop-ups were blocked. Please enable pop-ups for this site.");
         }
