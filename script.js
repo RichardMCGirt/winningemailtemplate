@@ -349,14 +349,12 @@ async function fetchVendorSuggestions() {
         }
 
         const data = await response.json();
-        console.log("🔧 Raw Vendor Records:", data.records);
 
         vendorData = data.records.map(record => {
             const fields = record.fields;
             const name = fields['Vendor Name'] || fields['Name'] || 'Unknown Vendor';
             const email = fields['Email'] || fields['Vendors email'] || null;
 
-            console.log(`📦 Vendor: ${name} | Email: ${email}`);
 
             return {
                 name,
@@ -420,16 +418,27 @@ async function fetchDetailsByBidName(bidName) {
         const vendor = fields['vendor'];
 
         // 🔁 NEW LOGIC: match vendor name to vendorData
-        const matchingVendor = vendorData.find(v => v.name === vendor);
+        const matchingVendor = vendorData.find(v =>
+            v.name?.toLowerCase().trim() === vendor?.toLowerCase().trim()
+          );
+          
+          if (matchingVendor && matchingVendor.email) {
+              vendoremail = matchingVendor.email;
+              window.currentVendorEmail = vendoremail;
+              console.log(`📬 Mapped vendor "${vendor}" to email: ${vendoremail}`);
+          
+              // ✅ Update UI immediately
+              const vendorNameEl = document.querySelector('.vendorNameContainer');
+              const vendorEmailEl = document.querySelector('.vendorEmailWrapper');
+          
+              if (vendorNameEl) vendorNameEl.textContent = matchingVendor.name;
+              if (vendorEmailEl) vendorEmailEl.textContent = ` (${matchingVendor.email})`;
 
-        if (matchingVendor) {
-            vendoremail = matchingVendor.email || '';
-            console.log(`📬 Mapped vendor "${vendor}" to email: ${vendoremail}`);
-        } else {
-            console.warn(`⚠️ No matching vendor found for vendor name: ${vendor}`);
-        }
+          } else {
+          }
+          
+          
 
-        setVendorName(vendor);
         console.log("Available fields:", Object.keys(fields));
 
         window.currentVendorEmail = vendoremail;
@@ -458,7 +467,6 @@ async function fetchDetailsByBidName(bidName) {
 
         await fetchSubcontractorSuggestions(branch);
         updateSubcontractorAutocomplete();
-        updateVendorEmailUI(vendoremail);
 
         return {
             builder,
@@ -711,9 +719,10 @@ function monitorSubdivisionChanges() {
 
 // Initialize monitoring on page load
 document.addEventListener('DOMContentLoaded', () => {
+    fetchVendorSuggestions();
+
     displayEmailContent();
     monitorSubdivisionChanges();
-    fetchVendorSuggestions();
 
 });
 
@@ -812,25 +821,9 @@ async function sendEmailData() {
       }
     }
 
-    function setVendorName(name) {
-        const vendorSpan = document.querySelector('.vendorNameContainer');
-        
-        console.log("Setting vendor name to:", name);
-        
-        if (vendorSpan) {
-            vendorSpan.textContent = name;
-            console.log("✅ Vendor name updated in .vendorNameContainer span.");
-        } else {
-            console.warn("⚠️ Could not find .vendorNameContainer element in the DOM.");
-        }
-    }
+   
 
-    function updateVendorEmailUI(email) {
-        const container = document.getElementById("vendorEmailContainer");
-        if (container) {
-            container.textContent = email || "No vendor email found";
-        }
-    }
+ 
     
     
     
@@ -932,7 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const gm = document.querySelector('.gmNameContainer')?.textContent || 'GM named';
 
     const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
-    console.log('GM Email Value:', gmEmail);
 });
 
 
