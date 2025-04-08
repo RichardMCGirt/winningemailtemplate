@@ -113,7 +113,6 @@ async function fetchAllVendorData() {
         vendorData = records.map(record => ({
             name: record.fields['Name'] || "Unknown Vendor",
             email: record.fields['Email'] || null,
-            secondaryEmail: record.fields['Secondary Email'] || null
         }));
 
         console.log("All vendor data fetched and stored:", vendorData);
@@ -250,7 +249,6 @@ function appendEmailsForSelectedBid(selectedBid) {
         // Collect all primary and secondary emails
         matchingVendors.forEach(vendor => {
             if (vendor.email) emails.push(vendor.email);
-            if (vendor.secondaryEmail) emails.push(vendor.secondaryEmail);
         });
 
         // Ensure emails are unique
@@ -332,6 +330,47 @@ async function waitForElement(selector, timeout = 5000) {
         }, interval);
     });
 }
+
+async function fetchVendorSuggestions() {
+    const vendorBaseId = 'appK9gZS77OmsIK50';
+    const vendorTableId = 'tbllFcCzQfRATm6dI';
+    const vendorViewId = 'viwgL9ZhslXzF1PiJ';
+
+    try {
+        const url = `https://api.airtable.com/v0/${vendorBaseId}/${vendorTableId}?view=${vendorViewId}`;
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch vendor data: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("🔧 Raw Vendor Records:", data.records);
+
+        vendorData = data.records.map(record => {
+            const fields = record.fields;
+            const name = fields['Vendor Name'] || fields['Name'] || 'Unknown Vendor';
+            const email = fields['Email'] || fields['Vendors email'] || null;
+
+            console.log(`📦 Vendor: ${name} | Email: ${email}`);
+
+            return {
+                name,
+                email,
+            };
+        });
+
+    } catch (error) {
+        console.error("🚨 Error fetching vendor suggestions:", error);
+    }
+}
+
+        
+
 document.addEventListener("DOMContentLoaded", () => {
     const dynamicContainer = document.querySelector("#dynamicContainer");
     if (!dynamicContainer) {
@@ -355,19 +394,21 @@ async function fetchPlaceDetails(query) {
 }
 
 async function fetchDetailsByBidName(bidName) {
-const filterFormula = `SEARCH("${bidName.replace(/"/g, '\\"')}", {Bid Name})`;
+    const filterFormula = `SEARCH("${bidName.replace(/"/g, '\\"')}", {Bid Name})`;
     const records = await fetchAirtableData(
         bidBaseName,
         bidTableName,
-        'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, Vendors email, AnticipatedDuration',
+        'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, Anticipated Duration, Builder, Branch, Project Type, Material Type, GM Named',
         filterFormula
     );
+
     console.log("📃 Records returned from Airtable for bid search:", records.map(r => r.fields["Bid Name"]));
 
     let vendoremail = '';
 
     if (records.length > 0) {
         const fields = records[0].fields;
+
         const bvalue = fields['Bid Value'] || 'Unknown Value';
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : 'Branch Staff@Vanir.com';
@@ -377,22 +418,17 @@ const filterFormula = `SEARCH("${bidName.replace(/"/g, '\\"')}", {Bid Name})`;
         const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
         const vendor = fields['vendor'];
-        console.log("🔍 Raw 'Vendors email' field value:", fields['Vendors email']);
 
-const vendorEmailField = fields['Vendors email'];
+        // 🔁 NEW LOGIC: match vendor name to vendorData
+        const matchingVendor = vendorData.find(v => v.name === vendor);
 
-if (Array.isArray(vendorEmailField)) {
-    vendoremail = vendorEmailField.find(e => !!e) || '';
-    console.log("📦 Parsed vendor email (array):", vendoremail);
-} else if (typeof vendorEmailField === 'string') {
-    vendoremail = vendorEmailField.trim();
-    console.log("📦 Parsed vendor email (string):", vendoremail);
-} else {
-    vendoremail = '';
-    console.warn("⚠️ 'Vendors email' is not a string or array. Got:", vendorEmailField);
-}
+        if (matchingVendor) {
+            vendoremail = matchingVendor.email || '';
+            console.log(`📬 Mapped vendor "${vendor}" to email: ${vendoremail}`);
+        } else {
+            console.warn(`⚠️ No matching vendor found for vendor name: ${vendor}`);
+        }
 
-        
         setVendorName(vendor);
         console.log("Available fields:", Object.keys(fields));
 
@@ -400,7 +436,9 @@ if (Array.isArray(vendorEmailField)) {
         console.log("Full fetched record:", records[0]);
 
         const AnticipatedDuration = fields['Anticipated Duration'];
-        const gm = fields['GM Named'] ? (Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named']) : deriveNameFromEmail(gmEmail);
+        const gm = fields['GM Named']
+            ? (Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named'])
+            : deriveNameFromEmail(gmEmail);
 
         updateTemplateText(
             bidName,
@@ -441,6 +479,7 @@ if (Array.isArray(vendorEmailField)) {
         return {};
     }
 }
+
 
 
   
@@ -674,6 +713,8 @@ function monitorSubdivisionChanges() {
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     monitorSubdivisionChanges();
+    fetchVendorSuggestions();
+
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -699,23 +740,7 @@ document.addEventListener("DOMContentLoaded", () => {
     observer.observe(document.body, { childList: true, subtree: true });
 });
 
-async function waitForElement(selector, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-        let elapsed = 0;
-        const intervalId = setInterval(() => {
-            const element = document.querySelector(selector);
-            if (element) {
-                clearInterval(intervalId);
-                resolve(element);
-            }
-            elapsed += 100;
-            if (elapsed >= timeout) {
-                clearInterval(intervalId);
-                reject(new Error(`Element "${selector}" not found within ${timeout}ms`));
-            }
-        }, 100);
-    });
-}
+
 
 async function exportTextareaToEmail() {
     const textarea = document.getElementById('additionalInfoInput');
@@ -801,23 +826,13 @@ async function sendEmailData() {
     }
 
     function updateVendorEmailUI(email) {
-        const vendorContainer = document.getElementById("vendorEmailContainer");
-    
-        console.log("📬 Vendor Email passed to UI:", email);
-        if (!vendorContainer) {
-            console.warn("❗ vendorEmailContainer not found in the DOM.");
-            return;
-        }
-    
-        if (email && email.includes('@')) {
-            vendorContainer.textContent = `Vendor Email: ${email}`;
-            vendorContainer.style.border = "1px solid #ccc";
-            vendorContainer.style.padding = "5px";
-        } else {
-            vendorContainer.textContent = "Vendor Email: Not specified";
-            vendorContainer.style.border = "none";
+        const container = document.getElementById("vendorEmailContainer");
+        if (container) {
+            container.textContent = email || "No vendor email found";
         }
     }
+    
+    
     
     
     
@@ -873,7 +888,7 @@ async function sendEmailData() {
             <hr>
     
             <!-- ✅ Vendor Email Section -->
-            <div id="vendorEmailContainer"></div>
+<div id="vendorEmailContainer" style="margin-top: 10px;"></div>
 
 <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
@@ -1080,6 +1095,7 @@ Better Look. Better Service. Best Choice.
         // Combine emails for the "To" and "CC" sections
         const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
         const toEmails = [teamEmails].filter(Boolean).join(', ');
+        const vendorToEmail = (vendorEmail && vendorEmail.includes('@')) ? vendorEmail : '';
 
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
@@ -1087,8 +1103,10 @@ Better Look. Better Service. Best Choice.
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
-        const vendorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorEmail || '')}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`;
-
+        const vendorGmailLink = vendorToEmail
+        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorToEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
+        : null;
+      
     
         console.log("Vendor Email:", vendorEmail);
         console.log("Vendor Gmail Link:", vendorGmailLink);
