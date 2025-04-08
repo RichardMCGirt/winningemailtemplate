@@ -355,13 +355,14 @@ async function fetchPlaceDetails(query) {
 }
 
 async function fetchDetailsByBidName(bidName) {
-    const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
+const filterFormula = `SEARCH("${bidName.replace(/"/g, '\\"')}", {Bid Name})`;
     const records = await fetchAirtableData(
         bidBaseName,
         bidTableName,
         'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, Vendors email, AnticipatedDuration',
         filterFormula
     );
+    console.log("📃 Records returned from Airtable for bid search:", records.map(r => r.fields["Bid Name"]));
 
     let vendoremail = '';
 
@@ -376,19 +377,21 @@ async function fetchDetailsByBidName(bidName) {
         const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
         const vendor = fields['vendor'];
-        const vendorEmailField = fields['Vendors email'];
-        console.log("📧 Vendor email from Airtable:", vendoremail);
+        console.log("🔍 Raw 'Vendors email' field value:", fields['Vendors email']);
 
-        vendoremail = Array.isArray(vendorEmailField)
-          ? vendorEmailField.find(e => !!e) || ''  // get the first non-empty value
-          : (vendorEmailField || '');
-        
-        if (!vendoremail) {
-          console.warn("⚠️ 'Vendors email' is empty or not set.");
-        }
-         else {
-            console.log("📧 Vendor email from Airtable:", vendoremail);
-        }
+const vendorEmailField = fields['Vendors email'];
+
+if (Array.isArray(vendorEmailField)) {
+    vendoremail = vendorEmailField.find(e => !!e) || '';
+    console.log("📦 Parsed vendor email (array):", vendoremail);
+} else if (typeof vendorEmailField === 'string') {
+    vendoremail = vendorEmailField.trim();
+    console.log("📦 Parsed vendor email (string):", vendoremail);
+} else {
+    vendoremail = '';
+    console.warn("⚠️ 'Vendors email' is not a string or array. Got:", vendorEmailField);
+}
+
         
         setVendorName(vendor);
         console.log("Available fields:", Object.keys(fields));
@@ -417,6 +420,7 @@ async function fetchDetailsByBidName(bidName) {
 
         await fetchSubcontractorSuggestions(branch);
         updateSubcontractorAutocomplete();
+        updateVendorEmailUI(vendoremail);
 
         return {
             builder,
@@ -795,6 +799,27 @@ async function sendEmailData() {
             console.warn("⚠️ Could not find .vendorNameContainer element in the DOM.");
         }
     }
+
+    function updateVendorEmailUI(email) {
+        const vendorContainer = document.getElementById("vendorEmailContainer");
+    
+        console.log("📬 Vendor Email passed to UI:", email);
+        if (!vendorContainer) {
+            console.warn("❗ vendorEmailContainer not found in the DOM.");
+            return;
+        }
+    
+        if (email && email.includes('@')) {
+            vendorContainer.textContent = `Vendor Email: ${email}`;
+            vendorContainer.style.border = "1px solid #ccc";
+            vendorContainer.style.padding = "5px";
+        } else {
+            vendorContainer.textContent = "Vendor Email: Not specified";
+            vendorContainer.style.border = "none";
+        }
+    }
+    
+    
     
     
   
@@ -848,6 +873,8 @@ async function sendEmailData() {
             <hr>
     
             <!-- ✅ Vendor Email Section -->
+            <div id="vendorEmailContainer"></div>
+
 <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
             <p><strong>Subject:</strong> Vanir | 
