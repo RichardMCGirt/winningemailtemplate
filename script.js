@@ -359,9 +359,11 @@ async function fetchDetailsByBidName(bidName) {
     const records = await fetchAirtableData(
         bidBaseName,
         bidTableName,
-        'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, AnticipatedDuration',
+        'Bid Name, GM Email, Attachments, Number of Lots, Anticipated Start Date, Bid Value, vendor, Vendors email, AnticipatedDuration',
         filterFormula
     );
+
+    let vendoremail = '';
 
     if (records.length > 0) {
         const fields = records[0].fields;
@@ -374,39 +376,28 @@ async function fetchDetailsByBidName(bidName) {
         const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
         const vendor = fields['vendor'];
-        const vendoremail = fields['vendor email'] || '';
+        const vendorEmailField = fields['Vendors email'];
         console.log("📧 Vendor email from Airtable:", vendoremail);
 
-        console.log("🔍 Raw vendor value from Airtable:", vendor);
-
-        if (vendor && typeof vendor === 'string') {
-            const vendorMatch = vendorData.find(v =>
-                v.name.toLowerCase().includes(vendor.toLowerCase()) ||
-                vendor.toLowerCase().includes(v.name.toLowerCase()) // makes it more forgiving
-            );
+        vendoremail = Array.isArray(vendorEmailField)
+          ? vendorEmailField.find(e => !!e) || ''  // get the first non-empty value
+          : (vendorEmailField || '');
         
-            if (vendorMatch) {
-                console.log("✅ Matched vendor name:", vendorMatch.name);
-                setVendorName(vendorMatch.name);
-                window.currentVendorEmail = vendorMatch.email || vendorMatch.secondaryEmail || '';
-            } else {
-                console.warn("⚠️ No vendor match found. Using raw vendor string:", vendor);
-                setVendorName(vendor); // fallback
-            }
-        } else {
-            console.warn("⚠️ Vendor value is missing or not a string.");
+        if (!vendoremail) {
+          console.warn("⚠️ 'Vendors email' is empty or not set.");
+        }
+         else {
+            console.log("📧 Vendor email from Airtable:", vendoremail);
         }
         
-    window.currentVendorEmail = vendoremail;
+        setVendorName(vendor);
+        console.log("Available fields:", Object.keys(fields));
+
+        window.currentVendorEmail = vendoremail;
+        console.log("Full fetched record:", records[0]);
 
         const AnticipatedDuration = fields['Anticipated Duration'];
-        const gm = fields['GM Named']
-            ? Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named']
-            : deriveNameFromEmail(gmEmail);
-
-        console.log("🧾 All field keys from Airtable:", Object.keys(fields));
-        console.log("👤 Raw GM name field:", fields['GM name']);
-        console.log("📦 Fetched record fields:", fields);
+        const gm = fields['GM Named'] ? (Array.isArray(fields['GM Named']) ? fields['GM Named'][0] : fields['GM Named']) : deriveNameFromEmail(gmEmail);
 
         updateTemplateText(
             bidName,
@@ -420,7 +411,7 @@ async function fetchDetailsByBidName(bidName) {
             anticipatedStartDate,
             vendor,
             AnticipatedDuration,
-            gm, 
+            gm,
             vendoremail
         );
 
@@ -442,23 +433,11 @@ async function fetchDetailsByBidName(bidName) {
             vendoremail,
         };
     } else {
-        console.warn('⚠️ No records found for bid:', bidName);
-        return {
-            builder: 'Unknown Builder',
-            bvalue: 'Unknown Value',
-            gmEmail: 'Branch Staff@Vanir.com',
-            branch: 'Unknown Branch',
-            projectType: 'Default Project Type',
-            materialType: 'General Materials',
-            numberOfLots: 'Unknown',
-            anticipatedStartDate: 'Unknown',
-            vendor: 'Unknown',
-            AnticipatedDuration: 'Unknown days',
-            gm: 'Unknown GM',
-            vendoremail: 'unknown@example.com',
-        };
+        console.warn("No bid found for the given name:", bidName);
+        return {};
     }
 }
+
 
   
   function updateSubcontractorAutocomplete() {
@@ -954,14 +933,19 @@ async function generateMailtoLinks() {
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
         const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
-        const vendorEmail = window.currentVendorEmail || 'Not Specified';
+        const bidDetails = await fetchDetailsByBidName(subdivision); // assuming subdivision == bid name
+const vendorEmail = bidDetails?.vendoremail || 'Not Specified';
 
-        const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
-if (vendorEmailWrapper && vendorEmail) {
-    vendorEmailWrapper.textContent = ` <${vendorEmail}>`;
-} else {
-    vendorEmailWrapper.textContent = ''; // avoid showing <>
+const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
+if (vendorEmailWrapper) {
+    if (vendorEmail !== 'Not Specified' && vendorEmail.includes('@')) {
+        vendorEmailWrapper.textContent = ` <${vendorEmail}>`;
+    } else {
+        vendorEmailWrapper.textContent = '';
+    }
 }
+
+        
 
         
         
@@ -1064,7 +1048,6 @@ https://www.vanirinstalledsales.com
 Better Look. Better Service. Best Choice.
 `.trim();
 
-// ✅ Now it's safe to use
 
 
         // Combine emails for the "To" and "CC" sections
@@ -1077,22 +1060,11 @@ Better Look. Better Service. Best Choice.
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
-        const vendorGmailLink = vendorEmail && vendorEmail.includes('@')
-        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
-        : null;
+        const vendorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorEmail || '')}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`;
+
     
-    // Open the Gmail links
-    const managementWindow = window.open(managementGmailLink);
-    const subcontractorWindow = window.open(subcontractorGmailLink);
-    const vendorWindow = vendorGmailLink ? window.open(vendorGmailLink) : null;
-    
-    if (!managementWindow || !subcontractorWindow || (vendorGmailLink && !vendorWindow)) {
-        alert("Pop-ups were blocked. Please enable pop-ups for this site.");
-    }
-    
-        if (!managementWindow || !subcontractorWindow || !vendorWindow) {
-            alert("Pop-ups were blocked. Please enable pop-ups for this site.");
-        }
+        console.log("Vendor Email:", vendorEmail);
+        console.log("Vendor Gmail Link:", vendorGmailLink);
         
         return {
             managementGmailLink,
@@ -1147,15 +1119,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
 
     if (sendManagementEmailButton) {
-        sendManagementEmailButton.addEventListener('click', function () {
-            console.log("Redirecting to Gmail...");
-            showRedirectAnimation(); // Trigger animation
-            generateMailtoLinks(); // Trigger the mailto generation
+        sendManagementEmailButton.addEventListener('click', async function () {
+            showRedirectAnimation(); // Optional loading animation
+
+            // 🔐 Trick popup blocker by opening immediately
+            const vendorWindow = window.open("about:blank", "_blank");
+
+            // Generate all links (async)
+            const links = await generateMailtoLinks();
+
+            if (links) {
+                const { managementGmailLink, subcontractorGmailLink, vendorGmailLink } = links;
+
+                if (managementGmailLink) window.open(managementGmailLink);
+                if (subcontractorGmailLink) window.open(subcontractorGmailLink);
+
+                // ✅ Set vendor link into pre-opened window
+                if (vendorGmailLink && vendorWindow) {
+                    vendorWindow.location.href = vendorGmailLink;
+                } else {
+                    vendorWindow.close(); // Close if no valid link
+                }
+            } else {
+                vendorWindow.close(); // Close if link gen failed
+            }
         });
-    } else {
-        console.error("Button with ID 'sendManagementEmailButton' not found.");
     }
 });
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const userNameInput = document.getElementById('inputUserName');
