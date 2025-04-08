@@ -782,7 +782,6 @@ async function sendEmailData() {
         anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
         numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
         managementEmails: [
-          "purchasing@vanirinstalledsales.com",
           "maggie@vanirinstalledsales.com",
           "jason.smith@vanirinstalledsales.com",
           "hunter@vanirinstalledsales.com",
@@ -833,7 +832,7 @@ async function sendEmailData() {
   
     function displayEmailContent() {
         const emailContent = `
-            <h2>To: purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
+            <h2>To: maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
             <p>CC: <span class="cc-email-container">Vendor</span></p>
             <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
             <p>Go <strong><span class="branchContainer"></span></strong>,</p>
@@ -1082,16 +1081,22 @@ https://www.vanirinstalledsales.com
 Better Look. Better Service. Best Choice.
 `.trim();
 
+const subcontractorEmails = subcontractorSuggestions.map(sub => sub.email).filter(Boolean);
 
 
         // Combine emails for the "To" and "CC" sections
-        const teamEmails = "purchasing@vanirinstalledsales.com, maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
-        const toEmails = [teamEmails].filter(Boolean).join(', ');
-        const vendorToEmail = (vendorEmail && vendorEmail.includes('@')) ? vendorEmail : '';
+        const teamEmails = "maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com";
+        const bccEmails = subcontractorSuggestions
+        .map(sub => sub.email)
+        .filter(Boolean)
+        .join(', ');
+      
+              const vendorToEmail = (vendorEmail && vendorEmail.includes('@')) ? vendorEmail : '';
+              const dummyToEmail = "vanir@vanirinstalledsales.com"; // or a shared/internal mailbox
 
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent()}&bcc=${encodeURIComponent(bccEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
