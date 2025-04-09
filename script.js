@@ -427,12 +427,17 @@ async function fetchDetailsByBidName(bidName) {
               window.currentVendorEmail = vendoremail;
               console.log(`📬 Mapped vendor "${vendor}" to email: ${vendoremail}`);
           
-              // ✅ Update UI immediately
-              const vendorNameEl = document.querySelector('.vendorNameContainer');
-              const vendorEmailEl = document.querySelector('.vendorEmailWrapper');
-          
-              if (vendorNameEl) vendorNameEl.textContent = matchingVendor.name;
-              if (vendorEmailEl) vendorEmailEl.textContent = ` (${matchingVendor.email})`;
+              await waitForElement('.vendorNameContainer'); // waits until injected
+
+              document.querySelectorAll('.vendorNameContainer').forEach(el => {
+                el.textContent = matchingVendor.name;
+              });
+              
+              document.querySelectorAll('.vendorEmailWrapper').forEach(el => {
+                el.textContent = ` <${matchingVendor.email}>`;
+              });
+              
+              
 
           } else {
           }
