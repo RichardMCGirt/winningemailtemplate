@@ -1096,13 +1096,16 @@ const subcontractorEmails = subcontractorSuggestions.map(sub => sub.email).filte
 
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
-        const subcontractorGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent()}&bcc=${encodeURIComponent(bccEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
-
+        const subcontractorGmailLink = gmEmail
+        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&bcc=${encodeURIComponent(bccEmails)}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`
+        : null;
+      
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLink);
-        const vendorGmailLink = vendorToEmail
-        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorToEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
+        const vendorGmailLink = (vendorToEmail || gmEmail)
+        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent([vendorToEmail, gmEmail].filter(Boolean).join(','))}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
         : null;
+      
       
     
         console.log("Vendor Email:", vendorEmail);
