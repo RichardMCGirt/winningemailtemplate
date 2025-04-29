@@ -776,12 +776,13 @@ async function exportTextareaToEmail() {
 
 async function sendEmailData() {
     const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; 
-  
+    const vendorEmail = window.currentVendorEmail || ""; // 👈 PULL vendor email here
 
-      const data = {
-        branch: document.querySelector('.branchContainer')?.textContent.trim(),
-        subdivision: document.querySelector('.subdivisionContainer')?.textContent.trim(),
-        builder: document.querySelector('.builderContainer')?.textContent.trim(),
+
+    const data = {
+        branch,
+        subdivision,
+        builder,
         projectType: document.querySelector('.briqProjectTypeContainer')?.textContent.trim(),
         materialType: document.querySelector('.materialTypeContainer')?.textContent.trim(),
         anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
@@ -791,10 +792,8 @@ async function sendEmailData() {
           "jason.smith@vanirinstalledsales.com",
           "hunter@vanirinstalledsales.com",
         ],
-        subcontractorEmails: [
-          "example1@subcontractor.com",
-          "example2@subcontractor.com",
-        ],
+        subcontractorEmails: subcontractorSuggestions.map(sub => sub.email).filter(Boolean), // ✅ dynamically pull subcontractors
+        vendorEmails: vendorEmail ? [vendorEmail] : [], // ✅ ADD vendor email into correct array
       };
     
       console.log("Prepared data for POST request:", data);
@@ -825,16 +824,6 @@ async function sendEmailData() {
       }
     }
 
-   
-
- 
-    
-    
-    
-    
-    
-    
-  
     function displayEmailContent() {
         const emailContent = `
             <h2>To: maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
@@ -1070,7 +1059,7 @@ const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
 const vendorBody = `
 Hello,
 
-We wanted to inform you that Vanir has secured the bid for the ${subdivision} project with ${builder} in ${branch}.
+We wanted to inform you that Vanir has secured the bid for the ${subdivision} project with ${builder} for Vanir ${branch}.
 
 Project Summary:
 - Project Type: ${projectType}
@@ -1316,7 +1305,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Initialize bid and vendor autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
     // Fetch suggestions
-    await fetchBidNameSuggestions();
+ //   await fetchBidNameSuggestions();
 });
 
 let offset = null; // Offset for Airtable pagination
