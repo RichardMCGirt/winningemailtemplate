@@ -1,11 +1,11 @@
 // Required constants and helper functions
 const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
-const bidBaseName = 'appi4QZE0SrWI6tt2';
+const bidBaseName = 'appK9gZS77OmsIK50';
 const bidTableName = 'tblQo2148s04gVPq1';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
-const VendorBaseName = 'appeNSp44fJ8QYeY5';
-const VendorTableName = 'tblLEYdDi0hfD9fT3';
+const VendorBaseName = 'appK9gZS77OmsIK50';
+const VendorTableName = 'tbllFcCzQfRATm6dI';
 // Google API Key
 const googleApiKey = "AIzaSyAe4p3dK30Kb3YHK5cnz8CQMS18wKeCOeM";
 let bidNameSuggestions = [];
@@ -824,10 +824,11 @@ async function sendEmailData() {
       }
     }
 
+   // <p>CC: <span class="cc-email-container">Vendor</span></p>
+
     function displayEmailContent() {
         const emailContent = `
             <h2>To: maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, <span class="gmEmailContainer"></span></h2>
-            <p>CC: <span class="cc-email-container">Vendor</span></p>
             <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
             <p>Go <strong><span class="branchContainer"></span></strong>,</p>
     
@@ -972,10 +973,6 @@ if (vendorEmailWrapper) {
     }
 }
 
-        
-
-        
-        
         // Fetch user signature inputs
         const userNameInput = await waitForElement('#inputUserName');
         const userPhoneInput = await waitForElement('#inputUserPhone');
