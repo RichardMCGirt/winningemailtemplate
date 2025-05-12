@@ -13,6 +13,7 @@ let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 let city = [];
 let subcontractors = []; // Initialize an empty array for subcontractors
 let vendorData = [];
+let currentBidName = "";
 
 let bidLoadingProgress = 0;
 let totalLoadingProgress = 0;
@@ -392,6 +393,10 @@ async function fetchPlaceDetails(query) {
 }
 
 async function fetchDetailsByBidName(bidName) {
+    if (!bidName || bidName.length < 3) {
+        console.warn("Ignoring bid fetch for short input:", bidName);
+        return;
+    }
     const filterFormula = `SEARCH("${bidName.replace(/"/g, '\\"')}", {Bid Name})`;
     const records = await fetchAirtableData(
         bidBaseName,
@@ -986,8 +991,8 @@ async function generateMailtoLinks() {
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
         const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
-        const bidDetails = await fetchDetailsByBidName(subdivision); // assuming subdivision == bid name
-const vendorEmail = bidDetails?.vendoremail || 'Not Specified';
+        const bidDetails = await fetchDetailsByBidName(currentBidName);
+        const vendorEmail = bidDetails?.vendoremail || 'Not Specified';
 
 const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
 if (vendorEmailWrapper) {
@@ -1363,18 +1368,28 @@ async function fetchLazyBidSuggestions(query = "", isInitialLoad = false) {
         }
 
         const data = await response.json();
-        if (isInitialLoad) bidNameSuggestions = []; // Clear suggestions on initial load
-        bidNameSuggestions.push(...data.records.map(record => record.fields["Bid Name"]).filter(Boolean));
 
-        offset = data.offset || null; // Update offset for next fetch
-        console.log("Fetched suggestions:", bidNameSuggestions);
+        // Extract bid names from records
+        const newSuggestions = data.records
+            .map(record => record.fields["Bid Name"])
+            .filter(Boolean);
 
-        return data.records;
+        if (isInitialLoad) bidNameSuggestions = []; // Clear only if initial load
+
+        // Add new suggestions to global list (avoiding duplicates)
+        bidNameSuggestions.push(...newSuggestions);
+
+        offset = data.offset || null;
+
+        console.log("Fetched suggestions:", newSuggestions);
+
+        return newSuggestions; // ✅ Return only new bid names as strings
     } catch (error) {
         console.error("Error during lazy loading of bid suggestions:", error);
         return [];
     }
 }
+
 
 // Debounce utility to limit API calls
 function debounce(func, delay) {
@@ -1405,52 +1420,64 @@ function initializeBidAutocomplete() {
         bidContainer.appendChild(autocompleteWrapper);
 
         // Handle input with debounce
-        bidInput.addEventListener(
-            "input",
-            debounce(async function () {
+        bidInput.addEventListener("input", debounce(async function () {
+            const query = bidInput.value.toLowerCase();
+            dropdown.innerHTML = ""; // Clear existing dropdown
+        
+            const newSuggestions = await fetchLazyBidSuggestions(query, true);
+        
+            const filtered = newSuggestions.filter(s =>
+                s.toLowerCase().includes(query)
+            );
+        
+            filtered.forEach(suggestion => {
+                const option = document.createElement("div");
+                option.classList.add("autocomplete-option");
+                option.textContent = suggestion;
+                option.addEventListener("click", () => {
+                    bidInput.value = suggestion;
+                    currentBidName = suggestion;
+                    dropdown.innerHTML = "";
+                    fetchDetailsByBidName(suggestion); // ✅ only triggers after click
+                });
+                
+                dropdown.appendChild(option);
+            });
+        
+            dropdown.style.display = filtered.length > 0 ? "block" : "none";
+        }, 300));
+        
+
+        // Lazy load on scroll
+        dropdown.addEventListener("scroll", async function () {
+            if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight && offset) {
+                console.log("Fetching more suggestions...");
                 const query = bidInput.value.toLowerCase();
-                dropdown.innerHTML = ""; // Clear existing dropdown
-
-                await fetchLazyBidSuggestions(query, true);
-
-                // Populate dropdown
-                bidNameSuggestions.forEach(suggestion => {
+                const newSuggestions = await fetchLazyBidSuggestions(query);
+        
+                const filtered = newSuggestions.filter(s =>
+                    s.toLowerCase().includes(query)
+                );
+        
+                filtered.forEach(suggestion => {
                     const option = document.createElement("div");
                     option.classList.add("autocomplete-option");
                     option.textContent = suggestion;
-
-                    
-
                     option.addEventListener("click", () => {
-                        bidInput.value = suggestion; // Set input value
-                        dropdown.innerHTML = ""; // Clear dropdown
-                        fetchDetailsByBidName(suggestion); // Fetch details for the bid
+                        bidInput.value = suggestion;
+                        currentBidName = suggestion;
+                        dropdown.innerHTML = "";
+                        fetchDetailsByBidName(suggestion); // ✅ only triggers after click
                     });
-
+                    
                     dropdown.appendChild(option);
                 });
-
-                dropdown.style.display = bidNameSuggestions.length > 0 ? "block" : "none";
-            }, 300)
-        );
- // Lazy load on scroll within the dropdown
- dropdown.addEventListener("scroll", async function () {
-    if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight && offset) {
-        console.log("Fetching more suggestions...");
-        await fetchLazyBidSuggestions(bidInput.value);
-
-        bidNameSuggestions.forEach(suggestion => {
-            const option = document.createElement("div");
-            option.classList.add("autocomplete-option");
-            option.textContent = suggestion;
-
-            dropdown.appendChild(option);
+            }
         });
+        
     }
-});
-} else {
 }
-}
+
 
 // Function to wait for the cc-email-container to exist in the DOM
 async function waitForElement(selector, timeout = 5000) {
