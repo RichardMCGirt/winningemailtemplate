@@ -4,10 +4,9 @@ const bidBaseName = 'appK9gZS77OmsIK50';
 const bidTableName = 'tblQo2148s04gVPq1';
 const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
-const VendorBaseName = 'appK9gZS77OmsIK50';
-const VendorTableName = 'tbllFcCzQfRATm6dI';
-// Google API Key
-const googleApiKey = "AIzaSyAe4p3dK30Kb3YHK5cnz8CQMS18wKeCOeM";
+const VendorBaseName = 'appeNSp44fJ8QYeY5';
+const VendorTableName = 'tblLEYdDi0hfD9fT3';
+
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 let city = [];
@@ -221,63 +220,76 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
 }
 
 function appendEmailsForSelectedBid(selectedBid) {
+    console.log("🔧 appendEmailsForSelectedBid triggered");
+    
     if (!selectedBid) {
-        console.error("No bid selected.");
+        console.error("❌ No bid selected.");
         return;
     }
 
-    console.log("Appending emails for selected bid:", selectedBid);
+    console.log("✅ Selected bid:", selectedBid);
 
     // Extract the first word from the selected bid
     const firstWord = selectedBid.split(/\s+/)[0].toLowerCase();
-    console.log("First word extracted:", firstWord);
+    console.log("🔍 First word extracted from bid:", firstWord);
 
     if (!firstWord) {
-        console.error("Invalid bid name provided.");
+        console.error("❌ Invalid bid name provided. Could not extract first word.");
         return;
     }
 
     // Filter vendor data to match the first word
     const matchingVendors = vendorData.filter(vendor =>
-        vendor.name.toLowerCase().startsWith(firstWord)
+        vendor.name && vendor.name.toLowerCase().startsWith(firstWord)
     );
 
-    console.log("Matching vendors:", matchingVendors);
+    console.log(`🔎 Found ${matchingVendors.length} matching vendor(s):`, matchingVendors);
 
     if (matchingVendors.length > 0) {
         const emails = [];
 
         // Collect all primary and secondary emails
-        matchingVendors.forEach(vendor => {
-            if (vendor.email) emails.push(vendor.email);
+        matchingVendors.forEach((vendor, index) => {
+            console.log(`➡️ Vendor #${index + 1}:`, vendor.name);
+            if (vendor.email) {
+                emails.push(vendor.email);
+                console.log(`📬 Added email: ${vendor.email}`);
+            } else {
+                console.warn(`⚠️ Vendor "${vendor.name}" has no email.`);
+            }
         });
 
         // Ensure emails are unique
         const uniqueEmails = [...new Set(emails)];
-        console.log("Unique emails to append:", uniqueEmails);
+        console.log("🧹 Unique emails to append:", uniqueEmails);
 
         // Find or create the <p> and <span> container dynamically
         let ccContainer = document.querySelector('.cc-email-container');
         if (!ccContainer) {
-            console.log("CC container not found. Creating dynamically...");
+            console.log("⚠️ .cc-email-container not found. Creating it dynamically...");
+
             const emailSection = document.createElement('p');
-          //  emailSection.innerHTML = `CC: <span class="cc-email-container"></span>`;
-            document.body.appendChild(emailSection); // Adjust to append in the correct location
+            emailSection.innerHTML = `CC: <span class="cc-email-container"></span>`;
+            document.body.appendChild(emailSection); // You might want to place this elsewhere
+
             ccContainer = emailSection.querySelector('.cc-email-container');
         }
 
         // Append emails to the container
         const existingEmails = ccContainer.textContent.split(/[\s,;]+/).filter(Boolean);
-        console.log("Existing emails in CC:", existingEmails);
+        console.log("📥 Existing emails in CC:", existingEmails);
 
         const updatedEmails = [...new Set([...existingEmails, ...uniqueEmails])];
+        console.log("📤 Updated CC email list:", updatedEmails);
+
         ccContainer.textContent = updatedEmails.join(', ');
 
-        console.log("Updated CC emails with vendor details:", updatedEmails);
+        console.log("✅ Emails successfully appended to the CC container.");
     } else {
-        console.warn("No matching vendors found for bid:", selectedBid);
+        console.warn("⚠️ No matching vendors found for bid:", selectedBid);
     }
 }
+
 
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
@@ -331,45 +343,7 @@ async function waitForElement(selector, timeout = 5000) {
         }, interval);
     });
 }
-
-async function fetchVendorSuggestions() {
-    const vendorBaseId = 'appK9gZS77OmsIK50';
-    const vendorTableId = 'tbllFcCzQfRATm6dI';
-    const vendorViewId = 'viwgL9ZhslXzF1PiJ';
-
-    try {
-        const url = `https://api.airtable.com/v0/${vendorBaseId}/${vendorTableId}?view=${vendorViewId}`;
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${airtableApiKey}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch vendor data: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        vendorData = data.records.map(record => {
-            const fields = record.fields;
-            const name = fields['Vendor Name'] || fields['Name'] || 'Unknown Vendor';
-            const email = fields['Email'] || fields['Vendors email'] || null;
-
-
-            return {
-                name,
-                email,
-            };
-        });
-
-    } catch (error) {
-        console.error("🚨 Error fetching vendor suggestions:", error);
-    }
-}
-
-        
-
+     
 document.addEventListener("DOMContentLoaded", () => {
     const dynamicContainer = document.querySelector("#dynamicContainer");
     if (!dynamicContainer) {
@@ -412,7 +386,6 @@ async function fetchDetailsByBidName(bidName) {
     if (records.length > 0) {
         const fields = records[0].fields;
 
-        const bvalue = fields['Bid Value'] || 'Unknown Value';
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : 'Branch Staff@Vanir.com';
         const branch = fields['Branch'] || 'Unknown Branch';
@@ -420,13 +393,14 @@ async function fetchDetailsByBidName(bidName) {
         const materialType = fields['Material Type'] || '';
         const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
-        const vendor = fields['vendor'];
 
         // 🔁 NEW LOGIC: match vendor name to vendorData
+        const vendor = fields['vendor']?.toLowerCase().trim() || '';
+
         const matchingVendor = vendorData.find(v =>
-            v.name?.toLowerCase().trim() === vendor?.toLowerCase().trim()
-          );
-          
+            v.name?.toLowerCase().trim().includes(vendor) || vendor.includes(v.name?.toLowerCase().trim())
+        );
+        
           if (matchingVendor && matchingVendor.email) {
               vendoremail = matchingVendor.email;
               window.currentVendorEmail = vendoremail;
@@ -442,12 +416,10 @@ async function fetchDetailsByBidName(bidName) {
                 el.textContent = ` <${matchingVendor.email}>`;
               });
               
-              
-
-          } else {
-          }
-          
-          
+            } else {
+                console.warn("⚠️ No records found for bid name:", bidName);
+            }
+        
 
         console.log("Available fields:", Object.keys(fields));
 
@@ -462,7 +434,6 @@ async function fetchDetailsByBidName(bidName) {
         updateTemplateText(
             bidName,
             builder,
-            bvalue,
             gmEmail,
             branch,
             projectType,
@@ -480,7 +451,6 @@ async function fetchDetailsByBidName(bidName) {
 
         return {
             builder,
-            bvalue,
             gmEmail,
             branch,
             projectType,
@@ -498,9 +468,6 @@ async function fetchDetailsByBidName(bidName) {
     }
 }
 
-
-
-  
   function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
@@ -611,7 +578,6 @@ function selectSuggestion(suggestion, input, dropdown) {
 function updateTemplateText(
     subdivision,
     builder,
-    bvalue,
     gmEmail,
     branch,
     projectType,
@@ -626,7 +592,6 @@ function updateTemplateText(
     console.log('Updating Template Text with the following parameters:', {
       subdivision,
       builder,
-      bvalue,
       gmEmail,
       branch,
       projectType,
@@ -650,15 +615,7 @@ function updateTemplateText(
     if (builder) {
       document.querySelectorAll('.builderContainer').forEach(el => (el.textContent = builder));
     }
-  
-    if (bvalue) {
-      const formattedValue = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(bvalue);
-      document.querySelectorAll('.valueContainer').forEach(el => (el.textContent = formattedValue));
-    }
-  
+ 
     if (gmEmail) {
       document.querySelectorAll('.gmEmailContainer').forEach(el => (el.textContent = gmEmail));
     }
@@ -672,9 +629,22 @@ function updateTemplateText(
     }
   
     if (materialType) {
-      document.querySelectorAll('.materialTypeContainer').forEach(el => (el.textContent = materialType));
-    }
-  
+        let formatted = materialType;
+      
+        // If materialType is a string with two comma-separated values
+        if (typeof materialType === "string" && materialType.includes(",")) {
+          const parts = materialType.split(",").map(p => p.trim());
+          if (parts.length === 2) {
+            formatted = `${parts[0]} and ${parts[1]}`;
+          }
+        }
+      
+        // Apply the formatted value to each element
+        document.querySelectorAll('.materialTypeContainer').forEach(el => {
+          el.textContent = formatted;
+        });
+      }
+      
     if (numberOfLots) {
       document.querySelectorAll('.numberOfLotsContainer').forEach(el => (el.textContent = numberOfLots));
     }
@@ -729,8 +699,6 @@ function monitorSubdivisionChanges() {
 
 // Initialize monitoring on page load
 document.addEventListener('DOMContentLoaded', () => {
-    fetchVendorSuggestions();
-
     displayEmailContent();
     monitorSubdivisionChanges();
 
@@ -759,8 +727,6 @@ document.addEventListener("DOMContentLoaded", () => {
     observer.observe(document.body, { childList: true, subtree: true });
 });
 
-
-
 async function exportTextareaToEmail() {
     const textarea = document.getElementById('additionalInfoInput');
     const additionalDetails = textarea.value.trim();
@@ -786,7 +752,6 @@ function splitIntoChunks(array, chunkSize = 30) {
     }
     return chunks;
 }
-
 
 async function sendEmailData() {
     const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; 
@@ -854,50 +819,46 @@ async function sendEmailData() {
 
    // <p>CC: <span class="cc-email-container">Vendor</span></p>
 
-    function displayEmailContent() {
-        const emailContent = `
-            <h2>To: maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com,  <span class="gmEmailContainer"></span></h2>
-                <p>CC: <span class="cc-email-container"></span></p>
+   function displayEmailContent() {
+    const emailContent = `
+        <h2>
+            To: maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com,
+            <span class="gmEmailContainer"></span>
+        </h2>
+        <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
 
-            <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-            <p>Go <strong><span class="branchContainer"></span></strong>,</p>
+        <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
+
+        <p>Go <strong><span class="branchContainer"></span></strong>,</p>
+
+        <h4>Major Win for Team <strong><span class="branchContainer"></span></strong></h4>
     
-            <h4>Major Win for Team <strong><span class="branchContainer"></span></strong></h4>
-            <p>We have been awarded <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
-            <input type="text" class="city" placeholder="    Enter city"></p>
+
+        <h2>Here's the breakdown:</h2>
+        <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
+        <p><strong>Project Type:</strong> <span class="briqProjectTypeContainer"></span></p>
+        <p><strong>Expected Pace:</strong> <span class="AnticipatedDurationContainer"></span> days</p>
+        <p><strong>Expected Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
+        <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
+
+        <p><strong>Do they have special pricing?</strong></p>
+        <label><input type="radio" name="sprice" value="Yes" class="sprice" /> Yes</label>
+        <label><input type="radio" name="sprice" value="No" class="sprice" /> No</label>
+
+        <p><strong>PO Customer?</strong></p>
+        <label><input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes</label>
+        <label><input type="radio" name="poCustomer" value="No" class="pcustomer" /> No</label>
+
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
     
-            <h2>Here's the breakdown:</h2>
-            <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
-            <p><strong><span class="briqProjectTypeContainer"></span></strong></p>
-            <p><strong>Expected Pace:</strong> <strong><span class="AnticipatedDurationContainer"></span> days</strong></p>
-            <p><strong>Expected Start Date:</strong> <strong><span class="anticipatedStartDateContainer"></span></strong></p>
-            <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
-            <p><strong>Do they have special pricing:</strong> 
-                <label>
-                    <input type="radio" name="sprice" value="Yes" class="sprice" /> Yes
-                </label>
-                <label>
-                    <input type="radio" name="sprice" value="No" class="sprice" /> No
-                </label>
-            </p>
-            <p><strong>PO Customer:</strong> 
-                <label>
-                    <input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes
-                </label>
-                <label>
-                    <input type="radio" name="poCustomer" value="No" class="pcustomer" /> No
-                </label>
-            </p>
-    
-            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
-    
+
             <hr>
     
             <!-- Subcontractor Email -->
             <div id="subcontractorCompanyContainer"></div>
             <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
             <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
-            <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
+            <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
             <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
             <p>If you're interested in working with us on this exciting opportunity, please reach out to our </span></strong> general manager 
             <strong><span class="gmNameContainer"></span></strong> at <strong><span class="gmEmailContainer"></span></strong>.</p>
@@ -1306,6 +1267,7 @@ async function fetchAndUpdateAutocomplete() {
 
     // Fetch bid names only (no subcontractors yet)
     await fetchBidNameSuggestions();
+    await fetchAllVendorData(); // Add this before fetchDetailsByBidName
 
     hideLoadingAnimation();
 
