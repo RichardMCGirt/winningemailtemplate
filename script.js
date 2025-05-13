@@ -409,8 +409,9 @@ async function fetchDetailsByBidName(bidName) {
               await waitForElement('.vendorNameContainer'); // waits until injected
 
               document.querySelectorAll('.vendorNameContainer').forEach(el => {
-                el.textContent = matchingVendor.name;
+                el.textContent = matchingVendor.email;
               });
+              
               
               document.querySelectorAll('.vendorEmailWrapper').forEach(el => {
                 el.textContent = ` <${matchingVendor.email}>`;
@@ -941,10 +942,18 @@ async function generateMailtoLinks() {
         const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
-        const city = document.querySelector('.city')?.value.trim() || '';
-        const cname = document.querySelector('.cname')?.value.trim() || 'Unknown Customer Name';
-        const whatbuild = document.querySelector('.whatbuild')?.value.trim() || 'Unknown Product';
-        const epace = document.querySelector('.epace')?.value.trim() || 'Unknown Pace';
+        const cityEl = document.querySelector('.city');
+const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
+
+const cnameEl = document.querySelector('.cname');
+const cname = cnameEl && cnameEl.value ? cnameEl.value.trim() : 'Unknown Customer Name';
+
+const whatbuildEl = document.querySelector('.whatbuild');
+const whatbuild = whatbuildEl && whatbuildEl.value ? whatbuildEl.value.trim() : 'Unknown Product';
+
+const epaceEl = document.querySelector('.epace');
+const epace = epaceEl && epaceEl.value ? epaceEl.value.trim() : 'Unknown Pace';
+
         const sprice = document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified';
         const poCustomer = document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified';
 
@@ -952,8 +961,8 @@ async function generateMailtoLinks() {
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
         const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
-        const bidDetails = await fetchDetailsByBidName(currentBidName);
-        const vendorEmail = bidDetails?.vendoremail || 'Not Specified';
+        const vendorEmail = window.currentVendorEmail || 'Not Specified';
+
 
 const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
 if (vendorEmailWrapper) {
@@ -1090,11 +1099,16 @@ const subcontractorEmailChunks = splitIntoChunks(
       
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLinks);
-        const vendorGmailLink = (vendorToEmail || gmEmail)
-        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent([vendorToEmail, gmEmail].filter(Boolean).join(','))}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
-        : null;
+        const vendorGmailLink = vendorToEmail
+        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorToEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
+        : gmEmail
+          ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
+          : null;
       
       
+          console.log("Using vendorToEmail:", vendorToEmail);
+          console.log("Fallback gmEmail (if needed):", gmEmail);
+          
     
         console.log("Vendor Email:", vendorEmail);
         console.log("Vendor Gmail Link:", vendorGmailLink);
