@@ -14,17 +14,14 @@ h2, h4, p {
 }
 
 #subcontractorCompanyContainer {
-    width: 95%; /* Adjust the width as needed */
-    max-height: 100px; /* Set the maximum height */
-    overflow-y: auto; /* Enable vertical scrolling */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow */
-    
-    /* Center the container */
-    margin: 0 auto; /* Horizontal centering */
-    display: flex;
-    justify-content: center; /* Center content horizontally inside the container */
-    align-items: center; /* Center content vertically inside the container */
+    width: 95%;
+    max-height: 150px;
+    overflow-y: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);   
+    margin: 0 auto;
+    display: block; /* <- or remove flex entirely */
 }
+
 
 .signature-container {
     display: flex;

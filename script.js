@@ -849,7 +849,7 @@ async function sendEmailData() {
         <label><input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes</label>
         <label><input type="radio" name="poCustomer" value="No" class="pcustomer" /> No</label>
 
-        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
     
 
             <hr>
@@ -859,7 +859,7 @@ async function sendEmailData() {
             <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
             <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
             <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project, requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
+            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
             <p>If you're interested in working with us on this exciting opportunity, please reach out to our </span></strong> general manager 
             <strong><span class="gmNameContainer"></span></strong> at <strong><span class="gmEmailContainer"></span></strong>.</p>
     
