@@ -453,31 +453,61 @@ async function fetchDetailsByBidName(bidName) {
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
 
         // 🔁 NEW LOGIC: match vendor name to vendorData
-        const vendor = fields['vendor']?.toLowerCase().trim() || '';
-
-        const matchingVendor = vendorData.find(v =>
-            v.name?.toLowerCase().trim().includes(vendor) || vendor.includes(v.name?.toLowerCase().trim())
+        let vendorRaw = fields['vendor'] || '';
+        if (Array.isArray(vendorRaw)) {
+            vendorRaw = vendorRaw[0] || ''; // take the first entry
+        }
+        const vendorNormalized = typeof vendorRaw === 'string' ? vendorRaw.toLowerCase().trim() : '';
+        
+        
+        // Get all close matches
+        const matchingVendors = vendorData.filter(v =>
+            v.name?.toLowerCase().includes(vendorNormalized) ||
+            v.email?.toLowerCase().includes(vendorNormalized)
         );
         
-          if (matchingVendor && matchingVendor.email) {
-              vendoremail = matchingVendor.email;
-              window.currentVendorEmail = vendoremail;
-              console.log(`📬 Mapped vendor "${vendor}" to email: ${vendoremail}`);
-          
-              await waitForElement('.vendorNameContainer'); // waits until injected
-
-              document.querySelectorAll('.vendorNameContainer').forEach(el => {
-                el.textContent = matchingVendor.email;
-              });
-              
-              
-              document.querySelectorAll('.vendorEmailWrapper').forEach(el => {
-                el.textContent = ` <${matchingVendor.email}>`;
-              });
-              
-            } else {
-                console.warn("⚠️ No records found for bid name:", bidName);
+        console.log(`🔍 Found ${matchingVendors.length} matching vendors for "${vendorRaw}"`, matchingVendors);
+        
+        // If only one match, proceed automatically
+        if (matchingVendors.length === 1) {
+            const matched = matchingVendors[0];
+            window.currentVendorEmail = matched.email;
+        
+            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
+            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+        } else if (matchingVendors.length > 1) {
+            const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
+        
+            if (branch) {
+                // Try to refine match based on branch in name or email
+                const narrowedMatches = matchingVendors.filter(vendor =>
+                    vendor.name?.toLowerCase().includes(branch) ||
+                    vendor.email?.toLowerCase().includes(branch)
+                );
+        
+                if (narrowedMatches.length === 1) {
+                    const matched = narrowedMatches[0];
+                    window.currentVendorEmail = matched.email;
+        
+                    document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
+                    document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+                    return; // ✅ Done
+                } else if (narrowedMatches.length > 1) {
+                    // Multiple matches even after narrowing — show dropdown
+                    showVendorSelectionDropdown(narrowedMatches);
+                    return;
+                }
             }
+        
+            // Fallback: show all loose matches
+            showVendorSelectionDropdown(matchingVendors);
+        }
+         else {
+            console.warn(`⚠️ No close vendor matches for "${vendorRaw}"`);
+        }
+        
+        
+        
         
 
         console.log("Available fields:", Object.keys(fields));
@@ -499,7 +529,7 @@ async function fetchDetailsByBidName(bidName) {
             materialType,
             numberOfLots,
             anticipatedStartDate,
-            vendor,
+            vendorRaw, // ✅ Correct variable
             AnticipatedDuration,
             gm,
             vendoremail
@@ -516,7 +546,7 @@ async function fetchDetailsByBidName(bidName) {
             materialType,
             numberOfLots,
             anticipatedStartDate,
-            vendor,
+            vendorRaw, // ✅ Correct variable
             AnticipatedDuration,
             gm,
             vendoremail,
@@ -525,6 +555,39 @@ async function fetchDetailsByBidName(bidName) {
         console.warn("No bid found for the given name:", bidName);
         return {};
     }
+}
+
+function showVendorSelectionDropdown(vendorMatches) {
+    const container = document.getElementById("vendorEmailContainer");
+    if (!container) {
+        console.error("No #vendorEmailContainer found.");
+        return;
+    }
+
+    // Clear existing
+    container.innerHTML = "<p><strong>Multiple vendor matches found. Please choose:</strong></p>";
+
+    const list = document.createElement("div");
+    list.className = "vendor-select-dropdown";
+
+    vendorMatches.forEach(vendor => {
+        const option = document.createElement("div");
+        option.className = "vendor-select-option";
+        option.innerHTML = `<strong>${vendor.name}</strong><br><small>${vendor.email}</small>`;
+
+        option.addEventListener("click", () => {
+            window.currentVendorEmail = vendor.email;
+
+            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
+            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
+
+            list.remove(); // remove dropdown
+        });
+
+        list.appendChild(option);
+    });
+
+    container.appendChild(list);
 }
 
   function updateSubcontractorAutocomplete() {
@@ -958,9 +1021,9 @@ async function sendEmailData() {
    
 
         <h2>Here's the breakdown:</h2>
-        <p><strong>Customer Name:</strong> <input class="cname" placeholder="Enter customer name" /></p>
-        <p><strong>Product Being Built:</strong> <input class="whatbuild" placeholder="Project type?" /></p>
-        <p><strong>Project Type:</strong> <span class="briqProjectTypeContainer"></span></p>
+        <span class="subdivisionContainer"></span> :
+        <p><strong>Field Contact:</strong> <input class="cname" placeholder="Enter customer name" /></p>
+        <p><strong>Product Being Built:</strong> <span class="briqProjectTypeContainer"></span></p>
 <p><strong>Expected Pace:</strong> <input class="epace" type="number" placeholder="Days" /> days</p>
         <p><strong>Expected Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
@@ -1002,6 +1065,7 @@ async function sendEmailData() {
 
         <!-- ✅ Vendor Email Section -->
         <div id="vendorEmailContainer" style="margin-top: 10px;"></div>
+<button id="changeVendorBtn" style="margin-top: 10px;">Change Vendor</button>
 
         <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
@@ -1034,7 +1098,58 @@ async function sendEmailData() {
     const emailContainer = document.getElementById('emailTemplate');
     if (emailContainer) {
         emailContainer.innerHTML = emailContent;
-        setupCopySubEmailsButton(); // Re-attach button listener
+
+        // ✅ Attach the click listener immediately after creating the button
+        const changeVendorBtn = document.getElementById('changeVendorBtn');
+        if (changeVendorBtn) {
+            changeVendorBtn.addEventListener('click', () => {
+                let vendorRaw = document.querySelector('.vendorContainer')?.textContent?.trim().toLowerCase();
+
+                if (!vendorRaw) {
+                  vendorRaw = document.querySelector('.vendorNameContainer')?.textContent?.trim().toLowerCase();
+                }
+                
+                if (!vendorRaw) {
+                  vendorRaw = vendorData.find(v => v.email === window.currentVendorEmail)?.name?.toLowerCase();
+                }
+                
+        
+                                const branch = document.querySelector('.branchContainer')?.textContent?.trim().toLowerCase();
+        
+                if (!vendorRaw) {
+                    alert("Original vendor name not found.");
+                    return;
+                }
+        
+                // Re-filter the vendor list based on vendorRaw
+                const matches = vendorData.filter(v =>
+                    v.name?.toLowerCase().includes(vendorRaw) ||
+                    v.email?.toLowerCase().includes(vendorRaw)
+                );
+        
+                // Further narrow down by branch
+                const narrowed = matches.filter(v =>
+                    v.name?.toLowerCase().includes(branch) ||
+                    v.email?.toLowerCase().includes(branch)
+                );
+        
+                const finalMatches = narrowed.length > 0 ? narrowed : matches;
+        
+                if (finalMatches.length > 1) {
+                    // Clear current vendor info
+                    document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = '');
+                    document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = '');
+                    window.currentVendorEmail = '';
+        
+                    // Show the dropdown again
+                    showVendorSelectionDropdown(finalMatches);
+                } else {
+                    alert("No alternate vendors found for this selection.");
+                }
+            });
+        }
+        
+                setupCopySubEmailsButton(); // Re-attach button listener
     } else {
         console.error("Email template container not found in the DOM.");
     }
@@ -1045,6 +1160,45 @@ async function sendEmailData() {
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const changeVendorBtn = document.getElementById('changeVendorBtn');
+
+    if (changeVendorBtn) {
+        changeVendorBtn.addEventListener('click', () => {
+            const vendorNameRaw = document.querySelector('.vendorNameContainer')?.textContent.trim().toLowerCase();
+
+            if (!vendorNameRaw) {
+                alert("No vendor name available.");
+                return;
+            }
+
+            // Use only the first word for fuzzy matching
+            const firstWord = vendorNameRaw.split(/\s+/)[0]; // e.g., "Summit" from "Summit Stairs"
+
+            // Get all vendor matches using first word and exclude the exact original name
+            const matches = vendorData.filter(vendor => {
+                const name = vendor.name?.toLowerCase() || '';
+                return name.includes(firstWord) && name !== vendorNameRaw;
+            });
+
+            if (matches.length > 0) {
+                // Clear current
+                document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = '');
+                document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = '');
+                window.currentVendorEmail = '';
+
+                // Show dropdown with options
+                showVendorSelectionDropdown(matches);
+            } else {
+                alert("No alternate vendors found for this selection.");
+            }
+        });
+    }
+});
+
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const gmEmailElement = document.querySelector('.gmEmailContainer');
@@ -1179,9 +1333,9 @@ if (vendorEmailWrapper) {
         
         const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
-        Hello,
+Greetings from Vanir Installed Sales,
         
-        We're excited to share that Vanir ${branch} will be partnering with ${builder} in the ${subdivision}.
+       Vanir ${branch} secured the ${subdivision} with ${builder}. We’re eager to get started and ensure excellence throughout the build.
         This will be a ${projectType} project, requiring ${materialType} installation.
         
         Project Details:
@@ -1209,7 +1363,7 @@ const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
 const vendorBody = `
 Hello,
 
-We're excited to share that Vanir ${branch} will be parterning with ${builder} in ${subdivision}.
+We're excited to share that Vanir ${branch} will be partnering with ${builder} in ${subdivision}.
 
 Project Summary:
 - Project Type: ${projectType}
@@ -1439,6 +1593,7 @@ async function fetchAndUpdateAutocomplete() {
     // Fetch bid names only (no subcontractors yet)
     await fetchBidNameSuggestions();
     await fetchAllVendorData(); // Add this before fetchDetailsByBidName
+    createVendorAutocompleteInput();
 
     hideLoadingAnimation();
 
@@ -1456,6 +1611,66 @@ async function fetchAndUpdateAutocomplete() {
     // Enable bid name input after loading
     bidAutocompleteInput.querySelector('input').disabled = false;
 }
+
+function createVendorAutocompleteInput() {
+    const container = document.getElementById("vendorEmailContainer");
+    if (!container) {
+        console.error("❌ vendorEmailContainer not found.");
+        return;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "vendor-autocomplete-wrapper";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Enter Vendor Name or Email";
+    input.className = "vendor-autocomplete-input";
+
+    const dropdown = document.createElement("div");
+    dropdown.className = "vendor-autocomplete-dropdown";
+
+    input.addEventListener("input", () => {
+        const query = input.value.toLowerCase();
+        dropdown.innerHTML = "";
+
+        const filteredVendors = vendorData.filter(vendor => {
+            return (
+                vendor.name?.toLowerCase().includes(query) ||
+                vendor.email?.toLowerCase().includes(query)
+            );
+        });
+
+        filteredVendors.forEach(vendor => {
+            const option = document.createElement("div");
+            option.className = "vendor-autocomplete-option";
+            option.innerHTML = `<strong>${vendor.name}</strong><br><small>${vendor.email}</small>`;
+            option.addEventListener("click", () => {
+                input.value = vendor.name;
+                window.currentVendorEmail = vendor.email;
+
+                // Update in DOM
+                document.querySelectorAll('.vendorNameContainer').forEach(el => {
+                    el.textContent = vendor.name;
+                });
+                document.querySelectorAll('.vendorEmailWrapper').forEach(el => {
+                    el.textContent = ` <${vendor.email}>`;
+                });
+
+                dropdown.innerHTML = "";
+            });
+
+            dropdown.appendChild(option);
+        });
+
+        dropdown.style.display = filteredVendors.length ? 'block' : 'none';
+    });
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(dropdown);
+    container.appendChild(wrapper);
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // Dynamically create bidInputContainer
