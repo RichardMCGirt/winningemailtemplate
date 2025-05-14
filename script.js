@@ -1065,7 +1065,6 @@ async function sendEmailData() {
 
         <!-- ✅ Vendor Email Section -->
         <div id="vendorEmailContainer" style="margin-top: 10px;"></div>
-<button id="changeVendorBtn" style="margin-top: 10px;">Change Vendor</button>
 
         <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
@@ -1095,10 +1094,39 @@ async function sendEmailData() {
         </div>
     `;
 
+    document.addEventListener('DOMContentLoaded', () => {
+        const cityObserver = new MutationObserver(() => { 
+            const cityInputs = document.querySelectorAll('input.city');
+            if (cityInputs.length >= 2) {
+                syncCityInputs();
+                cityObserver.disconnect();
+            }
+        });
+    
+        cityObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    });
+    
+
     const emailContainer = document.getElementById('emailTemplate');
     if (emailContainer) {
         emailContainer.innerHTML = emailContent;
 
+        // 🔄 Observe for city inputs after they're injected
+        const cityObserver = new MutationObserver(() => { 
+            const cityInputs = document.querySelectorAll('input.city');
+            if (cityInputs.length >= 2) {
+                syncCityInputs();
+                cityObserver.disconnect();
+            }
+        });
+        cityObserver.observe(emailContainer, {
+            childList: true,
+            subtree: true,
+        });
+        
         // ✅ Attach the click listener immediately after creating the button
         const changeVendorBtn = document.getElementById('changeVendorBtn');
         if (changeVendorBtn) {
@@ -1154,7 +1182,27 @@ async function sendEmailData() {
         console.error("Email template container not found in the DOM.");
     }
 }
+// Sync city inputs once both are loaded and observed
+function syncCityInputs() {
+    const cityInputs = document.querySelectorAll('input.city');
 
+    if (cityInputs.length < 2) return;
+
+    // Avoid duplicate listeners
+    cityInputs.forEach(input => {
+        input.removeEventListener('input', handleInput);
+        input.addEventListener('input', handleInput);
+    });
+
+    function handleInput(e) {
+        const value = e.target.value;
+        cityInputs.forEach(el => {
+            if (el !== e.target) el.value = value;
+        });
+    }
+
+    console.log("✅ City inputs synced and listeners attached");
+}
 
 // Trigger the display of email content once vendor emails are fetched
 document.addEventListener('DOMContentLoaded', () => {
@@ -1300,13 +1348,10 @@ if (vendorEmailWrapper) {
         
         Major Win for with ${builder}!
         
-        We have been awarded ${subdivision} with ${builder} in ${city}.
-                Here's the breakdown:
-
         Here's the breakdown:
-        Community Name: 
 
-        - Customer Name: ${cname}
+        Community Name: 
+        - Field Contact: Unknown Customer Name
 
      Purchasing Contact:  
 

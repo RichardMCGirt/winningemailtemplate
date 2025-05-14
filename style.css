@@ -97,9 +97,11 @@ h2, h4, p {
 
 .vendor-autocomplete-dropdown {
     position: absolute;
-    background: #fff;
+    background: grey;
     border: 1px solid #ccc;
-    max-height: 200px;
+    max-height: 450px;
+    font-size: 24px;
+    width: fit-content !important;
     overflow-y: auto;
     z-index: 999;
     width: 100%;
@@ -111,7 +113,8 @@ h2, h4, p {
 }
 
 .vendor-autocomplete-option:hover {
-    background-color: #f0f0f0;
+    background-color: white;
+    color: black;
 }
 
 .signature-container {
