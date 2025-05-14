@@ -298,6 +298,7 @@ async function fetchBidNameSuggestions() {
 }
 
 async function fetchSubcontractorSuggestions(branchFilter) {
+
     if (!branchFilter) {
         console.error("Branch filter is missing.");
         return;
@@ -389,7 +390,13 @@ async function fetchDetailsByBidName(bidName) {
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : 'Branch Staff@Vanir.com';
         const branch = fields['Branch'] || 'Unknown Branch';
-        const projectType = fields['Project Type'] || '';
+
+        if (branch) {
+          await fetchSubcontractorSuggestions(branch);
+        } else {
+          console.warn("⚠️ No branch found in bid details, skipping subcontractor fetch.");
+        }
+                const projectType = fields['Project Type'] || '';
         const materialType = fields['Material Type'] || '';
         const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
@@ -447,7 +454,7 @@ async function fetchDetailsByBidName(bidName) {
             vendoremail
         );
 
-        await fetchSubcontractorSuggestions(branch);
+        await fetchSubcontractorSuggestions(fields['Branch']);
         updateSubcontractorAutocomplete();
 
         return {
@@ -493,6 +500,37 @@ async function fetchDetailsByBidName(bidName) {
     }
 }
 
+function setupCopySubEmailsButton() {
+    const button = document.getElementById("copySubEmailsBtn");
+    if (!button) {
+        console.warn("Copy Sub Emails button not found.");
+        return;
+    }
+
+    button.addEventListener("click", () => {
+        const emails = subcontractorSuggestions.map(sub => sub.email).filter(Boolean);
+        const emailList = emails.join(', ');
+    
+        console.log("🔍 Subcontractor emails to copy:", emails); // <-- ADD THIS
+    
+
+        if (!emails.length) {
+            alert("No subcontractor emails loaded yet.");
+            return;
+        }
+
+        navigator.clipboard.writeText(emailList)
+            .then(() => {
+                alert("Subcontractor emails copied to clipboard!");
+            })
+            .catch(err => {
+                console.error("Failed to copy emails:", err);
+                alert("Failed to copy emails. Please try again.");
+            });
+    });
+}
+
+
 // Unified function to create an autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback) {
     // Validate the `type` parameter
@@ -505,10 +543,28 @@ function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCal
     wrapper.classList.add(`${type}-autocomplete-wrapper`, "autocomplete-wrapper");
 
     const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = placeholder;
-    input.classList.add(`${type}-autocomplete-input`, "autocomplete-input");
-    input.dataset.type = type;
+input.type = "text";
+input.placeholder = placeholder;
+input.classList.add(`${type}-autocomplete-input`, "autocomplete-input");
+input.dataset.type = type;
+
+input.addEventListener("input", () => {
+    if (input.value.trim() === "") {
+      input.classList.add("marching-ants");
+      console.log("🟡 Input is empty — marching ants added");
+    } else {
+      input.classList.remove("marching-ants");
+      console.log("✅ Input has value — marching ants removed");
+    }
+  });
+  
+  if (input.value.trim() === "") {
+    input.classList.add("marching-ants");
+    console.log("⚠️ Initially empty — marching ants added");
+  }
+  
+  
+
 
     const dropdown = document.createElement("div");
     dropdown.classList.add(`${type}-autocomplete-dropdown`, "autocomplete-dropdown");
@@ -702,6 +758,7 @@ function monitorSubdivisionChanges() {
 document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     monitorSubdivisionChanges();
+    setupCopySubEmailsButton(); // 👈 setup click listener
 
 });
 
@@ -857,6 +914,8 @@ async function sendEmailData() {
     
             <!-- Subcontractor Email -->
             <div id="subcontractorCompanyContainer"></div>
+            <button id="copySubEmailsBtn" style="margin-top: 10px;">Copy All <strong><span class="branchContainer"></span></strong> Subcontractors Emails</button>
+
             <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
             <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
             <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
@@ -896,10 +955,12 @@ async function sendEmailData() {
         const emailContainer = document.getElementById('emailTemplate');
         if (emailContainer) {
             emailContainer.innerHTML = emailContent;
+            setupCopySubEmailsButton(); // 👈 CALL HERE AFTER HTML IS INJECTED
         } else {
             console.error("Email template container not found in the DOM.");
         }
     }
+    
 
 // Trigger the display of email content once vendor emails are fetched
 document.addEventListener('DOMContentLoaded', () => {

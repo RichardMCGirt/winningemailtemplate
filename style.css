@@ -8,6 +8,46 @@ body {
     color: #333;
 }
 
+@keyframes marching-ants {
+    0% {
+      border-image-slice: 1;
+      border-image-source: repeating-linear-gradient(
+        45deg,
+        white 0px,
+        white,
+        transparent 4px,
+        transparent 8px
+      );
+    }
+    100% {
+      border-image-slice: 1;
+      border-image-source: repeating-linear-gradient(
+        45deg,
+        transparent 0px,
+        transparent 2px,
+        white 4px,
+        white 8px
+      );
+    }
+  }
+  
+  .marching-ants {
+    border: 4px solid transparent;
+    border-image-slice: 1;
+    border-image-source: repeating-linear-gradient(
+      45deg,
+      white 0px,
+      white 2px,
+      transparent 4px,
+      transparent 8px
+    );
+    animation: marching-ants 0.6s linear infinite;
+  }
+  
+  
+  
+  
+
 /* Title and Labels */
 h2, h4, p {
     color: #0056b3;
@@ -43,12 +83,14 @@ h2, h4, p {
 }
 
 input {
-    border: none;
-    border-bottom: 1px solid #000;
     font-size: 14px;
     padding: 3px;
-    width: auto;
+    width: fit-content !important;
+    background-color: transparent; /* Allow marching-ants to show */
+    border: none; /* Remove solid border */
+    width: 200px;
 }
+
 
 a {
     color: #004AAD;
@@ -237,6 +279,8 @@ button:hover {
     transition: width 0.3s ease;
 }
 
+  
+  
 
 .textarea-row {
     display: flex;
@@ -378,6 +422,7 @@ body.dark-mode textarea {
     color: #f4f4f9;
     border-color: #555;
     font-size: 25px;
+    width: fit-content;
 }
 
 body.dark-mode button {
