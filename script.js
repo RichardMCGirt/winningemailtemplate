@@ -219,6 +219,57 @@ async function fetchAirtableData(baseId, tableName, fieldName, filterFormula = '
     return allRecords;
 }
 
+async function fetchACMInfoForBranch(branchName) {
+    const url = `https://api.airtable.com/v0/appK9gZS77OmsIK50/tblIgxx14Qom58kqK?view=viwtpaTQYhHYGsv1R`;
+
+    try {
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`,
+            },
+        });
+
+        if (!response.ok) {
+            console.error("Failed to fetch ACM info:", response.statusText);
+            return;
+        }
+
+        const data = await response.json();
+
+        const matchedRecord = data.records.find(record => {
+            const office = record.fields["Office Name"];
+            return office && office.trim().toLowerCase() === branchName.trim().toLowerCase();
+        });
+
+        if (matchedRecord) {
+            const acmName = matchedRecord.fields["ACM Name"] || "";
+            const acmEmail = matchedRecord.fields["ACM Email"] || "";
+        
+            const nameInput = document.querySelector('.acmName');
+            const emailInput = document.querySelector('.acmEmail');
+        
+            if (nameInput) {
+                nameInput.value = acmName;
+                autoResizeInput(nameInput);
+            }
+            
+            if (emailInput) {
+                emailInput.value = acmEmail;
+                autoResizeInput(emailInput);
+            }
+            
+        
+            console.log(`✅ Found ACM info for branch "${branchName}": ${acmName}, ${acmEmail}`);
+        }
+         else {
+            console.warn(`⚠️ No ACM record found for branch "${branchName}"`);
+        }
+    } catch (error) {
+        console.error("Error fetching ACM data:", error);
+    }
+}
+
+
 function appendEmailsForSelectedBid(selectedBid) {
     console.log("🔧 appendEmailsForSelectedBid triggered");
     
@@ -680,7 +731,8 @@ function updateTemplateText(
     if (branch) {
       document.querySelectorAll('.branchContainer').forEach(el => (el.textContent = branch));
     }
-  
+    fetchACMInfoForBranch(branch);
+
     if (projectType) {
       document.querySelectorAll('.briqProjectTypeContainer').forEach(el => (el.textContent = projectType));
     }
@@ -877,6 +929,20 @@ async function sendEmailData() {
 
    // <p>CC: <span class="cc-email-container">Vendor</span></p>
 
+   function autoResizeInput(input) {
+    if (!input) return;
+    const tempSpan = document.createElement('span');
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.position = 'absolute';
+    tempSpan.style.whiteSpace = 'pre';
+    tempSpan.style.font = getComputedStyle(input).font;
+    tempSpan.textContent = input.value || input.placeholder || '';
+    document.body.appendChild(tempSpan);
+    input.style.width = `${tempSpan.offsetWidth + 12}px`; // Add some padding
+    document.body.removeChild(tempSpan);
+}
+
+
    function displayEmailContent() {
     const emailContent = `
         <h2>
@@ -886,16 +952,16 @@ async function sendEmailData() {
         <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
 
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-
         <p>Go <strong><span class="branchContainer"></span></strong>,</p>
 
-        <h4>Major Win for Team <strong><span class="branchContainer"></span></strong></h4>
-    
+        <h4>Major Win with <strong> <span class="builderContainer"></span></strong></h4>
+   
 
         <h2>Here's the breakdown:</h2>
-        <p><strong>Customer Name:</strong> <span class="builderContainer"></span></p>
+        <p><strong>Customer Name:</strong> <input class="cname" placeholder="Enter customer name" /></p>
+        <p><strong>Product Being Built:</strong> <input class="whatbuild" placeholder="Project type?" /></p>
         <p><strong>Project Type:</strong> <span class="briqProjectTypeContainer"></span></p>
-        <p><strong>Expected Pace:</strong> <span class="AnticipatedDurationContainer"></span> days</p>
+<p><strong>Expected Pace:</strong> <input class="epace" type="number" placeholder="Days" /> days</p>
         <p><strong>Expected Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
 
@@ -908,59 +974,72 @@ async function sendEmailData() {
         <label><input type="radio" name="poCustomer" value="No" class="pcustomer" /> No</label>
 
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
-    
 
-            <hr>
-    
-            <!-- Subcontractor Email -->
-            <div id="subcontractorCompanyContainer"></div>
-            <button id="copySubEmailsBtn" style="margin-top: 10px;">Copy All <strong><span class="branchContainer"></span></strong> Subcontractors Emails</button>
+        <hr>
 
-            <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
-            <p>We are thrilled to inform you that we have been awarded a new community, <strong><span class="subdivisionContainer"></span></strong>, in collaboration with 
-            <strong><span class="builderContainer"></span></strong>. We look forward to working together and maintaining high standards for this project.</p>
-            <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
-            <p>If you're interested in working with us on this exciting opportunity, please reach out to our </span></strong> general manager 
-            <strong><span class="gmNameContainer"></span></strong> at <strong><span class="gmEmailContainer"></span></strong>.</p>
-    
-            <hr>
-    
-            <!-- ✅ Vendor Email Section -->
-<div id="vendorEmailContainer" style="margin-top: 10px;"></div>
+        <!-- Subcontractor Email -->
+        <div id="subcontractorCompanyContainer"></div>
+        <button id="copySubEmailsBtn" style="margin-top: 10px;">Copy All <strong><span class="branchContainer"></span></strong> Subcontractors Emails</button>
 
-<h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
+        <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
 
-            <p><strong>Subject:</strong> Vanir | 
-            <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
+        <p>Greetings from Vanir Installed Sales,</p>
+            <p>Vanir has officially secured the<strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
+        <input class="city" placeholder="Enter city" /></p>. We’re eager to get started and ensure excellence throughout the build.
 
-            <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> has secured the bid for the <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
-            <p><strong>Project Summary:</strong></p>
-            <ul>
-                <li>Material Type: <span class="materialTypeContainer"></span></li>
-            </ul>
-    
-            <p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong></p>
-    
-            <div class="signature-container">
-                <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
-                <div class="signature-content">
-                    <p><input type="text" id="inputUserName" placeholder=""> | Vanir Installed Sales, LLC</p>
-                    <p>Phone: <input type="text" id="inputUserPhone" placeholder=""></p>
-                    <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
-                    <p><strong>Better Look. Better Service. Best Choice.</strong></p>
-                </div>
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
+
+      <p>
+  If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
+  <strong><span class="gmNameContainer"></span></strong> at 
+  <strong><span class="gmEmailContainer"></span></strong> or our Area Construction Manager 
+  <input type="text" class="acmName" placeholder="ACM Name" style="margin-left: 4px; margin-right: 4px;" /> at 
+  <input type="text" class="acmEmail" placeholder="ACM Email" style="margin-left: 4px;" />.
+</p>
+
+
+        <hr>
+
+        <!-- ✅ Vendor Email Section -->
+        <div id="vendorEmailContainer" style="margin-top: 10px;"></div>
+
+        <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
+
+        <p><strong>Subject:</strong> Vendor Notification | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
+        <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
+        <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> <strong><span class="branchContainer"></span></strong> has secured the bid for the <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
+
+        <p><strong>Project Summary:</strong></p>
+        <ul>
+            <li>Project Type: <span class="briqProjectTypeContainer"></span></li>
+            <li>Material Type: <span class="materialTypeContainer"></span></li>
+            <li>Expected Start Date: <span class="anticipatedStartDateContainer"></span></li>
+            <li>Number of Lots: <span class="numberOfLotsContainer"></span></li>
+            <li>Location: <input class="city" placeholder="Enter city" /></li>
+        </ul>
+<p>We look forward to another successful project with you.</p>
+        <p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong></p>
+
+        <div class="signature-container">
+            <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
+            <div class="signature-content">
+                <p><input type="text" id="inputUserName" placeholder=""> | Vanir Installed Sales, LLC</p>
+                <p>Phone: <input type="text" id="inputUserPhone" placeholder=""></p>
+                <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
+                <p><strong>Better Look. Better Service. Best Choice.</strong></p>
             </div>
-        `;
-    
-        const emailContainer = document.getElementById('emailTemplate');
-        if (emailContainer) {
-            emailContainer.innerHTML = emailContent;
-            setupCopySubEmailsButton(); // 👈 CALL HERE AFTER HTML IS INJECTED
-        } else {
-            console.error("Email template container not found in the DOM.");
-        }
+        </div>
+    `;
+
+    const emailContainer = document.getElementById('emailTemplate');
+    if (emailContainer) {
+        emailContainer.innerHTML = emailContent;
+        setupCopySubEmailsButton(); // Re-attach button listener
+    } else {
+        console.error("Email template container not found in the DOM.");
     }
-    
+}
+
 
 // Trigger the display of email content once vendor emails are fetched
 document.addEventListener('DOMContentLoaded', () => {
@@ -1003,6 +1082,11 @@ async function generateMailtoLinks() {
         const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
+        const acmNameEl = document.querySelector('.acmName');
+const acmEmailEl = document.querySelector('.acmEmail');
+const acmName = acmNameEl && acmNameEl.value ? acmNameEl.value.trim() : 'Your ACM';
+const acmEmail = acmEmailEl && acmEmailEl.value ? acmEmailEl.value.trim() : 'acm@example.com';
+
         const cityEl = document.querySelector('.city');
 const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
 
@@ -1060,12 +1144,18 @@ if (vendorEmailWrapper) {
         const managementBody = `
         Go ${branch},
         
-        Major Win for Team ${branch}!
+        Major Win for with ${builder}!
         
         We have been awarded ${subdivision} with ${builder} in ${city}.
-        
+                Here's the breakdown:
+
         Here's the breakdown:
+        Community Name: 
+
         - Customer Name: ${cname}
+
+     Purchasing Contact:  
+
         - ${projectType}
         - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
         - Expected Start Date: ${anticipatedStartDate}
@@ -1074,7 +1164,10 @@ if (vendorEmailWrapper) {
         - PO Customer: ${poCustomer}
         - Material Type: ${materialType}
         
-        This will be a ${projectType} project, requiring ${materialType} installation.
+        Vanir assignments will be:
+
+- Field:
+- Account Administrator:
     
         Kind regards,  
         ${userName}  
@@ -1086,10 +1179,9 @@ if (vendorEmailWrapper) {
         
         const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
-        Dear Subcontractor,
+        Hello,
         
-Vanir has officially secured the ${subdivision} community project with ${builder} in ${branch}. We’re eager to get started and ensure excellence throughout the build.
-
+        We're excited to share that Vanir ${branch} will be partnering with ${builder} in the ${subdivision}.
         This will be a ${projectType} project, requiring ${materialType} installation.
         
         Project Details:
@@ -1100,7 +1192,7 @@ Vanir has officially secured the ${subdivision} community project with ${builder
         - Number of Lots: ${numberOfLots}
         - Anticipated Start Date: ${anticipatedStartDate}
         
-If you're interested in this opportunity, please contact our General Manager, ${gm}, at ${gmEmail} to discuss next steps.
+        If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm}, at ${gmEmail} or our Area Construction Manager ${acmName} at ${acmEmail} to discuss next steps.
         
         Best regards,  
         ${userName}  
@@ -1109,6 +1201,7 @@ If you're interested in this opportunity, please contact our General Manager, ${
         https://www.vanirinstalledsales.com  
         Better Look. Better Service. Best Choice.
         `.trim();
+        
         console.log("📨 Vendor email to send to:", vendorEmail);
 
       // Define these before you use them
@@ -1116,13 +1209,16 @@ const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
 const vendorBody = `
 Hello,
 
-We're excited to share that Vanir, in collaboration with ${builder}, will be leading the ${subdivision} project through our ${branch} team.
+We're excited to share that Vanir ${branch} will be parterning with ${builder} in ${subdivision}.
 
 Project Summary:
 - Project Type: ${projectType}
 - Material Type: ${materialType}
 - Expected Start Date: ${anticipatedStartDate}
 - Number of Lots: ${numberOfLots}
+- Address or city of project 
+
+We look forward to another successful project with you.
 
 Best,  
 ${userName}  
