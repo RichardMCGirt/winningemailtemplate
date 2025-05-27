@@ -1523,37 +1523,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
 
     if (sendManagementEmailButton) {
-        sendManagementEmailButton.addEventListener('click', async function () {
-            showRedirectAnimation(); // Optional loading animation
+       sendManagementEmailButton.addEventListener('click', async function () {
+    showRedirectAnimation();
 
-            // 🔐 Trick popup blocker by opening immediately
-            const vendorWindow = window.open("about:blank", "_blank");
+    // Open all windows immediately to beat the popup blocker
+    const vendorWindow = window.open("about:blank", "_blank");
+    const managementWindow = window.open("about:blank", "_blank");
+    const subcontractorWindows = [];
 
-            // Generate all links (async)
-            const links = await generateMailtoLinks();
+    // Pre-open one window for each subcontractor chunk
+    const chunkCount = Math.ceil(subcontractorSuggestions.length / 30);
+    for (let i = 0; i < chunkCount; i++) {
+        subcontractorWindows.push(window.open("about:blank", "_blank"));
+    }
 
-            if (links) {
-                const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
+    const links = await generateMailtoLinks();
 
-                if (managementGmailLink) window.open(managementGmailLink);
-                if (subcontractorGmailLinks && subcontractorGmailLinks.length) {
-                    subcontractorGmailLinks.forEach(link => {
-                      window.open(link, "_blank");
-                    });
-                  }
-                  
-                // ✅ Set vendor link into pre-opened window
-                if (vendorGmailLink && vendorWindow) {
-                    vendorWindow.location.href = vendorGmailLink;
-                } else {
-                    vendorWindow.close(); // Close if no valid link
-                }
-            } else {
-                vendorWindow.close(); // Close if link gen failed
+    if (links) {
+        const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
+
+        if (vendorGmailLink) vendorWindow.location.href = vendorGmailLink;
+        else vendorWindow.close();
+
+        if (managementGmailLink) managementWindow.location.href = managementGmailLink;
+        else managementWindow.close();
+
+        subcontractorGmailLinks.forEach((link, index) => {
+            if (subcontractorWindows[index]) {
+                subcontractorWindows[index].location.href = link;
+            }
+        });
+    } else {
+        vendorWindow.close();
+        managementWindow.close();
+        subcontractorWindows.forEach(win => win.close());
             }
         });
     }
-});
+}); // ✅ closes the first DOMContentLoaded listener
 
 
 
