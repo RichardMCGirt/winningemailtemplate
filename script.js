@@ -1022,7 +1022,7 @@ async function sendEmailData() {
 
         <h2>Here's the breakdown:</h2>
         <span class="subdivisionContainer"></span> :
-        <p><strong>Field Contact:</strong> <input class="cname" placeholder="Enter customer name" /></p>
+        <p><strong>Field Contact:</strong> <input class="cname" placeholder="Enter contact name" /></p>
         <p><strong>Product Being Built:</strong> <span class="briqProjectTypeContainer"></span></p>
 <p><strong>Expected Pace:</strong> <input class="epace" type="number" placeholder="Days" /> days</p>
         <p><strong>Expected Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
