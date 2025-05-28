@@ -795,8 +795,10 @@ function updateTemplateText(
 if (branch) {
     document.querySelectorAll('.branchContainer').forEach(el => (el.textContent = branch));
 
-    const branchSlug = branch.toLowerCase().replace(/\s+/g, '');
-    const purchasingEmail = `purchasing.${branchSlug}@vanirinstalledsales.com`;
+const branchSlug = branch.toLowerCase().replace(/\s+/g, '');
+const rawPurchasingEmail = `purchasing.${branchSlug}@vanirinstalledsales.com`;
+const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
+
     const estimatesEmail = `estimates.${branchSlug}@vanirinstalledsales.com`;
 
     document.querySelectorAll('.branchEmailContainer').forEach(el => {
@@ -1016,6 +1018,12 @@ async function sendEmailData() {
     document.body.removeChild(tempSpan);
 }
 
+function normalizePurchasingEmail(email) {
+    if (email === "purchasing.raleigh@vanirinstalledsales.com") {
+        return "purchasing@vanirinstalledsales.com";
+    }
+    return email;
+}
 
    function displayEmailContent() {
     const emailContent = `
@@ -1032,7 +1040,7 @@ async function sendEmailData() {
         <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
 
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-        <p>Go !! <strong><span class="branchContainer"></span></strong>,</p>
+        <p>Go!! <strong><span class="branchContainer"></span></strong>,</p>
 
         <h4>Major Win with <strong> <span class="builderContainer"></span></strong></h4>
    
@@ -1446,7 +1454,8 @@ Better Look. Better Service. Best Choice.
 
         // Combine emails for the "To" and "CC" sections
 const selectedbranch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase().replace(/\s+/g, '');
-const purchasingEmail = `purchasing.${selectedbranch}@vanirinstalledsales.com`;
+const rawPurchasingEmail = `purchasing.${branchSlug}@vanirinstalledsales.com`;
+const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
 const estimatesEmail = `estimates.${selectedbranch}@vanirinstalledsales.com`;
 
 const teamEmails = [
