@@ -1797,48 +1797,62 @@ function debounce(func, delay) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
+    const sendManagementEmailButton = document.getElementById('sendSelectedEmails');
 
     if (sendManagementEmailButton) {
         sendManagementEmailButton.addEventListener('click', async function () {
             showRedirectAnimation();
 
-            // ✅ Open all windows synchronously BEFORE await
-            const vendorWindow = window.open("about:blank", "_blank");
-            const managementWindow = window.open("about:blank", "_blank");
+            const sendVendor = document.getElementById("optionVendor")?.checked;
+            const sendManagement = document.getElementById("optionManagement")?.checked;
+            const sendSubcontractor = document.getElementById("optionSubcontractor")?.checked;
+
+            // Pre-open windows as needed
+            const vendorWindow = sendVendor ? window.open("about:blank", "_blank") : null;
+            const managementWindow = sendManagement ? window.open("about:blank", "_blank") : null;
             const subcontractorWindows = [];
 
-            const chunkCount = Math.ceil(subcontractorSuggestions.length / 30);
+            const chunkCount = sendSubcontractor ? Math.ceil(subcontractorSuggestions.length / 30) : 0;
             for (let i = 0; i < chunkCount; i++) {
                 subcontractorWindows.push(window.open("about:blank", "_blank"));
             }
 
-            // ⏳ THEN fetch the links
             const links = await generateMailtoLinks();
 
             if (links) {
                 const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
 
-                if (vendorGmailLink) vendorWindow.location.href = vendorGmailLink;
-                else vendorWindow.close();
+                if (sendVendor && vendorWindow && vendorGmailLink) {
+                    vendorWindow.location.href = vendorGmailLink;
+                } else if (vendorWindow) {
+                    vendorWindow.close();
+                }
 
-                if (managementGmailLink) managementWindow.location.href = managementGmailLink;
-                else managementWindow.close();
+                if (sendManagement && managementWindow && managementGmailLink) {
+                    managementWindow.location.href = managementGmailLink;
+                } else if (managementWindow) {
+                    managementWindow.close();
+                }
 
-                subcontractorGmailLinks.forEach((link, index) => {
-                    if (subcontractorWindows[index]) {
-                        subcontractorWindows[index].location.href = link;
-                    }
-                });
+                if (sendSubcontractor && subcontractorGmailLinks.length) {
+                    subcontractorGmailLinks.forEach((link, index) => {
+                        if (subcontractorWindows[index]) {
+                            subcontractorWindows[index].location.href = link;
+                        }
+                    });
+                } else {
+                    subcontractorWindows.forEach(w => w.close());
+                }
+
             } else {
-                // Close pre-opened windows if no links
-                vendorWindow.close();
-                managementWindow.close();
+                vendorWindow?.close();
+                managementWindow?.close();
                 subcontractorWindows.forEach(w => w.close());
             }
         });
     }
 });
+
 
 
 
