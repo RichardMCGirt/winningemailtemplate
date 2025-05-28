@@ -1797,28 +1797,49 @@ function debounce(func, delay) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const sendSelectedBtn = document.getElementById('sendSelectedEmails');
+    const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
 
-  sendSelectedBtn.addEventListener('click', async () => {
-    showRedirectAnimation(); // Optional
+    if (sendManagementEmailButton) {
+        sendManagementEmailButton.addEventListener('click', async function () {
+            showRedirectAnimation();
 
-    const { vendorGmailLink, managementGmailLink, subcontractorGmailLinks } = await generateMailtoLinks();
+            // ✅ Open all windows synchronously BEFORE await
+            const vendorWindow = window.open("about:blank", "_blank");
+            const managementWindow = window.open("about:blank", "_blank");
+            const subcontractorWindows = [];
 
-    if (document.getElementById('optionVendor').checked && vendorGmailLink) {
-      window.open(vendorGmailLink, '_blank');
+            const chunkCount = Math.ceil(subcontractorSuggestions.length / 30);
+            for (let i = 0; i < chunkCount; i++) {
+                subcontractorWindows.push(window.open("about:blank", "_blank"));
+            }
+
+            // ⏳ THEN fetch the links
+            const links = await generateMailtoLinks();
+
+            if (links) {
+                const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
+
+                if (vendorGmailLink) vendorWindow.location.href = vendorGmailLink;
+                else vendorWindow.close();
+
+                if (managementGmailLink) managementWindow.location.href = managementGmailLink;
+                else managementWindow.close();
+
+                subcontractorGmailLinks.forEach((link, index) => {
+                    if (subcontractorWindows[index]) {
+                        subcontractorWindows[index].location.href = link;
+                    }
+                });
+            } else {
+                // Close pre-opened windows if no links
+                vendorWindow.close();
+                managementWindow.close();
+                subcontractorWindows.forEach(w => w.close());
+            }
+        });
     }
-
-    if (document.getElementById('optionManagement').checked && managementGmailLink) {
-      window.open(managementGmailLink, '_blank');
-    }
-
-    if (document.getElementById('optionSubcontractor').checked && subcontractorGmailLinks.length) {
-      subcontractorGmailLinks.forEach(link => {
-        window.open(link, '_blank');
-      });
-    }
-  });
 });
+
 
 
 function initializeBidAutocomplete() {
