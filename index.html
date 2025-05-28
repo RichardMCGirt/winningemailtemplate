@@ -21,12 +21,23 @@
 
     <!-- Email Template Container -->
     <div id="emailTemplate"></div>
+<!-- Hidden buttons -->
+<button id="sendVendorEmailButton" style="display: none;"></button>
+<button id="sendManagementEmailButtonReal" style="display: none;"></button>
+<button id="sendSubcontractorEmailButton" style="display: none;"></button>
+<div id="emailOptions" style="margin: 20px 0;">
+  <label><input type="checkbox" id="optionVendor" checked /> Send Vendor Email</label><br>
+  <label><input type="checkbox" id="optionManagement" checked /> Send Management Email</label><br>
+  <label><input type="checkbox" id="optionSubcontractor" checked /> Send Subcontractor Email(s)</label><br>
+  <button id="sendSelectedEmails">Send Selected Emails</button>
+</div>
 
 
     <!-- Send Email Button -->
-    <div id="sendEmailButtonContainer">
-        <button id="sendManagementEmailButton">Export to Gmail</button>
-    </div>
+ <div id="sendEmailButtonContainer" style="display: none;">
+    <button id="sendManagementEmailButton">Export to Gmail</button>
+</div>
+
 
     <!-- Translation Section -->
    <!-- <div class="translate-container">
@@ -39,6 +50,8 @@
 
     <!-- Dynamic Content Container -->
     <div id="dynamicContainer"></div>
+
+
 
     <!-- Google APIs -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>

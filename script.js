@@ -1427,8 +1427,6 @@ https://www.vanirinstalledsales.com
 Better Look. Better Service. Best Choice.
 `.trim();
 
-
-
         // Combine emails for the "To" and "CC" sections
         const teamEmails = "maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com";
         const bccEmails = subcontractorSuggestions
@@ -1452,7 +1450,6 @@ const subcontractorEmailChunks = splitIntoChunks(
     return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&bcc=${encodeURIComponent(chunk.join(','))}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
   });
   
-      
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLinks);
         const vendorGmailLink = vendorToEmail
@@ -1790,7 +1787,6 @@ async function fetchLazyBidSuggestions(query = "", isInitialLoad = false) {
     }
 }
 
-
 // Debounce utility to limit API calls
 function debounce(func, delay) {
     let timer;
@@ -1799,6 +1795,31 @@ function debounce(func, delay) {
         timer = setTimeout(() => func(...args), delay);
     };
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const sendSelectedBtn = document.getElementById('sendSelectedEmails');
+
+  sendSelectedBtn.addEventListener('click', async () => {
+    showRedirectAnimation(); // Optional
+
+    const { vendorGmailLink, managementGmailLink, subcontractorGmailLinks } = await generateMailtoLinks();
+
+    if (document.getElementById('optionVendor').checked && vendorGmailLink) {
+      window.open(vendorGmailLink, '_blank');
+    }
+
+    if (document.getElementById('optionManagement').checked && managementGmailLink) {
+      window.open(managementGmailLink, '_blank');
+    }
+
+    if (document.getElementById('optionSubcontractor').checked && subcontractorGmailLinks.length) {
+      subcontractorGmailLinks.forEach(link => {
+        window.open(link, '_blank');
+      });
+    }
+  });
+});
+
 
 function initializeBidAutocomplete() {
     const bidContainer = document.getElementById("bidInputContainer");
@@ -1877,7 +1898,6 @@ function initializeBidAutocomplete() {
         
     }
 }
-
 
 // Function to wait for the cc-email-container to exist in the DOM
 async function waitForElement(selector, timeout = 5000) {
