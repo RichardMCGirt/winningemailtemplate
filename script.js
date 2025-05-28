@@ -100,26 +100,44 @@ function addCitySpan() {
 
 async function fetchAllVendorData() {
     try {
-        console.log("Fetching all vendor data...");
+        console.log("📦 Fetching all vendor data...");
 
-        // Fetch all vendor records from Airtable
-        const records = await fetchAirtableData(
-            VendorBaseName,
-            VendorTableName,
-            'Vendor Name, Email, Secondary Email'
-        );
+        let allRecords = [];
+        let offset = null;
 
-        // Store vendor data globally
-        vendorData = records.map(record => ({
+        do {
+            let url = `https://api.airtable.com/v0/${VendorBaseName}/${VendorTableName}?pageSize=100`;
+            if (offset) url += `&offset=${offset}`;
+
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                },
+            });
+
+            if (!response.ok) {
+                console.error(`❌ HTTP Error: ${response.status} - ${response.statusText}`);
+                break;
+            }
+
+            const data = await response.json();
+            allRecords = allRecords.concat(data.records);
+            offset = data.offset; // Continue if there's more data
+
+        } while (offset);
+
+        // Map and store globally
+        vendorData = allRecords.map(record => ({
             name: record.fields['Name'] || "Unknown Vendor",
             email: record.fields['Email'] || null,
         }));
 
-        console.log("All vendor data fetched and stored:", vendorData);
+        console.log(`✅ All ${vendorData.length} vendor records fetched and stored.`);
     } catch (error) {
-        console.error("Error fetching vendor data:", error);
+        console.error("❌ Error fetching vendor data:", error);
     }
 }
+
 
 
 async function ensureDynamicContainerExists() {
@@ -475,6 +493,42 @@ async function fetchDetailsByBidName(bidName) {
         
             document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
             document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+            // ✅ Add "Change Vendor" button if not already present
+const existingChangeBtn = document.getElementById('changeVendorBtn');
+if (!existingChangeBtn) {
+    const changeBtn = document.createElement('button');
+    changeBtn.id = 'changeVendorBtn';
+    changeBtn.textContent = 'Change Vendor';
+    changeBtn.style.marginLeft = '10px';
+
+    changeBtn.addEventListener('click', () => {
+        const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
+        const vendorRaw = vendorRaw || matched.name?.toLowerCase();
+
+        const matches = vendorData.filter(v =>
+            v.name?.toLowerCase().includes(vendorRaw) ||
+            v.email?.toLowerCase().includes(vendorRaw)
+        );
+
+        const narrowed = matches.filter(v =>
+            v.name?.toLowerCase().includes(branch) ||
+            v.email?.toLowerCase().includes(branch)
+        );
+
+        const finalMatches = narrowed.length ? narrowed : matches;
+
+        if (finalMatches.length > 1) {
+            showVendorSelectionDropdown(finalMatches);
+        } else {
+            alert("No alternate vendors found.");
+        }
+    });
+
+    // Append next to vendor info container
+    const container = document.getElementById("vendorEmailContainer");
+    if (container) container.appendChild(changeBtn);
+}
+
         } else if (matchingVendors.length > 1) {
             const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
         
@@ -491,6 +545,43 @@ async function fetchDetailsByBidName(bidName) {
         
                     document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
                     document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+                    // ✅ Add "Change Vendor" button if not already present
+const emailWrapper = document.querySelector('.vendorEmailWrapper');
+if (emailWrapper && !document.getElementById('changeVendorBtn')) {
+    const changeBtn = document.createElement('button');
+    changeBtn.id = 'changeVendorBtn';
+    changeBtn.textContent = 'Change Vendor';
+    changeBtn.style.marginTop = '5px';
+
+    changeBtn.addEventListener('click', () => {
+        const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
+        const vendorRaw = matched.name?.toLowerCase();
+
+        const matches = vendorData.filter(v =>
+            v.name?.toLowerCase().includes(vendorRaw) ||
+            v.email?.toLowerCase().includes(vendorRaw)
+        );
+
+        const narrowed = matches.filter(v =>
+            v.name?.toLowerCase().includes(branch) ||
+            v.email?.toLowerCase().includes(branch)
+        );
+
+        const finalMatches = narrowed.length ? narrowed : matches;
+
+     if (finalMatches.length) {
+    showVendorSelectionDropdown(finalMatches);
+} else {
+    showVendorSelectionDropdown([{ name: 'No vendors found', email: 'N/A' }]);
+}
+
+    });
+
+    // Append right after email
+    emailWrapper.insertAdjacentElement('afterend', changeBtn);
+}
+
+
                     return; // ✅ Done
                 } else if (narrowedMatches.length > 1) {
                     // Multiple matches even after narrowing — show dropdown
@@ -557,38 +648,36 @@ async function fetchDetailsByBidName(bidName) {
     }
 }
 
-function showVendorSelectionDropdown(vendorMatches) {
-    const container = document.getElementById("vendorEmailContainer");
-    if (!container) {
-        console.error("No #vendorEmailContainer found.");
-        return;
-    }
+function showVendorSelectionDropdown(vendors) {
+    const existing = document.getElementById("vendorDropdown");
+    if (existing) existing.remove();
 
-    // Clear existing
-    container.innerHTML = "<p><strong>Multiple vendor matches found. Please choose:</strong></p>";
+    const dropdown = document.createElement("select");
+    dropdown.id = "vendorDropdown";
+    dropdown.style.marginTop = "10px";
 
-    const list = document.createElement("div");
-    list.className = "vendor-select-dropdown";
-
-    vendorMatches.forEach(vendor => {
-        const option = document.createElement("div");
-        option.className = "vendor-select-option";
-        option.innerHTML = `<strong>${vendor.name}</strong><br><small>${vendor.email}</small>`;
-
-        option.addEventListener("click", () => {
-            window.currentVendorEmail = vendor.email;
-
-            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
-            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
-
-            list.remove(); // remove dropdown
-        });
-
-        list.appendChild(option);
+    vendors.forEach(vendor => {
+        const option = document.createElement("option");
+        option.value = vendor.email;
+        option.textContent = `${vendor.name} <${vendor.email}>`;
+        dropdown.appendChild(option);
     });
 
-    container.appendChild(list);
+    // 🟢 Append dropdown to same container as Change Vendor button
+    const container = document.getElementById("changeVendorBtn")?.parentElement || document.body;
+    container.appendChild(dropdown);
+
+    // ✅ Handle change selection
+    dropdown.addEventListener('change', (e) => {
+        const selected = vendors.find(v => v.email === e.target.value);
+        if (selected) {
+            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = selected.name);
+            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${selected.email}>`);
+            window.currentVendorEmail = selected.email;
+        }
+    });
 }
+
 
   function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
@@ -1032,7 +1121,7 @@ function normalizePurchasingEmail(email) {
 <span class="managementEmailContainer">
   maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
   rick.jinkins@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
-</span><span class="branchEmailContainer"></span><span class="estimatesEmailContainer"></span><span class="gmEmailContainer"></span>
+</span><span class="branchEmailContainer"></span><span class="estimatesEmailContainer"></span>
 
 
 
@@ -1049,7 +1138,7 @@ function normalizePurchasingEmail(email) {
         <span class="subdivisionContainer"></span> :
         <p><strong>Field Contact:</strong> <input class="cname" placeholder="Enter contact name" /></p>
         <p><strong>Product Being Built:</strong> <span class="briqProjectTypeContainer"></span></p>
-<p><strong>Expected Pace:</strong> <input class="epace" type="number" placeholder="Days" /> days</p>
+<p><strong>Expected Pace:</strong> <input class="epace" type="number" placeholder="# of days" /> days</p>
         <p><strong>Expected Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
         <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
 
@@ -1715,16 +1804,34 @@ function createVendorAutocompleteInput() {
     const dropdown = document.createElement("div");
     dropdown.className = "vendor-autocomplete-dropdown";
 
+    // ✅ Clear button (only created once)
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = "×";
+    clearBtn.className = "vendor-clear-btn";
+    clearBtn.style.marginLeft = "5px";
+    clearBtn.title = "Clear";
+
+    clearBtn.addEventListener("click", () => {
+        input.value = "";
+        dropdown.innerHTML = "";
+        window.currentVendorEmail = null;
+
+        // Reset vendor info in UI
+        document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = "");
+        document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = "");
+    });
+
+    // ✅ Filter vendor suggestions on input
     input.addEventListener("input", () => {
         const query = input.value.toLowerCase();
         dropdown.innerHTML = "";
 
-        const filteredVendors = vendorData.filter(vendor => {
-            return (
+        const filteredVendors = query
+            ? vendorData.filter(vendor =>
                 vendor.name?.toLowerCase().includes(query) ||
                 vendor.email?.toLowerCase().includes(query)
-            );
-        });
+            )
+            : vendorData;
 
         filteredVendors.forEach(vendor => {
             const option = document.createElement("div");
@@ -1734,13 +1841,9 @@ function createVendorAutocompleteInput() {
                 input.value = vendor.name;
                 window.currentVendorEmail = vendor.email;
 
-                // Update in DOM
-                document.querySelectorAll('.vendorNameContainer').forEach(el => {
-                    el.textContent = vendor.name;
-                });
-                document.querySelectorAll('.vendorEmailWrapper').forEach(el => {
-                    el.textContent = ` <${vendor.email}>`;
-                });
+                // Update UI
+                document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
+                document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
 
                 dropdown.innerHTML = "";
             });
@@ -1751,10 +1854,13 @@ function createVendorAutocompleteInput() {
         dropdown.style.display = filteredVendors.length ? 'block' : 'none';
     });
 
+    // Append input, clear button, and dropdown
     wrapper.appendChild(input);
+    wrapper.appendChild(clearBtn);
     wrapper.appendChild(dropdown);
     container.appendChild(wrapper);
 }
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
