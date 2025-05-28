@@ -37,7 +37,7 @@ body {
 #emailOptions {
     max-width: 600px;
     width: 90%;
-    margin: 30px auto;
+    margin: 30px auto !important;
     padding: 20px;
     background: #ffffff;
     border: 1px solid #ccc;

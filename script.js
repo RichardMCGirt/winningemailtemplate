@@ -787,13 +787,28 @@ function updateTemplateText(
       document.querySelectorAll('.builderContainer').forEach(el => (el.textContent = builder));
     }
  
-    if (gmEmail) {
-      document.querySelectorAll('.gmEmailContainer').forEach(el => (el.textContent = gmEmail));
-    }
+ document.querySelectorAll('.gmEmailContainer').forEach(el => {
+    el.textContent = gmEmail ? `, ${gmEmail}` : '';
+});
+
   
-    if (branch) {
-      document.querySelectorAll('.branchContainer').forEach(el => (el.textContent = branch));
-    }
+if (branch) {
+    document.querySelectorAll('.branchContainer').forEach(el => (el.textContent = branch));
+
+    const branchSlug = branch.toLowerCase().replace(/\s+/g, '');
+    const purchasingEmail = `purchasing.${branchSlug}@vanirinstalledsales.com`;
+    const estimatesEmail = `estimates.${branchSlug}@vanirinstalledsales.com`;
+
+    document.querySelectorAll('.branchEmailContainer').forEach(el => {
+        el.textContent = purchasingEmail ? `, ${purchasingEmail}` : '';
+    });
+    document.querySelectorAll('.estimatesEmailContainer').forEach(el => {
+        el.textContent = estimatesEmail ? `, ${estimatesEmail}` : '';
+    });
+}
+
+
+
     fetchACMInfoForBranch(branch);
 
     if (projectType) {
@@ -952,11 +967,7 @@ async function sendEmailData() {
         anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
         numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
         managementEmails: [
-            "maggie@vanirinstalledsales.com",
-            "jason.smith@vanirinstalledsales.com",
-            "hunter@vanirinstalledsales.com",
-            "rick.jinkins@vanirinstalledsales.com",
-            gmEmail
+"maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com",
         ].filter(email => typeof email === "string" && email.includes('@')),
         vendorEmails: vendorEmail && vendorEmail.includes('@') ? [vendorEmail] : [],
         subcontractorGmailLinks // <-- You can include this array now
@@ -1009,13 +1020,19 @@ async function sendEmailData() {
    function displayEmailContent() {
     const emailContent = `
         <h2>
-            To: maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com,
-            <span class="gmEmailContainer"></span>
+      To: 
+<span class="managementEmailContainer">
+  maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
+  rick.jinkins@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
+</span><span class="branchEmailContainer"></span><span class="estimatesEmailContainer"></span><span class="gmEmailContainer"></span>
+
+
+
         </h2>
         <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
 
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-        <p>Go <strong><span class="branchContainer"></span></strong>,</p>
+        <p>Go !! <strong><span class="branchContainer"></span></strong>,</p>
 
         <h4>Major Win with <strong> <span class="builderContainer"></span></strong></h4>
    
@@ -1344,7 +1361,7 @@ if (vendorEmailWrapper) {
         const gmName = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
 
         const managementBody = `
-        Go ${branch},
+        Go !! ${branch},
         
         Major Win for with ${builder}!
         
@@ -1406,7 +1423,7 @@ Greetings from Vanir Installed Sales,
       // Define these before you use them
 const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
 const vendorBody = `
-Hello,
+Hello,ZZZ
 
 We're excited to share that Vanir ${branch} will be partnering with ${builder} in ${subdivision}.
 
@@ -1428,11 +1445,21 @@ Better Look. Better Service. Best Choice.
 `.trim();
 
         // Combine emails for the "To" and "CC" sections
-        const teamEmails = "maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com";
-        const bccEmails = subcontractorSuggestions
-        .map(sub => sub.email)
-        .filter(Boolean)
-        .join(', ');
+const selectedbranch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase().replace(/\s+/g, '');
+const purchasingEmail = `purchasing.${selectedbranch}@vanirinstalledsales.com`;
+const estimatesEmail = `estimates.${selectedbranch}@vanirinstalledsales.com`;
+
+const teamEmails = [
+  "maggie@vanirinstalledsales.com",
+  "jason.smith@vanirinstalledsales.com",
+  "hunter@vanirinstalledsales.com",
+  "rick.jinkins@vanirinstalledsales.com",
+  "dallas.hudson@vanirinstalledsales.com",
+  "mike.raszmann@vanirinstalledsales.com",
+  purchasingEmail,
+  estimatesEmail
+].join(", ");
+
       
               const vendorToEmail = (vendorEmail && vendorEmail.includes('@')) ? vendorEmail : '';
               const dummyToEmail = "vanir@vanirinstalledsales.com"; 
