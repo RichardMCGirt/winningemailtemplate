@@ -259,10 +259,8 @@ h2, h4, p {
 input {
     font-size: 24px;
     padding: 3px;
-    width: fit-content !important;
     background-color: transparent; /* Allow marching-ants to show */
     border: grey; /* Remove solid border */
-    width: 200px;
     color: white;
 }
 
@@ -282,6 +280,11 @@ a {
     margin-right: 5px;
 }
 
+.acmEmail {
+    width: fit-content !important;
+    min-width: 430px;
+    border: none !important;
+}
 
 
 /* Toggle Switch Styles */
@@ -593,11 +596,9 @@ textarea {
 
 body.dark-mode input[type="text"],
 body.dark-mode textarea {
-    background-color: #333;
+    background-color: transparent;
     color: #f4f4f9;
-    border-color: #555;
     font-size: 25px;
-    width: fit-content;
 }
 
 body.dark-mode button {

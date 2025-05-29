@@ -410,16 +410,14 @@ async function fetchDetailsByBidName(bidName) {
     if (records.length > 0) {
         const fields = records[0].fields;
 
-     const acmName = fields['AC'] || '';
-const acmEmail = fields["AC's email"] || '';
+const acmEmail = fields["Field's Email"] || '';
 
-await waitForElement('.acmName');
 await waitForElement('.acmEmail');
 
-document.querySelectorAll('.acmName').forEach(el => el.value = acmName);
 document.querySelectorAll('.acmEmail').forEach(el => el.value = acmEmail);
+enableAutoResizeInput('.acmEmail');
 
-console.log("✅ ACM fields populated in template:", acmName, acmEmail);
+console.log("✅ ACM fields populated in template:", acmEmail);
 
 
 
@@ -520,7 +518,6 @@ console.log("✅ ACM fields populated in template:", acmName, acmEmail);
     AnticipatedDuration,
     gm,
     vendoremail,
-    acmName,         // ✅ added
     acmEmail         // ✅ added
 );
 
@@ -749,7 +746,6 @@ function updateTemplateText(
   AnticipatedDuration,
   gm,
   vendoremail,
-  acmName,           // ✅ NEW
   acmEmail           // ✅ NEW
 )
  {
@@ -772,14 +768,14 @@ function updateTemplateText(
       document.querySelectorAll('.subdivisionContainer').forEach(el => (el.textContent = subdivision));
     }
 
-  if (acmName || acmEmail) {
-  const nameInputs = document.querySelectorAll('.acmName');
+  if (acmEmail) {
   const emailInputs = document.querySelectorAll('.acmEmail');
 
-  nameInputs.forEach(input => input.value = acmName || '');
   emailInputs.forEach(input => input.value = acmEmail || '');
 
-  console.log("✅ ACM fields populated in template:", acmName, acmEmail);
+  console.log("✅ ACM fields populated in template:", acmEmail);
+  enableAutoResizeInput('.acmEmail');
+
 }
 
   
@@ -1033,16 +1029,13 @@ async function sendEmailData() {
         });
 
         if (matchedRecord) {
-            const acmName = matchedRecord.fields["AC"] || "";
             const acmEmail = matchedRecord.fields["AC's Email"] || "";
 
-            const nameInput = document.querySelector('.acmName');
             const emailInput = document.querySelector('.acmEmail');
 
-            if (nameInput) nameInput.value = acmName;
             if (emailInput) emailInput.value = acmEmail;
 
-            console.log("✅ Populated ACM Name and Email:", acmName, acmEmail);
+            console.log("✅ Populated ACM Name and Email:", acmEmail);
         } else {
             console.warn(`No ACM record found for branch "${branchName}"`);
         }
@@ -1069,6 +1062,42 @@ document.getElementById('clearVendorBtn')?.addEventListener('click', () => {
     input.style.width = `${tempSpan.offsetWidth + 12}px`; // Add some padding
     document.body.removeChild(tempSpan);
 }
+
+function enableAutoResizeInput(selector) {
+    const input = document.querySelector(selector);
+    if (!input) {
+        console.warn(`[autoResize] Input not found for selector: ${selector}`);
+        return;
+    }
+
+    console.log(`[autoResize] Input found for selector: ${selector}`, input);
+
+    const span = document.createElement('span');
+    span.style.visibility = 'hidden';
+    span.style.position = 'absolute';
+    span.style.whiteSpace = 'pre';
+    span.style.font = getComputedStyle(input).font;
+
+    document.body.appendChild(span);
+    console.log(`[autoResize] Temporary span added for measurement.`);
+
+    const resize = () => {
+        const value = input.value || input.placeholder || '';
+        span.textContent = value;
+        const newWidth = span.offsetWidth + 10;
+        input.style.width = `${newWidth}px`;
+
+        console.log(`[autoResize] Resizing input to fit content: "${value}"`);
+        console.log(`[autoResize] Calculated width: ${span.offsetWidth}px, Applied width: ${newWidth}px`);
+    };
+
+    input.addEventListener('input', resize);
+    console.log(`[autoResize] Resize listener added.`);
+
+    resize(); // initialize on load
+}
+
+
 
 function normalizePurchasingEmail(email) {
     if (email === "purchasing.raleigh@vanirinstalledsales.com") {
@@ -1132,8 +1161,7 @@ function normalizePurchasingEmail(email) {
       <p>
   If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
   <strong><span class="gmNameContainer"></span></strong> at 
-  <strong><span class="gmEmailContainer"></span></strong> or our Area Construction Manager 
-  <input type="text" class="acmName" placeholder="ACM Name" style="margin-left: 4px; margin-right: 4px;" /> at 
+  <strong><span class="gmEmailContainer"></span></strong> or our Area Construction Manager at
   <input type="text" class="acmEmail" placeholder="ACM Email" style="margin-left: 4px;" />.
 </p>
 
@@ -1362,9 +1390,7 @@ async function generateMailtoLinks() {
         const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
-        const acmNameEl = document.querySelector('.acmName');
 const acmEmailEl = document.querySelector('.acmEmail');
-const acmName = acmNameEl && acmNameEl.value ? acmNameEl.value.trim() : 'Your ACM';
 const acmEmail = acmEmailEl && acmEmailEl.value ? acmEmailEl.value.trim() : 'acm@example.com';
 
         const cityEl = document.querySelector('.city');
@@ -1469,7 +1495,7 @@ Greetings from Vanir Installed Sales,
         - Number of Lots: ${numberOfLots}
         - Anticipated Start Date: ${anticipatedStartDate}
         
-        If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm}, at ${gmEmail} or our Area Construction Manager ${acmName} at ${acmEmail} to discuss next steps.
+        If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm}, at ${gmEmail} or our Area Construction Manager at ${acmEmail} to discuss next steps.
         
         Best regards,  
         ${userName}  
