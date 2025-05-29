@@ -1752,29 +1752,30 @@ function getSubcontractorsByBranch(subcontractors, branch) {
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
-
-
-    // Fetch bid names only (no subcontractors yet)
+    // Fetch data
     await fetchBidNameSuggestions();
-    await fetchAllVendorData(); // Add this before fetchDetailsByBidName
-    createVendorAutocompleteInput();
+    await fetchAllVendorData(); // Needed before fetchDetailsByBidName
 
-    hideLoadingAnimation();
+    // Wait for the DOM to be ready
+    const emailContainer = await waitForElement('#emailTemplate');
 
-    const emailContainer = document.getElementById('emailTemplate');
-
-    // Correctly pass "bid" as the type
+    // Build and insert bid name input
     const bidAutocompleteInput = createAutocompleteInput(
-        "    Enter Bid Name",
+        "Enter Bid Name",
         bidNameSuggestions,
-        "bid", // Pass a string as type
+        "bid",
         fetchDetailsByBidName
     );
+
     emailContainer.prepend(bidAutocompleteInput);
 
-    // Enable bid name input after loading
+    // Enable the input field
     bidAutocompleteInput.querySelector('input').disabled = false;
+
+    // ✅ Hide loading animation **after** full setup
+    hideLoadingAnimation();
 }
+
 
 function createVendorAutocompleteInput() {
     const container = document.getElementById("vendorEmailContainer");
@@ -1836,23 +1837,25 @@ function createVendorAutocompleteInput() {
     wrapper.appendChild(dropdown);
     container.appendChild(wrapper);
 }
+function renderBidInputImmediately() {
+    const emailContainer = document.getElementById('emailTemplate');
+    if (!emailContainer) return;
+
+    const bidAutocompleteInput = createAutocompleteInput(
+        "Enter Bid Name",
+        [], // Initially empty suggestions
+        "bid",
+        fetchDetailsByBidName
+    );
+
+    emailContainer.prepend(bidAutocompleteInput);
+}
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Dynamically create bidInputContainer
-    const emailContainer = document.getElementById('emailTemplate');
-    if (!emailContainer) {
-        console.error("emailTemplate not found in the DOM.");
-        return;
-    }
-    
-    const bidContainer = document.createElement('div');
-    bidContainer.id = 'bidInputContainer';
-    emailContainer.appendChild(bidContainer);
-
-    // Initialize autocomplete for bid names
-    initializeBidAutocomplete();
+    renderBidInputImmediately(); // show UI fast
 });
+
 
 // Initialize bid and vendor autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
@@ -2077,13 +2080,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Ensure email template is displayed
         displayEmailContent();
         fetchAndUpdateAutocomplete();
-        await fetchLazyBidSuggestions("", true); // Initial load with no query
-        initializeBidAutocomplete();
-        // Wait for bidInputContainer to be dynamically created
-        await waitForElement('#bidInputContainer');
-
-        // Initialize bid autocomplete
-        initializeBidAutocomplete();
+       
     } catch (error) {
     }
 });
