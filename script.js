@@ -816,7 +816,7 @@ function updateTemplateText(
     }
  
  document.querySelectorAll('.gmEmailContainer').forEach(el => {
-    el.textContent = gmEmail ? `, ${gmEmail}` : '';
+  el.textContent = gmEmail || '';
 });
 
   
@@ -969,7 +969,7 @@ function splitIntoChunks(array, chunkSize = 30) {
 
 async function sendEmailData() {
     const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; 
-    const vendorEmail = window.currentVendorEmail || ""; // 👈 PULL vendor email here
+    const vendorEmail = window.currentVendorEmail || ""; 
     const gmEmail = document.querySelector('.gmEmailContainer')?.textContent.trim() || '';
 
 
@@ -993,10 +993,10 @@ async function sendEmailData() {
         anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
         numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
         managementEmails: [
-"maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com",
+"maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com",
         ].filter(email => typeof email === "string" && email.includes('@')),
         vendorEmails: vendorEmail && vendorEmail.includes('@') ? [vendorEmail] : [],
-        subcontractorGmailLinks // <-- You can include this array now
+        subcontractorGmailLinks 
     };
     
       console.log("Prepared data for POST request:", data);
@@ -1026,16 +1026,6 @@ async function sendEmailData() {
         alert("An error occurred while sending the data.");
       }
     }
-
-   // <p>CC: <span class="cc-email-container">Vendor</span></p>
-
-  
-
-     
-
-
-           
-
 
 document.getElementById('clearVendorBtn')?.addEventListener('click', () => {
     document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = '');
@@ -1091,8 +1081,6 @@ function enableAutoResizeInput(selector) {
     resize(); // initialize on load
 }
 
-
-
 function normalizePurchasingEmail(email) {
     if (email === "purchasing.raleigh@vanirinstalledsales.com") {
         return "purchasing@vanirinstalledsales.com";
@@ -1106,10 +1094,8 @@ function normalizePurchasingEmail(email) {
       To: 
 <span class="managementEmailContainer">
   maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
-  rick.jinkins@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
+  rick.jinkins@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
 </span><span class="branchEmailContainer"></span><span class="estimatesEmailContainer"></span>
-
-
 
         </h2>
         <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
@@ -1154,11 +1140,8 @@ function normalizePurchasingEmail(email) {
 
       <p>
   If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
-  <strong><span class="gmNameContainer"></span></strong> at 
-  <strong><span class="gmEmailContainer"></span></strong>.
+  <strong><span class="gmNameContainer"></span></strong> at <strong><span class="gmEmailContainer"></span></strong>.
 </p>
-
-
         <hr>
 
         <!-- ✅ Vendor Email Section -->
@@ -1344,9 +1327,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
     const gmEmailElement = document.querySelector('.gmEmailContainer');
     const gm = document.querySelector('.gmNameContainer')?.textContent || 'GM named';
@@ -1367,15 +1347,9 @@ const additionalDetails = textarea ? textarea.value.trim() : null;
 // Define generateMailtoLinks
 async function generateMailtoLinks() {
     try {
-        // Wait for the cc-email-container to be available
 
         const ccEmailContainer = await waitForElement('.cc-email-container');
-     //   if (!ccEmailContainer) {
-      //      console.error('Element with class "cc-email-container" not found.');
-    //        return;
-     //   }
-
-        // Fetch dynamic data from the DOM
+  
         const branch = document.querySelector('.branchContainer')?.textContent.trim() || 'Unknown Branch';
         const subdivision = document.querySelector('.subdivisionContainer')?.textContent.trim() || 'Unknown Subdivision';
         const builder = document.querySelector('.builderContainer')?.textContent.trim() || 'Unknown Builder';
@@ -1421,9 +1395,6 @@ if (vendorEmailWrapper) {
         const userPhoneInput = await waitForElement('#inputUserPhone');
         const userName = userNameInput.value.trim() || 'Your Name';
         const userPhone = userPhoneInput.value.trim() || 'Your Phone';
-        const logoURL = "https://raw.githubusercontent.com/RichardMCGirt/winningemailtemplate/main/VANIR-transparent.png";
-
-        
 
         console.log('GM Email Value:', gmEmail);
         console.log('User Info:', { userName, userPhone });
@@ -1487,7 +1458,7 @@ Greetings from Vanir Installed Sales,
         - Number of Lots: ${numberOfLots}
         - Anticipated Start Date: ${anticipatedStartDate}
         
-        If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm}, at ${gmEmail} or our Area Construction Manager at ${acmEmail} to discuss next steps.
+        If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}.
         
         Best regards,  
         ${userName}  
@@ -1502,7 +1473,7 @@ Greetings from Vanir Installed Sales,
       // Define these before you use them
 const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
 const vendorBody = `
-Hello,ZZZ
+Hello,
 
 We're excited to share that Vanir ${branch} will be partnering with ${builder} in ${subdivision}.
 
@@ -1536,13 +1507,13 @@ const teamEmails = [
   "rick.jinkins@vanirinstalledsales.com",
   "dallas.hudson@vanirinstalledsales.com",
   "mike.raszmann@vanirinstalledsales.com",
+  "ethen.wilson@vanirinstalledsales.com",
   purchasingEmail,
   estimatesEmail
 ].join(", ");
 
       
               const vendorToEmail = (vendorEmail && vendorEmail.includes('@')) ? vendorEmail : '';
-              const dummyToEmail = "vanir@vanirinstalledsales.com"; 
 
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
@@ -1575,17 +1546,14 @@ const subcontractorEmailChunks = splitIntoChunks(
         
         return {
             managementGmailLink,
-            subcontractorGmailLinks, // <-- now an array of multiple links
+            subcontractorGmailLinks, 
             vendorGmailLink
         };
         
-        
-
     } catch (error) {
         console.error("Error generating mailto links:", error.message);
     }
 }
-
 
 let ccObserver = null;
 
@@ -1666,8 +1634,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }); // ✅ closes the first DOMContentLoaded listener
 
-
-
 document.addEventListener('DOMContentLoaded', () => {
     const userNameInput = document.getElementById('inputUserName');
 
@@ -1683,8 +1649,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
-
-
 
 // Function to show the redirect animation
 function showRedirectAnimation() {
@@ -1767,7 +1731,6 @@ async function fetchAndUpdateAutocomplete() {
     // ✅ Hide loading animation **after** full setup
     hideLoadingAnimation();
 }
-
 
 function createVendorAutocompleteInput() {
     const container = document.getElementById("vendorEmailContainer");
@@ -1964,9 +1927,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-
-
 
 function initializeBidAutocomplete() {
     const bidContainer = document.getElementById("bidInputContainer");
