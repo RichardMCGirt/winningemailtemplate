@@ -42,7 +42,6 @@ function updateLoadingProgress(percentage) {
     const loadingProgress = document.getElementById("loadingProgress");
     const loadingOverlay = document.getElementById("loadingOverlay");
 
-    // Ensure percentage is within bounds (0 - 100)
     const safePercentage = Math.min(100, Math.max(0, percentage));
 
     if (loadingPercentage) {
@@ -54,16 +53,33 @@ function updateLoadingProgress(percentage) {
         loadingProgress.style.transition = "width 0.3s ease-in-out";
     }
 
-    // Remove loading overlay when progress reaches 100%
     if (safePercentage === 100 && loadingOverlay) {
         setTimeout(() => {
             loadingOverlay.style.opacity = "0";
             setTimeout(() => {
                 loadingOverlay.remove();
-            }, 300); // Allow fade-out effect
-        }, 500); // Delay to ensure progress bar reaches 100%
+            }, 300);
+        }, 500);
     }
 }
+
+function autoProgressLoading() {
+    let currentProgress = 0;
+
+    const interval = setInterval(() => {
+        const increment = Math.floor(Math.random() * 10) + 1; // 1–10%
+        currentProgress = Math.min(100, currentProgress + increment);
+        updateLoadingProgress(currentProgress);
+
+        if (currentProgress >= 100) {
+            clearInterval(interval);
+        }
+    }, 300); // Adjust delay for pacing
+}
+
+// Call this to start the random progress
+autoProgressLoading();
+
 
 function deriveNameFromEmail(email) {
     if (!email || typeof email !== "string") return "Unknown Name";
@@ -412,10 +428,9 @@ async function fetchDetailsByBidName(bidName) {
 
 const acmEmail = fields["Field's Email"] || '';
 
-await waitForElement('.acmEmail');
 
-document.querySelectorAll('.acmEmail').forEach(el => el.value = acmEmail);
-enableAutoResizeInput('.acmEmail');
+
+
 
 console.log("✅ ACM fields populated in template:", acmEmail);
 
@@ -427,7 +442,6 @@ console.log("✅ ACM fields populated in template:", acmEmail);
 
         if (branch) {
           await fetchSubcontractorSuggestions(branch);
-              await fetchACMInfoForBranch(branch); // 👈 ADD THIS LINE
 
         } else {
           console.warn("⚠️ No branch found in bid details, skipping subcontractor fetch.");
@@ -767,18 +781,7 @@ function updateTemplateText(
     if (subdivision) {
       document.querySelectorAll('.subdivisionContainer').forEach(el => (el.textContent = subdivision));
     }
-
-  if (acmEmail) {
-  const emailInputs = document.querySelectorAll('.acmEmail');
-
-  emailInputs.forEach(input => input.value = acmEmail || '');
-
-  console.log("✅ ACM fields populated in template:", acmEmail);
-  enableAutoResizeInput('.acmEmail');
-
-}
-
-  
+ 
     if (gm) {
       document.querySelectorAll('.gmNameContainer').forEach(el => (el.textContent = gm));
     }
@@ -1001,48 +1004,14 @@ async function sendEmailData() {
 
    // <p>CC: <span class="cc-email-container">Vendor</span></p>
 
-   async function fetchACMInfoForBranch(branchName) {
-    if (!branchName) {
-        console.warn("No branch provided to fetch ACM info.");
-        return;
-    }
+  
 
-    const url = `https://api.airtable.com/v0/appK9gZS77OmsIK50/tblIgxx14Qom58kqK?view=viwtpaTQYhHYGsv1R`;
+     
 
-    try {
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${airtableApiKey}`,
-            },
-        });
 
-        if (!response.ok) {
-            console.error("Failed to fetch ACM info:", response.statusText);
-            return;
-        }
+           
 
-        const data = await response.json();
 
-        const matchedRecord = data.records.find(record => {
-            const office = record.fields["Office Name"];
-            return office && office.trim().toLowerCase() === branchName.trim().toLowerCase();
-        });
-
-        if (matchedRecord) {
-            const acmEmail = matchedRecord.fields["AC's Email"] || "";
-
-            const emailInput = document.querySelector('.acmEmail');
-
-            if (emailInput) emailInput.value = acmEmail;
-
-            console.log("✅ Populated ACM Name and Email:", acmEmail);
-        } else {
-            console.warn(`No ACM record found for branch "${branchName}"`);
-        }
-    } catch (error) {
-        console.error("Error fetching ACM info:", error);
-    }
-}
 document.getElementById('clearVendorBtn')?.addEventListener('click', () => {
     document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = '');
     document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = '');
@@ -1161,8 +1130,7 @@ function normalizePurchasingEmail(email) {
       <p>
   If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
   <strong><span class="gmNameContainer"></span></strong> at 
-  <strong><span class="gmEmailContainer"></span></strong> or our Area Construction Manager at
-  <input type="text" class="acmEmail" placeholder="ACM Email" style="margin-left: 4px;" />.
+  <strong><span class="gmEmailContainer"></span></strong>.
 </p>
 
 
@@ -1390,7 +1358,6 @@ async function generateMailtoLinks() {
         const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
-const acmEmailEl = document.querySelector('.acmEmail');
 const acmEmail = acmEmailEl && acmEmailEl.value ? acmEmailEl.value.trim() : 'acm@example.com';
 
         const cityEl = document.querySelector('.city');
