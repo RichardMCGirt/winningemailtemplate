@@ -63,22 +63,47 @@ function updateLoadingProgress(percentage) {
     }
 }
 
-function autoProgressLoading() {
+function autoProgressLoading(stopConditionCallback) {
     let currentProgress = 0;
-
     const interval = setInterval(() => {
-        const increment = Math.floor(Math.random() * 10) + 1; // 1–10%
-        currentProgress = Math.min(100, currentProgress + increment);
+        const increment = Math.floor(Math.random() * 8) + 1;
+        currentProgress = Math.min(99, currentProgress + increment); // don't go straight to 100%
         updateLoadingProgress(currentProgress);
 
-        if (currentProgress >= 100) {
+        if (stopConditionCallback && stopConditionCallback()) {
             clearInterval(interval);
+            updateLoadingProgress(100); // complete and remove overlay
         }
-    }, 300); // Adjust delay for pacing
+    }, 250);
 }
 
+function isBidInputVisible() {
+    const input = document.querySelector('.bid-autocomplete-input');
+    return input && input.offsetParent !== null;
+}
+
+function waitForBidInput(callback) {
+    const observer = new MutationObserver(() => {
+        if (isBidInputVisible()) {
+            observer.disconnect();
+            callback();
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
+}
+
+waitForBidInput(() => updateLoadingProgress(100));
+
 // Call this to start the random progress
-autoProgressLoading();
+document.addEventListener('DOMContentLoaded', () => {
+    showLoadingAnimation(); // display the overlay
+    autoProgressLoading(isBidInputVisible); // start fake loading
+});
+
 
 
 function deriveNameFromEmail(email) {
