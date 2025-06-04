@@ -453,13 +453,7 @@ async function fetchDetailsByBidName(bidName) {
 
 const acmEmail = fields["Field's Email"] || '';
 
-
-
-
-
 console.log("✅ ACM fields populated in template:", acmEmail);
-
-
 
         const builder = fields['Builder'] || 'Unknown Builder';
         const gmEmail = fields['GM Email'] ? fields['GM Email'][0] : 'Branch Staff@Vanir.com';
@@ -478,64 +472,70 @@ console.log("✅ ACM fields populated in template:", acmEmail);
 
         // 🔁 NEW LOGIC: match vendor name to vendorData
         let vendorRaw = fields['vendor'] || '';
-        if (Array.isArray(vendorRaw)) {
-            vendorRaw = vendorRaw[0] || ''; // take the first entry
-        }
-        const vendorNormalized = typeof vendorRaw === 'string' ? vendorRaw.toLowerCase().trim() : '';
-        
-        
-        // Get all close matches
-        const matchingVendors = vendorData.filter(v =>
-            v.name?.toLowerCase().includes(vendorNormalized) ||
-            v.email?.toLowerCase().includes(vendorNormalized)
+if (Array.isArray(vendorRaw)) {
+    vendorRaw = vendorRaw[0] || ''; // take first entry if it's an array
+}
+const vendorNormalized = typeof vendorRaw === 'string' ? vendorRaw.toLowerCase().trim() : '';
+
+let matchingVendors;
+if (!vendorNormalized) {
+    console.warn("⚠️ No vendor specified in the bid record. Showing all vendors.");
+    matchingVendors = [...vendorData]; // Show all
+} else {
+    matchingVendors = vendorData.filter(v => {
+        const name = v.name?.toLowerCase() || '';
+        const email = v.email?.toLowerCase() || '';
+        return (
+            vendorNormalized.split(' ').some(part => name.includes(part)) ||
+            vendorNormalized.split(' ').some(part => email.includes(part))
         );
-        
+    });
+}
+
+
+       
         console.log(`🔍 Found ${matchingVendors.length} matching vendors for "${vendorRaw}"`, matchingVendors);
         
         // If only one match, proceed automatically
-        if (matchingVendors.length === 1) {
-            const matched = matchingVendors[0];
+      if (matchingVendors.length === 1) {
+    const matched = matchingVendors[0];
+    window.currentVendorEmail = matched.email;
+
+    document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
+    document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+
+} else if (matchingVendors.length > 1) {
+    const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
+
+    if (branch) {
+        const narrowedMatches = matchingVendors.filter(vendor =>
+            vendor.name?.toLowerCase().includes(branch) ||
+            vendor.email?.toLowerCase().includes(branch)
+        );
+
+        if (narrowedMatches.length === 1) {
+            const matched = narrowedMatches[0];
             window.currentVendorEmail = matched.email;
-        
+
             document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
             document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
-        } else if (matchingVendors.length > 1) {
-            const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
-        
-            if (branch) {
-                // Try to refine match based on branch in name or email
-                const narrowedMatches = matchingVendors.filter(vendor =>
-                    vendor.name?.toLowerCase().includes(branch) ||
-                    vendor.email?.toLowerCase().includes(branch)
-                );
-        
-                if (narrowedMatches.length === 1) {
-                    const matched = narrowedMatches[0];
-                    window.currentVendorEmail = matched.email;
-        
-                    document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
-                    document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
-                    return; // ✅ Done
-                } else if (narrowedMatches.length > 1) {
-                    // Multiple matches even after narrowing — show dropdown
-                    showVendorSelectionDropdown(narrowedMatches);
-                    return;
-                }
-            }
-        
-            // Fallback: show all loose matches
-            showVendorSelectionDropdown(matchingVendors);
+            return; // ✅ Done
+        } else if (narrowedMatches.length > 1) {
+            showVendorSelectionDropdown(narrowedMatches); // 🔽 show narrowed list
+            return;
         }
-         else {
-            console.warn(`⚠️ No close vendor matches for "${vendorRaw}"`);
-        }
-        
-        
-        
-        
+    }
 
-        console.log("Available fields:", Object.keys(fields));
+    // ❗ If we didn't narrow it down to 1 match
+    showVendorSelectionDropdown(matchingVendors);
 
+} else {
+    // ❌ No match at all — show full vendor list as fallback
+    console.warn(`⚠️ No close vendor matches for "${vendorRaw}" — showing all vendors`);
+    showVendorSelectionDropdown([...vendorData]);
+}
+
+        
         window.currentVendorEmail = vendoremail;
         console.log("Full fetched record:", records[0]);
 
@@ -559,7 +559,6 @@ console.log("✅ ACM fields populated in template:", acmEmail);
     vendoremail,
     acmEmail         // ✅ added
 );
-
 
         await fetchSubcontractorSuggestions(fields['Branch']);
         updateSubcontractorAutocomplete();
@@ -614,7 +613,16 @@ function showVendorSelectionDropdown(vendorMatches) {
     });
 
     container.appendChild(list);
+console.log("📋 Suggestions rendered:", vendorMatches.length);
+
+    // ✅ Logging vendors rendered
+    console.log(`📋 Vendor suggestions rendered (${vendorMatches.length}):`);
+    console.table(vendorMatches.map(v => ({
+        name: v.name,
+        email: v.email
+    })));
 }
+
 
   function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
@@ -1336,10 +1344,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 async function validateAndExportBidDetails(bidName) {
+    await fetchAllVendorData(); // ⬅️ ensures vendorData is ready
     const bidDetails = await fetchDetailsByBidName(bidName);
     console.log('Validated bid details for export:', bidDetails);
     exportData(bidDetails);
 }
+
 
 const textarea = document.getElementById('additionalInfoInput');
 const additionalDetails = textarea ? textarea.value.trim() : null;
@@ -1711,6 +1721,7 @@ async function fetchAndUpdateAutocomplete() {
     // Fetch data
     await fetchBidNameSuggestions();
     await fetchAllVendorData(); // Needed before fetchDetailsByBidName
+    createVendorAutocompleteInput(); // 👈 populate dropdown for manual search
 
     // Wait for the DOM to be ready
     const emailContainer = await waitForElement('#emailTemplate');
@@ -1744,54 +1755,51 @@ function createVendorAutocompleteInput() {
 
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = "Enter Vendor Name or Email";
+    input.placeholder = "Search Vendor Name or Email";
     input.className = "vendor-autocomplete-input";
 
     const dropdown = document.createElement("div");
     dropdown.className = "vendor-autocomplete-dropdown";
 
-  input.addEventListener("input", () => {
+input.addEventListener("input", () => {
     const query = input.value.toLowerCase();
-    dropdown.innerHTML = "";
+    const filteredVendors = vendorData.filter(vendor =>
+        vendor.name?.toLowerCase().includes(query) ||
+        vendor.email?.toLowerCase().includes(query)
+    );
 
-    const filteredVendors = query
-        ? vendorData.filter(vendor =>
-            vendor.name?.toLowerCase().includes(query) ||
-            vendor.email?.toLowerCase().includes(query)
-        )
-        : vendorData; // 👈 show all vendors if input is blank
+    console.log("🔍 Vendors in suggestion list:", filteredVendors); // ✅ Log here
 
-    filteredVendors.forEach(vendor => {
-        const option = document.createElement("div");
-        option.className = "vendor-autocomplete-option";
-        option.innerHTML = `<strong>${vendor.name}</strong><br><small>${vendor.email}</small>`;
-        option.addEventListener("click", () => {
-            input.value = vendor.name;
-            window.currentVendorEmail = vendor.email;
-
-            // Update in DOM
-            document.querySelectorAll('.vendorNameContainer').forEach(el => {
-                el.textContent = vendor.name;
-            });
-            document.querySelectorAll('.vendorEmailWrapper').forEach(el => {
-                el.textContent = ` <${vendor.email}>`;
-            });
-
-            dropdown.innerHTML = "";
-        });
-
-        dropdown.appendChild(option);
+    suggestionBox.innerHTML = '';
+   filteredVendors.forEach(vendor => {
+    const option = document.createElement('div');
+    option.className = 'vendor-autocomplete-option';
+    option.textContent = vendor['Name'];
+    option.dataset.email = vendor['Email'];
+    option.addEventListener('click', () => {
+        vendorInput.value = vendor['Name'];
+        selectedVendorEmail = vendor['Email'];
+        document.getElementById('vendor-suggestion-box').innerHTML = '';
+        updateVendorEmailUI();
     });
-
-    dropdown.style.display = filteredVendors.length ? 'block' : 'none';
-    
+    suggestionBox.appendChild(option);
 });
 
+console.log("📋 Suggestions rendered:", filteredVendors.length); // ✅ Add here
+
+
+});
+
+// 👇 Trigger input logic even on click/focus to show all vendors
+input.addEventListener("focus", () => {
+    input.dispatchEvent(new Event("input"));
+});
 
     wrapper.appendChild(input);
     wrapper.appendChild(dropdown);
     container.appendChild(wrapper);
 }
+
 function renderBidInputImmediately() {
     const emailContainer = document.getElementById('emailTemplate');
     if (!emailContainer) return;
@@ -1814,9 +1822,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize bid and vendor autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
+      await fetchAllVendorData(); // ✅ Load vendor records first
     // Fetch suggestions
  //   await fetchBidNameSuggestions();
-});
+});console.log("👀 Vendor data loaded:", vendorData);
 
 let offset = null; // Offset for Airtable pagination
 const PAGE_SIZE = 20; // Adjust as needed

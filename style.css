@@ -54,24 +54,9 @@ body {
   margin-left: 5px;
 }
 
-.vendor-autocomplete-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  z-index: 10;
-  background: white;
-  border: 1px solid #ccc;
-  max-height: 200px;
-  overflow-y: auto;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
 
-.vendor-autocomplete-option {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-}
+
+
 
 .vendor-autocomplete-option:hover {
   background-color: #f0f0f0;
@@ -186,6 +171,16 @@ h2, h4, p {
     display: block; /* <- or remove flex entirely */
 }
 
+#vendor-suggestion-box {
+    max-height: 400px; /* increase if you want to show more */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    background-color: white;
+    z-index: 1000;
+    position: absolute;
+}
+
+
 .acmName, .acmEmail {
     transition: width 0.2s ease;
 }
@@ -194,43 +189,54 @@ h2, h4, p {
 }
 
 .vendor-select-dropdown {
-    border: 1px solid #444;
-    max-height: 200px;
-    overflow-y: auto;
-    background: #1e1e1e;
-    margin-top: 5px;
-    padding: 5px;
-    color: #f0f0f0;
+  position: absolute;
+  background: #2c3e50; /* dark blue background */
+  border: 1px solid #1abc9c; /* teal border */
+  max-height: 450px;
+  overflow-y: auto;
+  font-size: 16px;
+  z-index: 999;
+  width: 100%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  color: #ecf0f1; /* light text */
 }
 
 .vendor-select-option {
-    padding: 6px;
-    cursor: pointer;
-    border-bottom: 1px solid #333;
-    color: #e0e0e0;
+  padding: 10px;
+  border-bottom: 1px solid #34495e; /* slightly lighter dark for separator */
+  cursor: pointer;
 }
 
 .vendor-select-option:hover {
-    background-color: #333333;
+  background-color: #1abc9c; /* teal highlight */
+  color: #ffffff;
 }
+
+
 
 
 .vendor-autocomplete-dropdown {
-    position: absolute;
-    background: grey;
-    border: 1px solid #ccc;
-    max-height: 450px;
-    font-size: 24px;
-    width: fit-content !important;
-    overflow-y: auto;
-    z-index: 999;
-    width: 100%;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 999 !important;
+    background: grey !important;
+    border: 1px solid #ccc !important;
+    max-height: 450px !important;
+    overflow-y: auto !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+    font-size: 24px !important;
 }
 
+
 .vendor-autocomplete-option {
-    padding: 8px;
+    padding: 4px 8px;
+    font-size: 16px;
     cursor: pointer;
+    line-height: 1.2;
 }
+
 
 .vendor-autocomplete-option:hover {
     background-color: white;
