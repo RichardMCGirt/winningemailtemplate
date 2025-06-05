@@ -1926,8 +1926,6 @@ async function fetchAndUpdateAutocomplete() {
     console.log("🎉 fetchAndUpdateAutocomplete complete!");
 }
 
-
-
 function createVendorAutocompleteInput() {
     const container = document.getElementById("vendorEmailContainer");
     if (!container) {
@@ -1946,52 +1944,58 @@ function createVendorAutocompleteInput() {
     const dropdown = document.createElement("div");
     dropdown.className = "vendor-autocomplete-dropdown";
 
-input.addEventListener("input", () => {
-    const query = input.value.toLowerCase();
-    dropdown.innerHTML = ""; // Clear old results
+    input.addEventListener("input", () => {
+        const query = input.value.toLowerCase();
+        dropdown.innerHTML = ""; // Clear old results
 
-    const filteredVendors = vendorData
-        .filter(vendor =>
-            vendor.name?.toLowerCase().includes(query) ||
-            vendor.email?.toLowerCase().includes(query)
-        )
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        const filteredVendors = vendorData
+            .filter(vendor =>
+                vendor.name?.toLowerCase().includes(query) ||
+                vendor.email?.toLowerCase().includes(query)
+            )
+            .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-    console.log("🔍 Vendors in suggestion list:", filteredVendors);
+        console.log("🔍 Vendors in suggestion list:", filteredVendors);
 
-    filteredVendors.forEach(vendor => {
-        const option = document.createElement('div');
-        option.className = 'vendor-autocomplete-option';
-        option.textContent = vendor.name;
-        option.dataset.email = vendor.email;
+        filteredVendors.forEach(vendor => {
+            const option = document.createElement('div');
+            option.className = 'vendor-autocomplete-option';
+            option.textContent = vendor.name;
+            option.dataset.email = vendor.email;
 
-        option.addEventListener('click', () => {
-            input.value = vendor.name;
-            window.currentVendorEmail = vendor.email;
-            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
-            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
-            dropdown.innerHTML = '';
+            option.addEventListener('click', () => {
+                input.value = vendor.name;
+                window.currentVendorEmail = vendor.email;
+                document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
+                document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
+                dropdown.innerHTML = '';
+            });
+
+            dropdown.appendChild(option);
         });
 
-        dropdown.appendChild(option);
+        console.log("📋 Suggestions rendered:", filteredVendors.length);
+        dropdown.style.display = filteredVendors.length > 0 ? 'block' : 'none';
     });
 
+    // 👇 Trigger input logic even on focus to show all vendors
+    input.addEventListener("focus", () => {
+        input.dispatchEvent(new Event("input"));
+    });
 
-
-console.log("📋 Suggestions rendered:", filteredVendors.length); // ✅ Add here
-
-
-});
-
-// 👇 Trigger input logic even on click/focus to show all vendors
-input.addEventListener("focus", () => {
-    input.dispatchEvent(new Event("input"));
-});
+    // ✅ Click outside to close dropdown
+    const handleClickOutside = (event) => {
+        if (!wrapper.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    };
+    document.addEventListener("click", handleClickOutside);
 
     wrapper.appendChild(input);
     wrapper.appendChild(dropdown);
     container.appendChild(wrapper);
 }
+
 
 function renderBidInputImmediately() {
     const emailContainer = document.getElementById('emailTemplate');
