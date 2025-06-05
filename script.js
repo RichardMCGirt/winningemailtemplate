@@ -189,14 +189,11 @@ async function fetchAllVendorData() {
 // ✅ Sort once globally by name
 vendorData.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-
         console.log(`✅ All ${vendorData.length} vendor records fetched and stored.`);
     } catch (error) {
         console.error("❌ Error fetching vendor data:", error);
     }
 }
-
-
 
 async function ensureDynamicContainerExists() {
     try {
@@ -372,14 +369,14 @@ async function fetchBidNameSuggestions() {
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
 }
 
-async function fetchSubcontractorSuggestions(branchFilter) {
-
-    if (!branchFilter) {
-        console.error("Branch filter is missing.");
+async function fetchSubcontractorSuggestions(branch) {
+    if (!branch) {
+        console.error("❌ Missing branch for subcontractor filtering.");
         return;
     }
 
-    const filterFormula = `{Branch} = "${branchFilter}"`;
+    const filterFormula = `{Branch} = "${branch}"`;
+
     try {
         const records = await fetchAirtableData(
             subcontractorBaseName,
@@ -395,11 +392,13 @@ async function fetchSubcontractorSuggestions(branchFilter) {
             }))
             .filter(suggestion => suggestion.companyName && suggestion.email);
 
-        console.log("Subcontractor suggestions (filtered by branch):", subcontractorSuggestions);
+        console.log(`✅ Subcontractor suggestions filtered by branch "${branch}":`, subcontractorSuggestions);
     } catch (error) {
-        console.error("Error fetching subcontractor suggestions:", error);
+        console.error("❌ Error fetching subcontractor suggestions:", error);
     }
 }
+
+
 async function waitForElement(selector, timeout = 5000) {
     return new Promise((resolve, reject) => {
         const interval = 100;
@@ -447,7 +446,7 @@ async function fetchDetailsByBidName(bidName) {
         console.warn("Ignoring bid fetch for short input:", bidName);
         return;
     }
-    const filterFormula = `SEARCH("${bidName.replace(/"/g, '\\"')}", {Bid Name})`;
+const filterFormula = `{Bid Name} = "${bidName.replace(/"/g, '\\"')}"`;
     const records = await fetchAirtableData(
         bidBaseName,
         bidTableName,
@@ -461,6 +460,7 @@ async function fetchDetailsByBidName(bidName) {
 
     if (records.length > 0) {
         const fields = records[0].fields;
+    console.log("🧾 All fields for selected bid:", fields);
 
 const acmEmail = fields["Field's Email"] || '';
 
@@ -482,26 +482,30 @@ console.log("✅ ACM fields populated in template:", acmEmail);
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
 
         // 🔁 NEW LOGIC: match vendor name to vendorData
-        let vendorRaw = fields['vendor'] || '';
+
+let vendorRaw = fields['vendor'] || '';
 if (Array.isArray(vendorRaw)) {
-    vendorRaw = vendorRaw[0] || ''; // take first entry if it's an array
+    vendorRaw = vendorRaw[0] || '';
 }
 const vendorNormalized = typeof vendorRaw === 'string' ? vendorRaw.toLowerCase().trim() : '';
 
-let matchingVendors;
-if (!vendorNormalized) {
-    console.warn("⚠️ No vendor specified in the bid record. Showing all vendors.");
-    matchingVendors = [...vendorData]; // Show all
-} else {
+// First, try exact match
+let matchingVendors = vendorData.filter(v =>
+    v.name?.toLowerCase().trim() === vendorNormalized
+);
+
+// Fallback to fuzzy only if no exact match
+if (matchingVendors.length === 0) {
     matchingVendors = vendorData.filter(v => {
         const name = v.name?.toLowerCase() || '';
         const email = v.email?.toLowerCase() || '';
-        return (
-            vendorNormalized.split(' ').some(part => name.includes(part)) ||
-            vendorNormalized.split(' ').some(part => email.includes(part))
-        );
+        return name.includes(vendorNormalized) || email.includes(vendorNormalized);
     });
 }
+
+
+
+
        
         console.log(`🔍 Found ${matchingVendors.length} matching vendors for "${vendorRaw}"`, matchingVendors);
         
@@ -510,8 +514,9 @@ if (!vendorNormalized) {
     const matched = matchingVendors[0];
     window.currentVendorEmail = matched.email;
 
-    document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
-    document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+  document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
+document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+
 
 } else if (matchingVendors.length > 1) {
     const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
@@ -526,20 +531,21 @@ if (!vendorNormalized) {
             const matched = narrowedMatches[0];
             window.currentVendorEmail = matched.email;
 
-            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
-            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+           document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = matched.name);
+document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${matched.email}>`);
+
             return; // ✅ Done
         } else if (narrowedMatches.length > 1) {
-            showVendorSelectionDropdown(narrowedMatches); // 🔽 show narrowed list
+renderMatchingVendorsToDropdown(matchingVendors);
             return;
         }
     }
 
-    showVendorSelectionDropdown(matchingVendors);
+renderMatchingVendorsToDropdown(matchingVendors);
 
 } else {
     console.warn(`⚠️ No close vendor matches for "${vendorRaw}" — showing all vendors`);
-    showVendorSelectionDropdown([...vendorData]);
+    renderMatchingVendorsToDropdown([...matchingVendors]);
 }
 
         window.currentVendorEmail = vendoremail;
@@ -595,37 +601,99 @@ function showVendorSelectionDropdown(vendorMatches) {
         return;
     }
 
-    container.innerHTML = "<p><strong>Multiple vendor matches found. Please choose:</strong></p>";
+    // Clear any existing dropdown
+    const existing = container.querySelector(".vendor-select-dropdown");
+    if (existing) existing.remove();
+
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.placeholder = "Search vendor...";
+    searchInput.style.width = "100%";
+    searchInput.style.marginBottom = "10px";
+    searchInput.style.padding = "5px";
 
     const list = document.createElement("div");
-    list.className = "vendor-select-dropdown";
 
-    vendorMatches.forEach(vendor => {
-        const option = document.createElement("div");
-        option.className = "vendor-select-option";
-        option.innerHTML = `<strong>${vendor.name}</strong><br><small>${vendor.email}</small>`;
+    function renderList(filteredVendors) {
+        list.innerHTML = "";
+        if (!filteredVendors.length) {
+            list.innerHTML = "<p>No matching vendors found.</p>";
+            return;
+        }
 
-        option.addEventListener("click", () => {
-            window.currentVendorEmail = vendor.email;
+        filteredVendors.forEach(vendor => {
+            const option = document.createElement("div");
+            option.className = "vendor-select-option";
+            option.style.cursor = "pointer";
+            option.style.padding = "5px 0";
+option.innerHTML = `<strong>${vendor.name}</strong><br><small>${vendor.email}</small>`;
 
-            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
-            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
+option.addEventListener("click", () => {
+    window.currentVendorEmail = vendor.email;
 
-            list.remove(); 
+    document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
+    document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
+
+    wrapper.remove(); // Close dropdown
+});
+
+
+
+            list.appendChild(option);
         });
+    }
 
-        list.appendChild(option);
+    renderList(vendorMatches); // initial render
+
+    searchInput.addEventListener("input", () => {
+        const query = searchInput.value.trim().toLowerCase();
+        const filtered = vendorMatches.filter(v =>
+            v.name?.toLowerCase().includes(query) || v.email?.toLowerCase().includes(query)
+        );
+        renderList(filtered);
     });
 
-    container.appendChild(list);
-console.log("📋 Suggestions rendered:", vendorMatches.length);
 
-    // ✅ Logging vendors rendered
-    console.log(`📋 Vendor suggestions rendered (${vendorMatches.length}):`);
-    console.table(vendorMatches.map(v => ({
-        name: v.name,
-        email: v.email
-    })));
+    console.log("📋 Vendor suggestions shown with search:", vendorMatches.length);
+}
+
+function renderMatchingVendorsToDropdown(matchingVendors) {
+    const dropdown = document.querySelector('.vendor-autocomplete-dropdown');
+    if (!dropdown) {
+        console.error("Dropdown container not found.");
+        return;
+    }
+
+    dropdown.innerHTML = ''; // Clear any previous results
+
+    if (!Array.isArray(matchingVendors) || matchingVendors.length === 0) {
+        dropdown.innerHTML = '<p>No matching vendors found.</p>';
+        return;
+    }
+
+    matchingVendors.forEach(vendor => {
+        const option = document.createElement('div');
+        option.className = 'vendor-autocomplete-option';
+        option.style.cursor = 'pointer';
+        option.style.padding = '8px 10px';
+        option.style.borderBottom = '1px solid #eee';
+
+        const email = vendor.email ? `<br><small>${vendor.email}</small>` : `<br><small style="color:gray;">(no email)</small>`;
+        option.innerHTML = `<strong>${vendor.name}</strong>${email}`;
+
+        option.addEventListener('click', () => {
+            // You can customize this part depending on what happens on click
+            console.log("✅ Selected vendor:", vendor);
+            window.currentVendorEmail = vendor.email;
+            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
+            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email || ''}>`);
+            dropdown.innerHTML = ''; // Close dropdown
+        });
+
+        dropdown.appendChild(option);
+    });
+
+    dropdown.style.display = 'block';
 }
 
   function updateSubcontractorAutocomplete() {
@@ -896,7 +964,6 @@ function monitorSubdivisionChanges() {
     // Check if subdivisionElement exists before setting up observer
     if (subdivisionElement) {
         const observer = new MutationObserver(async () => {
-            await updateCityForSubdivision();
         });
         
         observer.observe(subdivisionElement, { childList: true, characterData: true, subtree: true });
@@ -905,28 +972,149 @@ function monitorSubdivisionChanges() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const observer = new MutationObserver((mutationsList) => {
-        for (const mutation of mutationsList) {
-            if (mutation.type === "childList") {
-                // Iterate through added nodes to find textareas
-                Array.from(mutation.addedNodes).forEach((node) => {
-                    if (node.tagName === "TEXTAREA" && (node.id === "additionalInfoInput" || node.id === "additionalInfoInputSub")) {
-                        // Attach the dynamic height adjustment event listener
-                        node.addEventListener("input", function () {
-                            this.style.height = "auto"; // Reset height
-                            this.style.height = `${this.scrollHeight}px`; // Adjust to content height
-                        });
-                        console.log(`Dynamic height adjustment enabled for ${node.id}`);
-                    }
-                });
-            }
-        }
-    });
+// ✅ All DOMContentLoaded logic consolidated
 
-    // Start observing the document body for changes
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    showLoadingAnimation();
+    autoProgressLoading(isBidInputVisible);
+    renderBidInputImmediately();
+    simulateLiveProgressUpdates();
+    displayEmailContent();
+    monitorSubdivisionChanges();
+    setupCopySubEmailsButton();
+    observeCCContainer();
+    ensureDynamicContainerExists();
+    initializeBidAutocomplete();
+    await fetchAllVendorData();
+    fetchAndUpdateAutocomplete();
+
+    const observer = new MutationObserver(mutationsList => {
+      for (const mutation of mutationsList) {
+        if (mutation.type === "childList") {
+          Array.from(mutation.addedNodes).forEach(node => {
+            if (
+              node.tagName === "TEXTAREA" &&
+              (node.id === "additionalInfoInput" ||
+                node.id === "additionalInfoInputSub")
+            ) {
+              node.addEventListener("input", function () {
+                this.style.height = "auto";
+                this.style.height = `${this.scrollHeight}px`;
+              });
+              console.log(`Dynamic height adjustment enabled for ${node.id}`);
+            }
+          });
+        }
+      }
+    });
     observer.observe(document.body, { childList: true, subtree: true });
+
+    const userNameInput = document.getElementById("inputUserName");
+    if (userNameInput) {
+      userNameInput.addEventListener("input", () => {
+        const name = userNameInput?.value || "Your Name";
+        const firstLine = document.querySelector(".signature-content p:first-child");
+        if (firstLine) {
+          firstLine.innerHTML = `${name} | Vanir Installed Sales, LLC`;
+        }
+      });
+    }
+
+    const sendManagementEmailButton = document.getElementById("sendManagementEmailButton");
+    if (sendManagementEmailButton) {
+      sendManagementEmailButton.addEventListener("click", async () => {
+        showRedirectAnimation();
+
+        const vendorWindow = window.open("about:blank", "_blank");
+        const managementWindow = window.open("about:blank", "_blank");
+        const subcontractorWindows = [];
+
+        const chunkCount = Math.ceil(subcontractorSuggestions.length / 30);
+        for (let i = 0; i < chunkCount; i++) {
+          subcontractorWindows.push(window.open("about:blank", "_blank"));
+        }
+
+        const links = await generateMailtoLinks();
+
+        if (links) {
+          const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
+
+          if (vendorGmailLink) vendorWindow.location.href = vendorGmailLink;
+          else vendorWindow.close();
+
+          if (managementGmailLink) managementWindow.location.href = managementGmailLink;
+          else managementWindow.close();
+
+          subcontractorGmailLinks.forEach((link, index) => {
+            if (subcontractorWindows[index]) {
+              subcontractorWindows[index].location.href = link;
+            }
+          });
+        } else {
+          vendorWindow.close();
+          managementWindow.close();
+          subcontractorWindows.forEach(win => win.close());
+        }
+      });
+    }
+
+    const sendSelectedEmailsBtn = document.getElementById("sendSelectedEmails");
+    if (sendSelectedEmailsBtn) {
+      sendSelectedEmailsBtn.addEventListener("click", async () => {
+        showRedirectAnimation();
+
+        const sendVendor = document.getElementById("optionVendor")?.checked;
+        const sendManagement = document.getElementById("optionManagement")?.checked;
+        const sendSubcontractor = document.getElementById("optionSubcontractor")?.checked;
+
+        const vendorWindow = sendVendor ? window.open("about:blank", "_blank") : null;
+        const managementWindow = sendManagement ? window.open("about:blank", "_blank") : null;
+        const subcontractorWindows = [];
+
+        const chunkCount = sendSubcontractor ? Math.ceil(subcontractorSuggestions.length / 30) : 0;
+        for (let i = 0; i < chunkCount; i++) {
+          subcontractorWindows.push(window.open("about:blank", "_blank"));
+        }
+
+        const links = await generateMailtoLinks();
+
+        if (links) {
+          const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
+
+          if (sendVendor && vendorWindow && vendorGmailLink) {
+            vendorWindow.location.href = vendorGmailLink;
+          } else if (vendorWindow) {
+            vendorWindow.close();
+          }
+
+          if (sendManagement && managementWindow && managementGmailLink) {
+            managementWindow.location.href = managementGmailLink;
+          } else if (managementWindow) {
+            managementWindow.close();
+          }
+
+          if (sendSubcontractor && subcontractorGmailLinks.length) {
+            subcontractorGmailLinks.forEach((link, index) => {
+              if (subcontractorWindows[index]) {
+                subcontractorWindows[index].location.href = link;
+              }
+            });
+          } else {
+            subcontractorWindows.forEach(w => w.close());
+          }
+        } else {
+          vendorWindow?.close();
+          managementWindow?.close();
+          subcontractorWindows.forEach(w => w.close());
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error in consolidated DOMContentLoaded handler:", error);
+  }
 });
+
 
 async function exportTextareaToEmail() {
     const textarea = document.getElementById('additionalInfoInput');
@@ -1129,10 +1317,9 @@ function normalizePurchasingEmail(email) {
         <hr>
 
         <!-- ✅ Vendor Email Section -->
-        <div id="vendorEmailContainer" style="margin-top: 10px;"></div>
+      <div id="vendorEmailContainer" style="margin-top: 10px;"></div>
 
-        <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
-<button id="clearVendorBtn">Clear Vendor</button>
+<h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
         <p><strong>Subject:</strong> Vendor Notification | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
@@ -1177,7 +1364,20 @@ function normalizePurchasingEmail(email) {
     
     const emailContainer = document.getElementById('emailTemplate');
     if (emailContainer) {
-        emailContainer.innerHTML = emailContent;
+emailContainer.innerHTML = emailContent;
+
+const chooseVendorBtn = document.getElementById('chooseVendorBtn');
+if (chooseVendorBtn) {
+  chooseVendorBtn.addEventListener('click', () => {
+    if (!vendorData.length) {
+      console.warn("⚠️ Vendor data is not loaded.");
+      return;
+    }
+
+    showVendorSelectionDropdown(vendorData);
+  });
+}
+
 
         // 🔄 Observe for city inputs after they're injected
         const cityObserver = new MutationObserver(() => { 
@@ -1714,19 +1914,18 @@ function createVendorAutocompleteInput() {
 
 input.addEventListener("input", () => {
     const query = input.value.toLowerCase();
-  const filteredVendors = vendorData
-  .filter(vendor =>
-    vendor.name?.toLowerCase().includes(query) ||
-    vendor.email?.toLowerCase().includes(query)
-  )
-  .sort((a, b) => (a.name || "").localeCompare(b.name || "")); // <== ✅ force alphabetical
+    dropdown.innerHTML = ""; // Clear old results
 
-    console.log("🔍 Vendors in suggestion list:", filteredVendors); // ✅ Log here
+    const filteredVendors = vendorData
+        .filter(vendor =>
+            vendor.name?.toLowerCase().includes(query) ||
+            vendor.email?.toLowerCase().includes(query)
+        )
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-dropdown.appendChild(option);
-  filteredVendors
-    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
-    .forEach(vendor => {
+    console.log("🔍 Vendors in suggestion list:", filteredVendors);
+
+    filteredVendors.forEach(vendor => {
         const option = document.createElement('div');
         option.className = 'vendor-autocomplete-option';
         option.textContent = vendor.name;
@@ -1742,6 +1941,7 @@ dropdown.appendChild(option);
 
         dropdown.appendChild(option);
     });
+
 
 
 console.log("📋 Suggestions rendered:", filteredVendors.length); // ✅ Add here
@@ -1772,13 +1972,6 @@ function renderBidInputImmediately() {
 
     emailContainer.prepend(bidAutocompleteInput);
 }
-
-// Initialize bid and vendor autocomplete
-document.addEventListener('DOMContentLoaded', async () => {
-      await fetchAllVendorData(); // ✅ Load vendor records first
-    // Fetch suggestions
- //   await fetchBidNameSuggestions();
-});console.log("👀 Vendor data loaded:", vendorData);
 
 let offset = null; // Offset for Airtable pagination
 const PAGE_SIZE = 20; // Adjust as needed
@@ -1988,13 +2181,3 @@ async function waitForElement(selector, timeout = 5000) {
         }, interval);
     });
 }
-
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Ensure email template is displayed
-        displayEmailContent();
-        fetchAndUpdateAutocomplete();
-       
-    } catch (error) {
-    }
-});

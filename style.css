@@ -190,8 +190,8 @@ h2, h4, p {
 
 .vendor-select-dropdown {
   position: absolute;
-  background: #2c3e50; /* dark blue background */
-  border: 1px solid #1abc9c; /* teal border */
+  background: #2c3e50 !important; /* dark blue background */
+  border: 1px solid #1abc9c !important; /* teal border */
   max-height: 450px;
   overflow-y: auto;
   font-size: 16px;
