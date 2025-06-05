@@ -20,29 +20,15 @@ let mailtoOpened = false;
 
 const MAX_PROGRESS = 100;
 
-// Display Loading Animation
-function showLoadingAnimation() {
-    const loadingOverlay = document.createElement("div");
-    loadingOverlay.id = "loadingOverlay";
-    loadingOverlay.innerHTML = `
-        <div class="loading-content">
-            <p>Fetching Winning Bids </p>
-            <p id="loadingPercentage">0%</p>
-            <div class="loading-bar">
-                <div class="loading-progress" id="loadingProgress"></div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(loadingOverlay);
-}
+let lastProgress = 0;
 
-// Update Loading Progress
 function updateLoadingProgress(percentage) {
+    const safePercentage = Math.min(100, Math.max(lastProgress, percentage));
+    lastProgress = safePercentage;
+    
     const loadingPercentage = document.getElementById("loadingPercentage");
     const loadingProgress = document.getElementById("loadingProgress");
     const loadingOverlay = document.getElementById("loadingOverlay");
-
-    const safePercentage = Math.min(100, Math.max(0, percentage));
 
     if (loadingPercentage) {
         loadingPercentage.textContent = `${safePercentage}%`;
@@ -62,6 +48,58 @@ function updateLoadingProgress(percentage) {
         }, 500);
     }
 }
+
+
+
+// Display Loading Animation
+function showLoadingAnimation() {
+    const loadingOverlay = document.createElement("div");
+    loadingOverlay.id = "loadingOverlay";
+    loadingOverlay.innerHTML = `
+        <div class="loading-content">
+            <p>Fetching Winning Bids </p>
+            <p id="loadingPercentage">0%</p>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loadingProgress"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+}
+
+// Update Loading Progress
+async function fetchAndUpdateAutocomplete() {
+    showLoadingAnimation(); // 🎯 Start loading
+
+    let progress = 0;
+    updateLoadingProgress(progress);
+
+    // Fetch bid names (40%)
+    await fetchBidNameSuggestions();
+    progress = 40;
+    updateLoadingProgress(progress);
+
+    // Fetch vendor data (80%)
+    await fetchAllVendorData();
+    progress = 80;
+    updateLoadingProgress(progress);
+
+    // Render inputs and finish (100%)
+    createVendorAutocompleteInput();
+
+    const emailContainer = await waitForElement('#emailTemplate');
+    const bidAutocompleteInput = createAutocompleteInput(
+        "Enter Bid Name",
+        bidNameSuggestions,
+        "bid",
+        fetchDetailsByBidName
+    );
+    emailContainer.prepend(bidAutocompleteInput);
+
+    progress = 100;
+    updateLoadingProgress(progress);
+}
+
 
 function autoProgressLoading(stopConditionCallback) {
     let currentProgress = 0;
@@ -100,10 +138,8 @@ waitForBidInput(() => updateLoadingProgress(100));
 
 // Call this to start the random progress
 document.addEventListener('DOMContentLoaded', () => {
-    showLoadingAnimation(); // display the overlay
     autoProgressLoading(isBidInputVisible); // start fake loading
         renderBidInputImmediately(); // show UI fast
-    simulateLiveProgressUpdates();  // Start live progress updates
     displayEmailContent();
     monitorSubdivisionChanges();
     setupCopySubEmailsButton(); // 👈 setup click listener
@@ -208,23 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ensureDynamicContainerExists();
 });
 
-// Simulate Live Progress Updates (e.g., for data loading)
-function simulateLiveProgressUpdates() {
-    let percentage = 0;
 
-    const interval = setInterval(() => {
-        percentage += 10; // Increase progress by 5%
-        
-        // Update loading progress
-        updateLoadingProgress(percentage);
-
-        // If the progress reaches 100%, stop the interval and hide the loading overlay
-        if (percentage >= 100) {
-            clearInterval(interval);
-            hideLoadingAnimation();
-        }
-    }, 500); // Update every 500ms
-}
 
 // Fetch "Bid Name" suggestions
 async function fetchBidSuggestions() {
@@ -232,10 +252,7 @@ async function fetchBidSuggestions() {
         const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
         bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
         
-        // Simulate progress update for bid fetching
-        bidLoadingProgress = 55;
-        totalLoadingProgress = Math.round((bidLoadingProgress) / 2);  // Average of both progress
-        updateLoadingProgress(totalLoadingProgress);
+     
     } catch (error) {
         console.error("Error fetching bid suggestions:", error);
     }
@@ -503,8 +520,6 @@ if (matchingVendors.length === 0) {
         return name.includes(firstWord) || email.includes(firstWord);
     });
 }
-
-
         console.log(`🔍 Found ${matchingVendors.length} matching vendors for "${vendorRaw}"`, matchingVendors);
         
         // If only one match, proceed automatically
@@ -974,10 +989,8 @@ function monitorSubdivisionChanges() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    showLoadingAnimation();
-    autoProgressLoading(isBidInputVisible);
+   // autoProgressLoading(isBidInputVisible);
     renderBidInputImmediately();
-    simulateLiveProgressUpdates();
     displayEmailContent();
     monitorSubdivisionChanges();
     setupCopySubEmailsButton();
@@ -1867,30 +1880,51 @@ function getSubcontractorsByBranch(subcontractors, branch) {
 
 // Fetch all bid names on page load, but subcontractors only after a bid is chosen
 async function fetchAndUpdateAutocomplete() {
-    // Fetch data
-    await fetchBidNameSuggestions();
-    await fetchAllVendorData(); // Needed before fetchDetailsByBidName
-    createVendorAutocompleteInput(); // 👈 populate dropdown for manual search
+    console.log("🚀 Starting fetchAndUpdateAutocomplete...");
+    showLoadingAnimation(); // 🎯 Start loading
+    await new Promise(resolve => setTimeout(resolve, 50));
+    let progress = 0;
+    updateLoadingProgress(progress);
+    console.log(`📊 Progress: ${progress}% - Loading started`);
 
-    // Wait for the DOM to be ready
+    // Fetch bid names (40%)
+    console.log("📥 Fetching bid name suggestions...");
+    await fetchBidNameSuggestions();
+    progress = 40;
+    updateLoadingProgress(progress);
+    console.log(`📊 Progress: ${progress}% - Bid names fetched (${bidNameSuggestions.length})`);
+
+    // Fetch vendor data (80%)
+    console.log("📥 Fetching vendor data...");
+    await fetchAllVendorData();
+    progress = 80;
+    updateLoadingProgress(progress);
+    console.log(`📊 Progress: ${progress}% - Vendor data fetched (${vendorData.length})`);
+
+    // Render inputs
+    console.log("🧩 Rendering vendor autocomplete input...");
+    createVendorAutocompleteInput();
+
+    console.log("⏳ Waiting for #emailTemplate to exist...");
     const emailContainer = await waitForElement('#emailTemplate');
 
-    // Build and insert bid name input
+    console.log("🧩 Rendering bid name input...");
     const bidAutocompleteInput = createAutocompleteInput(
         "Enter Bid Name",
         bidNameSuggestions,
         "bid",
         fetchDetailsByBidName
     );
-
     emailContainer.prepend(bidAutocompleteInput);
 
-    // Enable the input field
-    bidAutocompleteInput.querySelector('input').disabled = false;
+    progress = 100;
+    updateLoadingProgress(progress);
+    console.log(`✅ Progress: ${progress}% - All UI elements ready`);
 
-    // ✅ Hide loading animation **after** full setup
-    hideLoadingAnimation();
+    console.log("🎉 fetchAndUpdateAutocomplete complete!");
 }
+
+
 
 function createVendorAutocompleteInput() {
     const container = document.getElementById("vendorEmailContainer");
