@@ -188,6 +188,14 @@ h2, h4, p {
     transition: background-color 0.2s ease;
 }
 
+#vendorEmailContainer {
+  width: fit-content;
+  box-sizing: border-box; /* ensures padding/border don't exceed the width */
+  overflow-wrap: break-word; /* wraps long emails or text */
+  word-break: break-word;    /* breaks long strings if necessary */
+}
+
+
 input.city {
     border: 2px solid white;
     border-radius: 6px; /* optional: for a cleaner look */

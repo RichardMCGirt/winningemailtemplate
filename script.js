@@ -1328,7 +1328,7 @@ function normalizePurchasingEmail(email) {
         <hr>
 
         <!-- ✅ Vendor Email Section -->
-      <div id="vendorEmailContainer" style="margin-top: 10px;"></div>
+<div id="vendorEmailContainer" style="margin-top: 10px; position: relative;"></div>
 
 <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
@@ -1357,6 +1357,8 @@ function normalizePurchasingEmail(email) {
             </div>
         </div>
     `;
+
+    
 
     document.addEventListener('DOMContentLoaded', () => {
         const cityObserver = new MutationObserver(() => { 
