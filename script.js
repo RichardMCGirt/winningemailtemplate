@@ -102,6 +102,19 @@ waitForBidInput(() => updateLoadingProgress(100));
 document.addEventListener('DOMContentLoaded', () => {
     showLoadingAnimation(); // display the overlay
     autoProgressLoading(isBidInputVisible); // start fake loading
+        renderBidInputImmediately(); // show UI fast
+    simulateLiveProgressUpdates();  // Start live progress updates
+    displayEmailContent();
+    monitorSubdivisionChanges();
+    setupCopySubEmailsButton(); // 👈 setup click listener
+    
+    // Initial call to observe the CC container
+    observeCCContainer();
+
+    // Schedule it to run every minute
+    setInterval(() => {
+        observeCCContainer();
+    }, 60000); // 60000 milliseconds = 1 minute
 });
 
 
@@ -168,10 +181,14 @@ async function fetchAllVendorData() {
         } while (offset);
 
         // Map and store globally
-        vendorData = allRecords.map(record => ({
-            name: record.fields['Name'] || "Unknown Vendor",
-            email: record.fields['Email'] || null,
-        }));
+       vendorData = allRecords.map(record => ({
+    name: record.fields['Name'] || "Unknown Vendor",
+    email: record.fields['Email'] || null,
+}));
+
+// ✅ Sort once globally by name
+vendorData.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
 
         console.log(`✅ All ${vendorData.length} vendor records fetched and stored.`);
     } catch (error) {
@@ -211,12 +228,6 @@ function simulateLiveProgressUpdates() {
         }
     }, 500); // Update every 500ms
 }
-
-// Start the process on page load or when you want to trigger it
-document.addEventListener('DOMContentLoaded', () => {
-    showLoadingAnimation();  // Show the loading animation
-    simulateLiveProgressUpdates();  // Start live progress updates
-});
 
 // Fetch "Bid Name" suggestions
 async function fetchBidSuggestions() {
@@ -491,8 +502,6 @@ if (!vendorNormalized) {
         );
     });
 }
-
-
        
         console.log(`🔍 Found ${matchingVendors.length} matching vendors for "${vendorRaw}"`, matchingVendors);
         
@@ -526,16 +535,13 @@ if (!vendorNormalized) {
         }
     }
 
-    // ❗ If we didn't narrow it down to 1 match
     showVendorSelectionDropdown(matchingVendors);
 
 } else {
-    // ❌ No match at all — show full vendor list as fallback
     console.warn(`⚠️ No close vendor matches for "${vendorRaw}" — showing all vendors`);
     showVendorSelectionDropdown([...vendorData]);
 }
 
-        
         window.currentVendorEmail = vendoremail;
         console.log("Full fetched record:", records[0]);
 
@@ -557,7 +563,7 @@ if (!vendorNormalized) {
     AnticipatedDuration,
     gm,
     vendoremail,
-    acmEmail         // ✅ added
+    acmEmail         
 );
 
         await fetchSubcontractorSuggestions(fields['Branch']);
@@ -571,7 +577,7 @@ if (!vendorNormalized) {
             materialType,
             numberOfLots,
             anticipatedStartDate,
-            vendorRaw, // ✅ Correct variable
+            vendorRaw, 
             AnticipatedDuration,
             gm,
             vendoremail,
@@ -589,7 +595,6 @@ function showVendorSelectionDropdown(vendorMatches) {
         return;
     }
 
-    // Clear existing
     container.innerHTML = "<p><strong>Multiple vendor matches found. Please choose:</strong></p>";
 
     const list = document.createElement("div");
@@ -606,7 +611,7 @@ function showVendorSelectionDropdown(vendorMatches) {
             document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
             document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
 
-            list.remove(); // remove dropdown
+            list.remove(); 
         });
 
         list.appendChild(option);
@@ -623,15 +628,12 @@ console.log("📋 Suggestions rendered:", vendorMatches.length);
     })));
 }
 
-
   function updateSubcontractorAutocomplete() {
     const subcontractorContainer = document.getElementById("subcontractorCompanyContainer");
     subcontractorContainer.innerHTML = ''; // Clear previous content
 
-    // Collect all emails into an array
     const emailArray = subcontractorSuggestions.map(sub => sub.email);
 
-    // Join the emails with commas
     const formattedEmails = emailArray.join(', ');
 
     if (formattedEmails.trim() === '') {
@@ -678,7 +680,6 @@ function setupCopySubEmailsButton() {
     });
 }
 
-
 // Unified function to create an autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback) {
     // Validate the `type` parameter
@@ -711,9 +712,6 @@ input.addEventListener("input", () => {
     console.log("⚠️ Initially empty — marching ants added");
   }
   
-  
-
-
     const dropdown = document.createElement("div");
     dropdown.classList.add(`${type}-autocomplete-dropdown`, "autocomplete-dropdown");
 
@@ -793,7 +791,6 @@ function updateTemplateText(
   AnticipatedDuration,
   gm,
   vendoremail,
-  acmEmail           // ✅ NEW
 )
  {
     console.log('Updating Template Text with the following parameters:', {
@@ -852,7 +849,6 @@ const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
     if (materialType) {
         let formatted = materialType;
       
-        // If materialType is a string with two comma-separated values
         if (typeof materialType === "string" && materialType.includes(",")) {
           const parts = materialType.split(",").map(p => p.trim());
           if (parts.length === 2) {
@@ -860,7 +856,6 @@ const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
           }
         }
       
-        // Apply the formatted value to each element
         document.querySelectorAll('.materialTypeContainer').forEach(el => {
           el.textContent = formatted;
         });
@@ -891,14 +886,6 @@ const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
         console.error('Invalid date format for anticipatedStartDate:', anticipatedStartDate);
       }
     }
-  
- //   if (vendoremail) {
-    //  const ccSpan = document.querySelector('.cc-email-container');
-    //  if (ccSpan) {
-    //    ccSpan.textContent = vendoremail;
-    //    console.log("✅ Updated CC field with vendor email:", vendoremail);
-   //   }
-  //  }
   }
   
   
@@ -917,14 +904,6 @@ function monitorSubdivisionChanges() {
         console.error("Element '.subdivisionContainer' not found. Cannot observe changes.");
     }
 }
-
-// Initialize monitoring on page load
-document.addEventListener('DOMContentLoaded', () => {
-    displayEmailContent();
-    monitorSubdivisionChanges();
-    setupCopySubEmailsButton(); // 👈 setup click listener
-
-});
 
 document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver((mutationsList) => {
@@ -991,7 +970,6 @@ async function sendEmailData() {
         return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&bcc=${encodeURIComponent(chunk.join(','))}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
     });
     
-    // NOW safely build your data object
     const data = {
         branch,
         subdivision,
@@ -1041,7 +1019,6 @@ document.getElementById('clearVendorBtn')?.addEventListener('click', () => {
     window.currentVendorEmail = '';
 });
 
-
    function autoResizeInput(input) {
     if (!input) return;
     const tempSpan = document.createElement('span');
@@ -1086,7 +1063,7 @@ function enableAutoResizeInput(selector) {
     input.addEventListener('input', resize);
     console.log(`[autoResize] Resize listener added.`);
 
-    resize(); // initialize on load
+    resize(); 
 }
 
 function normalizePurchasingEmail(email) {
@@ -1113,7 +1090,6 @@ function normalizePurchasingEmail(email) {
 
         <h4>Major Win with <strong> <span class="builderContainer"></span></strong></h4>
    
-
         <h2>Here's the breakdown:</h2>
         <span class="subdivisionContainer"></span> :
         <p><strong>Field Contact:</strong> <input class="cname" placeholder="Enter contact name" /></p>
@@ -1199,7 +1175,6 @@ function normalizePurchasingEmail(email) {
         });
     });
     
-
     const emailContainer = document.getElementById('emailTemplate');
     if (emailContainer) {
         emailContainer.innerHTML = emailContent;
@@ -1232,7 +1207,7 @@ function normalizePurchasingEmail(email) {
                 }
                 
         
-                                const branch = document.querySelector('.branchContainer')?.textContent?.trim().toLowerCase();
+             const branch = document.querySelector('.branchContainer')?.textContent?.trim().toLowerCase();
         
                 if (!vendorRaw) {
                     alert("Original vendor name not found.");
@@ -1294,11 +1269,6 @@ function syncCityInputs() {
     console.log("✅ City inputs synced and listeners attached");
 }
 
-// Trigger the display of email content once vendor emails are fetched
-document.addEventListener('DOMContentLoaded', () => {
-    displayEmailContent();
-});
-
 document.addEventListener('DOMContentLoaded', () => {
     const changeVendorBtn = document.getElementById('changeVendorBtn');
 
@@ -1335,21 +1305,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const gmEmailElement = document.querySelector('.gmEmailContainer');
-    const gm = document.querySelector('.gmNameContainer')?.textContent || 'GM named';
-
-    const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
-});
-
-
 async function validateAndExportBidDetails(bidName) {
     await fetchAllVendorData(); // ⬅️ ensures vendorData is ready
     const bidDetails = await fetchDetailsByBidName(bidName);
     console.log('Validated bid details for export:', bidDetails);
     exportData(bidDetails);
 }
-
 
 const textarea = document.getElementById('additionalInfoInput');
 const additionalDetails = textarea ? textarea.value.trim() : null;
@@ -1367,7 +1328,6 @@ async function generateMailtoLinks() {
         const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
-const acmEmail = acmEmailEl && acmEmailEl.value ? acmEmailEl.value.trim() : 'acm@example.com';
 
         const cityEl = document.querySelector('.city');
 const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
@@ -1590,16 +1550,7 @@ function observeCCContainer() {
     ccObserver.observe(ccEmailContainer, { childList: true, characterData: true, subtree: true });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
 
-    // Initial call to observe the CC container
-    observeCCContainer();
-
-    // Schedule it to run every minute
-    setInterval(() => {
-        observeCCContainer();
-    }, 60000); // 60000 milliseconds = 1 minute
-});
 
 document.addEventListener('DOMContentLoaded', () => {
     const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
@@ -1642,7 +1593,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-}); // ✅ closes the first DOMContentLoaded listener
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     const userNameInput = document.getElementById('inputUserName');
@@ -1763,27 +1714,35 @@ function createVendorAutocompleteInput() {
 
 input.addEventListener("input", () => {
     const query = input.value.toLowerCase();
-    const filteredVendors = vendorData.filter(vendor =>
-        vendor.name?.toLowerCase().includes(query) ||
-        vendor.email?.toLowerCase().includes(query)
-    );
+  const filteredVendors = vendorData
+  .filter(vendor =>
+    vendor.name?.toLowerCase().includes(query) ||
+    vendor.email?.toLowerCase().includes(query)
+  )
+  .sort((a, b) => (a.name || "").localeCompare(b.name || "")); // <== ✅ force alphabetical
 
     console.log("🔍 Vendors in suggestion list:", filteredVendors); // ✅ Log here
 
-    suggestionBox.innerHTML = '';
-   filteredVendors.forEach(vendor => {
-    const option = document.createElement('div');
-    option.className = 'vendor-autocomplete-option';
-    option.textContent = vendor['Name'];
-    option.dataset.email = vendor['Email'];
-    option.addEventListener('click', () => {
-        vendorInput.value = vendor['Name'];
-        selectedVendorEmail = vendor['Email'];
-        document.getElementById('vendor-suggestion-box').innerHTML = '';
-        updateVendorEmailUI();
+dropdown.appendChild(option);
+  filteredVendors
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+    .forEach(vendor => {
+        const option = document.createElement('div');
+        option.className = 'vendor-autocomplete-option';
+        option.textContent = vendor.name;
+        option.dataset.email = vendor.email;
+
+        option.addEventListener('click', () => {
+            input.value = vendor.name;
+            window.currentVendorEmail = vendor.email;
+            document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = vendor.name);
+            document.querySelectorAll('.vendorEmailWrapper').forEach(el => el.textContent = ` <${vendor.email}>`);
+            dropdown.innerHTML = '';
+        });
+
+        dropdown.appendChild(option);
     });
-    suggestionBox.appendChild(option);
-});
+
 
 console.log("📋 Suggestions rendered:", filteredVendors.length); // ✅ Add here
 
@@ -1813,12 +1772,6 @@ function renderBidInputImmediately() {
 
     emailContainer.prepend(bidAutocompleteInput);
 }
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    renderBidInputImmediately(); // show UI fast
-});
-
 
 // Initialize bid and vendor autocomplete
 document.addEventListener('DOMContentLoaded', async () => {
