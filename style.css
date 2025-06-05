@@ -188,6 +188,14 @@ h2, h4, p {
     transition: background-color 0.2s ease;
 }
 
+input.city {
+    border: 2px solid white;
+    border-radius: 6px; /* optional: for a cleaner look */
+    padding: 8px;       /* optional: for spacing inside the input */
+    background-color: transparent; /* optional: keep background clear */
+    color: white;       /* optional: if using dark backgrounds */
+  }
+
 .vendor-select-dropdown {
   position: absolute;
   background: #2c3e50 !important; /* dark blue background */
