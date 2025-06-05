@@ -494,19 +494,17 @@ let matchingVendors = vendorData.filter(v =>
     v.name?.toLowerCase().trim() === vendorNormalized
 );
 
-// Fallback to fuzzy only if no exact match
+// Fallback to match by first word if no exact match
 if (matchingVendors.length === 0) {
+    const firstWord = vendorNormalized.split(" ")[0]; // Extract first word
     matchingVendors = vendorData.filter(v => {
         const name = v.name?.toLowerCase() || '';
         const email = v.email?.toLowerCase() || '';
-        return name.includes(vendorNormalized) || email.includes(vendorNormalized);
+        return name.includes(firstWord) || email.includes(firstWord);
     });
 }
 
 
-
-
-       
         console.log(`🔍 Found ${matchingVendors.length} matching vendors for "${vendorRaw}"`, matchingVendors);
         
         // If only one match, proceed automatically
@@ -1305,7 +1303,7 @@ function normalizePurchasingEmail(email) {
         <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
 
         <p>Greetings from Vanir Installed Sales,</p>
-            <p>Vanir has officially secured the<strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
+            <p>Vanir has officially secured the <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
         <input class="city" placeholder="Enter city" /></p>. We’re eager to get started and ensure excellence throughout the build.
 
         <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
