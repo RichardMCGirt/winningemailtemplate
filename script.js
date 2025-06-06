@@ -1679,7 +1679,7 @@ Better Look. Better Service. Best Choice.
 
         // Combine emails for the "To" and "CC" sections
 const selectedbranch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase().replace(/\s+/g, '');
-const rawPurchasingEmail = `purchasing.${branchSlug}@vanirinstalledsales.com`;
+const rawPurchasingEmail = `purchasing.${selectedbranch}@vanirinstalledsales.com`;
 const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
 const estimatesEmail = `estimates.${selectedbranch}@vanirinstalledsales.com`;
 
@@ -1769,44 +1769,81 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
 
     if (sendManagementEmailButton) {
-       sendManagementEmailButton.addEventListener('click', async function () {
-    showRedirectAnimation();
+        sendManagementEmailButton.addEventListener('click', async function () {
+            showRedirectAnimation();
 
-    // Open all windows immediately to beat the popup blocker
-    const vendorWindow = window.open("about:blank", "_blank");
-    const managementWindow = window.open("about:blank", "_blank");
-    const subcontractorWindows = [];
+            // Open all windows immediately to beat the popup blocker
+            const vendorWindow = window.open("about:blank", "_blank");
+            const managementWindow = window.open("about:blank", "_blank");
+            const subcontractorWindows = [];
 
-    // Pre-open one window for each subcontractor chunk
-    const chunkCount = Math.ceil(subcontractorSuggestions.length / 30);
-    for (let i = 0; i < chunkCount; i++) {
-        subcontractorWindows.push(window.open("about:blank", "_blank"));
-    }
-
-    const links = await generateMailtoLinks();
-
-    if (links) {
-        const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
-
-        if (vendorGmailLink) vendorWindow.location.href = vendorGmailLink;
-        else vendorWindow.close();
-
-        if (managementGmailLink) managementWindow.location.href = managementGmailLink;
-        else managementWindow.close();
-
-        subcontractorGmailLinks.forEach((link, index) => {
-            if (subcontractorWindows[index]) {
-                subcontractorWindows[index].location.href = link;
+            // Pre-open one window for each subcontractor chunk
+            const chunkCount = Math.ceil(subcontractorSuggestions.length / 30);
+            for (let i = 0; i < chunkCount; i++) {
+                subcontractorWindows.push(window.open("about:blank", "_blank"));
             }
-        });
-    } else {
-        vendorWindow.close();
-        managementWindow.close();
-        subcontractorWindows.forEach(win => win.close());
+
+            const links = await generateMailtoLinks();
+
+            if (!links) {
+                // Safely close vendor window
+                if (vendorWindow && typeof vendorWindow.close === "function") {
+                    vendorWindow.close();
+                }
+
+                // Safely close management window
+                if (managementWindow && typeof managementWindow.close === "function") {
+                    managementWindow.close();
+                }
+
+                // Safely close subcontractor windows
+                if (Array.isArray(subcontractorWindows) && subcontractorWindows.length > 0) {
+                    subcontractorWindows.forEach(win => {
+                        if (win && typeof win.close === "function") {
+                            win.close();
+                        }
+                    });
+                }
+
+                return; // Exit early if no links
+            }
+
+            const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
+
+            // Navigate to vendor email if available
+            if (vendorGmailLink && vendorWindow && typeof vendorWindow.location !== "undefined") {
+                vendorWindow.location.href = vendorGmailLink;
+            } else if (vendorWindow && typeof vendorWindow.close === "function") {
+                vendorWindow.close();
+            }
+
+            // Navigate to management email if available
+            if (managementGmailLink && managementWindow && typeof managementWindow.location !== "undefined") {
+                managementWindow.location.href = managementGmailLink;
+            } else if (managementWindow && typeof managementWindow.close === "function") {
+                managementWindow.close();
+            }
+
+            // Navigate to subcontractor emails
+            if (Array.isArray(subcontractorGmailLinks) && subcontractorGmailLinks.length > 0) {
+                subcontractorGmailLinks.forEach((link, index) => {
+                    const win = subcontractorWindows[index];
+                    if (win && typeof win.location !== "undefined") {
+                        win.location.href = link;
+                    }
+                });
+            } else {
+                subcontractorWindows.forEach(win => {
+                    if (win && typeof win.close === "function") {
+                        win.close();
+                    }
+                });
             }
         });
     }
 });
+
+    
 
 document.addEventListener('DOMContentLoaded', () => {
     const userNameInput = document.getElementById('inputUserName');
