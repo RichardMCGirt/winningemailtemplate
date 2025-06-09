@@ -1976,7 +1976,7 @@ function createVendorAutocompleteInput() {
 
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = "Search Vendor Name or Email";
+    input.placeholder = "Search Vendor";
     input.className = "vendor-autocomplete-input";
 
     const dropdown = document.createElement("div");
