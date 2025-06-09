@@ -282,7 +282,7 @@ input {
     font-size: 24px;
     padding: 3px;
     background-color: transparent; /* Allow marching-ants to show */
-    border: grey; /* Remove solid border */
+    border: 1px solid grey; /* ✅ Correct border syntax */
     color: white;
 }
 

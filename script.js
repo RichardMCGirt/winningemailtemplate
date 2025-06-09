@@ -912,6 +912,7 @@ if (branch) {
 const branchSlug = branch.toLowerCase().replace(/\s+/g, '');
 const rawPurchasingEmail = `purchasing.${branchSlug}@vanirinstalledsales.com`;
 const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
+console.log("✅ Normalized purchasing email:", purchasingEmail);
 
     const estimatesEmail = `estimates.${branchSlug}@vanirinstalledsales.com`;
 
@@ -1021,16 +1022,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    const userNameInput = document.getElementById("inputUserName");
-    if (userNameInput) {
-      userNameInput.addEventListener("input", () => {
-        const name = userNameInput?.value || "Your Name";
-        const firstLine = document.querySelector(".signature-content p:first-child");
-        if (firstLine) {
-          firstLine.innerHTML = `${name} | Vanir Installed Sales, LLC`;
-        }
-      });
-    }
+const userNameInput = document.getElementById("inputUserName");
+const preview = document.getElementById("userNamePreview");
+
+if (userNameInput && preview) {
+  userNameInput.addEventListener("input", () => {
+    const name = userNameInput.value.trim() || "Your Name";
+    preview.textContent = name;
+  });
+}
+
 
     const sendManagementEmailButton = document.getElementById("sendManagementEmailButton");
     if (sendManagementEmailButton) {
@@ -1350,7 +1351,11 @@ function normalizePurchasingEmail(email) {
         <div class="signature-container">
             <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
             <div class="signature-content">
-                <p><input type="text" id="inputUserName" placeholder=""> | Vanir Installed Sales, LLC</p>
+<p>
+  <input type="text" id="inputUserName" placeholder="Your Name" />
+</p>
+
+
                 <p>Phone: <input type="text" id="inputUserPhone" placeholder=""></p>
                 <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
                 <p><strong>Better Look. Better Service. Best Choice.</strong></p>
@@ -1678,10 +1683,11 @@ Better Look. Better Service. Best Choice.
 `.trim();
 
         // Combine emails for the "To" and "CC" sections
-const selectedbranch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase().replace(/\s+/g, '');
-const rawPurchasingEmail = `purchasing.${selectedbranch}@vanirinstalledsales.com`;
+const selectedBranch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase().replace(/\s+/g, '');
+
+const rawPurchasingEmail = `purchasing.${selectedBranch}@vanirinstalledsales.com`;
 const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
-const estimatesEmail = `estimates.${selectedbranch}@vanirinstalledsales.com`;
+const estimatesEmail = `estimates.${selectedBranch}@vanirinstalledsales.com`;
 
 const teamEmails = [
   "maggie@vanirinstalledsales.com",
@@ -1695,8 +1701,22 @@ const teamEmails = [
   estimatesEmail
 ].join(", ");
 
-      
-              const vendorToEmail = (vendorEmail && vendorEmail.includes('@')) ? vendorEmail : '';
+// Combine vendor + purchasing
+const vendorToEmail = [vendorEmail, purchasingEmail]
+  .filter(email => typeof email === "string" && email.includes('@'))
+  .join(',');
+
+const vendorToEncoded = `to=${encodeURIComponent(vendorToEmail)}`;
+
+
+const vendorGmailLink = vendorToEmail
+  ? `https://mail.google.com/mail/?view=cm&fs=1&${vendorToEncoded}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
+  : gmEmail
+    ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
+  : null;
+
+
+
 
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
@@ -1713,12 +1733,7 @@ const subcontractorEmailChunks = splitIntoChunks(
   
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLinks);
-        const vendorGmailLink = vendorToEmail
-        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(vendorToEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
-        : gmEmail
-          ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&su=${encodeURIComponent(vendorSubject)}&body=${encodeURIComponent(vendorBody)}`
-          : null;
-      
+
       
           console.log("Using vendorToEmail:", vendorToEmail);
           console.log("Fallback gmEmail (if needed):", gmEmail);
@@ -1845,21 +1860,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 
-document.addEventListener('DOMContentLoaded', () => {
-    const userNameInput = document.getElementById('inputUserName');
 
-    if (userNameInput) {
-        userNameInput.addEventListener('input', updateSignature);
-    }
-
-    function updateSignature() {
-        const name = userNameInput?.value || "Your Name";
-        const firstLine = document.querySelector('.signature-content p:first-child');
-        if (firstLine) {
-            firstLine.innerHTML = `${name} | Vanir Installed Sales, LLC`;
-        }
-    }
-});
 
 // Function to show the redirect animation
 function showRedirectAnimation() {
