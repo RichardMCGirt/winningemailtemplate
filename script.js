@@ -582,8 +582,13 @@ renderMatchingVendorsToDropdown(matchingVendors);
     AnticipatedDuration,
     gm,
     vendoremail,
-    acmEmail         
+    acmEmail   
+          
 );
+console.log("📤 branchEmailContainer content:", document.querySelector('.branchEmailContainer')?.textContent);
+console.log("📤 estimatesEmailContainer content:", document.querySelector('.estimatesEmailContainer')?.textContent);
+
+console.log("📍 Branch passed to updateTemplateText:", branch);
 
         await fetchSubcontractorSuggestions(fields['Branch']);
         updateSubcontractorAutocomplete();
@@ -649,9 +654,6 @@ option.addEventListener("click", () => {
 
     wrapper.remove(); // Close dropdown
 });
-
-
-
             list.appendChild(option);
         });
     }
@@ -919,6 +921,9 @@ console.log("✅ Normalized purchasing email:", purchasingEmail);
     document.querySelectorAll('.branchEmailContainer').forEach(el => {
         el.textContent = purchasingEmail ? `, ${purchasingEmail}` : '';
     });
+    console.log("🧩 Populated branchEmailContainer:", purchasingEmail);
+console.log("🧩 Populated estimatesEmailContainer:", estimatesEmail);
+
     document.querySelectorAll('.estimatesEmailContainer').forEach(el => {
         el.textContent = estimatesEmail ? `, ${estimatesEmail}` : '';
     });
@@ -1179,7 +1184,7 @@ async function sendEmailData() {
         anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
         numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
         managementEmails: [
-"maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com",
+"maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com, josh@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com",
         ].filter(email => typeof email === "string" && email.includes('@')),
         vendorEmails: vendorEmail && vendorEmail.includes('@') ? [vendorEmail] : [],
         subcontractorGmailLinks 
@@ -1279,9 +1284,9 @@ function normalizePurchasingEmail(email) {
       To: 
 <span class="managementEmailContainer">
   maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
-  rick.jinkins@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
-</span><span class="branchEmailContainer"></span><span class="estimatesEmailContainer"></span>
-
+  rick.jinkins@vanirinstalledsales.com, josh@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
+ <span class="branchEmailContainer-label"> </span><span class="branchEmailContainer"></span>
+  <span class="estimatesEmailContainer-label"> </span><span class="estimatesEmailContainer"></span>
         </h2>
         <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
 
@@ -1694,6 +1699,7 @@ const teamEmails = [
   "jason.smith@vanirinstalledsales.com",
   "hunter@vanirinstalledsales.com",
   "rick.jinkins@vanirinstalledsales.com",
+  "josh@vanirinstalledsales.com",
   "dallas.hudson@vanirinstalledsales.com",
   "mike.raszmann@vanirinstalledsales.com",
   "ethen.wilson@vanirinstalledsales.com",
@@ -1777,91 +1783,7 @@ function observeCCContainer() {
 
     ccObserver.observe(ccEmailContainer, { childList: true, characterData: true, subtree: true });
 }
-
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    const sendManagementEmailButton = document.getElementById('sendManagementEmailButton');
-
-    if (sendManagementEmailButton) {
-        sendManagementEmailButton.addEventListener('click', async function () {
-            showRedirectAnimation();
-
-            // Open all windows immediately to beat the popup blocker
-            const vendorWindow = window.open("about:blank", "_blank");
-            const managementWindow = window.open("about:blank", "_blank");
-            const subcontractorWindows = [];
-
-            // Pre-open one window for each subcontractor chunk
-            const chunkCount = Math.ceil(subcontractorSuggestions.length / 30);
-            for (let i = 0; i < chunkCount; i++) {
-                subcontractorWindows.push(window.open("about:blank", "_blank"));
-            }
-
-            const links = await generateMailtoLinks();
-
-            if (!links) {
-                // Safely close vendor window
-                if (vendorWindow && typeof vendorWindow.close === "function") {
-                    vendorWindow.close();
-                }
-
-                // Safely close management window
-                if (managementWindow && typeof managementWindow.close === "function") {
-                    managementWindow.close();
-                }
-
-                // Safely close subcontractor windows
-                if (Array.isArray(subcontractorWindows) && subcontractorWindows.length > 0) {
-                    subcontractorWindows.forEach(win => {
-                        if (win && typeof win.close === "function") {
-                            win.close();
-                        }
-                    });
-                }
-
-                return; // Exit early if no links
-            }
-
-            const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
-
-            // Navigate to vendor email if available
-            if (vendorGmailLink && vendorWindow && typeof vendorWindow.location !== "undefined") {
-                vendorWindow.location.href = vendorGmailLink;
-            } else if (vendorWindow && typeof vendorWindow.close === "function") {
-                vendorWindow.close();
-            }
-
-            // Navigate to management email if available
-            if (managementGmailLink && managementWindow && typeof managementWindow.location !== "undefined") {
-                managementWindow.location.href = managementGmailLink;
-            } else if (managementWindow && typeof managementWindow.close === "function") {
-                managementWindow.close();
-            }
-
-            // Navigate to subcontractor emails
-            if (Array.isArray(subcontractorGmailLinks) && subcontractorGmailLinks.length > 0) {
-                subcontractorGmailLinks.forEach((link, index) => {
-                    const win = subcontractorWindows[index];
-                    if (win && typeof win.location !== "undefined") {
-                        win.location.href = link;
-                    }
-                });
-            } else {
-                subcontractorWindows.forEach(win => {
-                    if (win && typeof win.close === "function") {
-                        win.close();
-                    }
-                });
-            }
-        });
-    }
-});
-
-    
-
-
-
+ 
 // Function to show the redirect animation
 function showRedirectAnimation() {
     const animationOverlay = document.createElement('div');
@@ -1907,7 +1829,7 @@ function showRedirectAnimation() {
     // Remove the animation after a few seconds (optional)
     setTimeout(() => {
         document.body.removeChild(animationOverlay);
-    }, 15000); // Adjust duration as needed
+    }, 7500); // Adjust duration as needed
 }
 
 // Function to get subcontractor emails by branch
@@ -2101,63 +2023,6 @@ function debounce(func, delay) {
         timer = setTimeout(() => func(...args), delay);
     };
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const sendManagementEmailButton = document.getElementById('sendSelectedEmails');
-
-    if (sendManagementEmailButton) {
-        sendManagementEmailButton.addEventListener('click', async function () {
-            showRedirectAnimation();
-
-            const sendVendor = document.getElementById("optionVendor")?.checked;
-            const sendManagement = document.getElementById("optionManagement")?.checked;
-            const sendSubcontractor = document.getElementById("optionSubcontractor")?.checked;
-
-            // Pre-open windows as needed
-            const vendorWindow = sendVendor ? window.open("about:blank", "_blank") : null;
-            const managementWindow = sendManagement ? window.open("about:blank", "_blank") : null;
-            const subcontractorWindows = [];
-
-            const chunkCount = sendSubcontractor ? Math.ceil(subcontractorSuggestions.length / 30) : 0;
-            for (let i = 0; i < chunkCount; i++) {
-                subcontractorWindows.push(window.open("about:blank", "_blank"));
-            }
-
-            const links = await generateMailtoLinks();
-
-            if (links) {
-                const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
-
-                if (sendVendor && vendorWindow && vendorGmailLink) {
-                    vendorWindow.location.href = vendorGmailLink;
-                } else if (vendorWindow) {
-                    vendorWindow.close();
-                }
-
-                if (sendManagement && managementWindow && managementGmailLink) {
-                    managementWindow.location.href = managementGmailLink;
-                } else if (managementWindow) {
-                    managementWindow.close();
-                }
-
-                if (sendSubcontractor && subcontractorGmailLinks.length) {
-                    subcontractorGmailLinks.forEach((link, index) => {
-                        if (subcontractorWindows[index]) {
-                            subcontractorWindows[index].location.href = link;
-                        }
-                    });
-                } else {
-                    subcontractorWindows.forEach(w => w.close());
-                }
-
-            } else {
-                vendorWindow?.close();
-                managementWindow?.close();
-                subcontractorWindows.forEach(w => w.close());
-            }
-        });
-    }
-});
 
 function initializeBidAutocomplete() {
     const bidContainer = document.getElementById("bidInputContainer");
