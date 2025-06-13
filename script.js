@@ -1630,7 +1630,7 @@ if (vendorEmailWrapper) {
     
         Kind regards,  
         ${userName}  
-        Vanir Installed Sales, LLC  
+        Vanir Installed Sales ${branch || 'LLC'}
         Phone: ${userPhone}  
         https://www.vanirinstalledsales.com  
         Better Look. Better Service. Best Choice.
@@ -1655,7 +1655,7 @@ Greetings from Vanir Installed Sales,
         
         Best regards,  
         ${userName}  
-        Vanir Installed Sales, LLC  
+        Vanir Installed Sales ${branch || 'LLC'}
         Phone: ${userPhone}  
         https://www.vanirinstalledsales.com  
         Better Look. Better Service. Best Choice.
@@ -1681,7 +1681,7 @@ We look forward to another successful project with you.
 
 Best,  
 ${userName}  
-Vanir Installed Sales, LLC  
+Vanir Installed Sales ${branch || 'LLC'}
 Phone: ${userPhone}  
 https://www.vanirinstalledsales.com  
 Better Look. Better Service. Best Choice.
