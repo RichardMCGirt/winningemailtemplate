@@ -22,12 +22,22 @@
     <!-- Email Template Container -->
     <div id="emailTemplate"></div>
 <!-- Hidden buttons -->
+
 <button id="sendVendorEmailButton" style="display: none;"></button>
 <button id="sendManagementEmailButtonReal" style="display: none;"></button>
 <button id="sendSubcontractorEmailButton" style="display: none;"></button>
 <div id="emailOptions" style="margin: 20px 0;">
       <label><input type="checkbox" id="optionManagement" checked /> Send Management Email</label><br>
   <label><input type="checkbox" id="optionSubcontractor" checked /> Send Subcontractor Email(s)</label><br>
+<label>
+  <input type="checkbox" id="optionSendBlankSubEmail" />
+  Send empty Subcontractor Email
+</label><br>
+<div id="blankSubEmailMessage" style="display: none; color: lightgray; font-size: 14px; margin-top: 5px;">
+  ⚠️ You will need to manually copy and paste subcontractor emails to avoid launching multiple batches of 30.
+</div>
+
+
 
   <label><input type="checkbox" id="optionVendor" checked /> Send Vendor Email</label><br>
   <button id="sendSelectedEmails">Send Selected Emails</button>
@@ -59,6 +69,45 @@
     <script src="script.js"></script>
     <!-- <script src="translate.js"></script> -->
     <script src="darkmode.js"></script>
+    <script>
+const blankSubEmailCheckbox = document.getElementById("optionSendBlankSubEmail");
+const blankSubEmailMessage = document.getElementById("blankSubEmailMessage");
+const managementCheckbox = document.getElementById("optionSubcontractor");
+
+if (blankSubEmailCheckbox && blankSubEmailMessage && managementCheckbox) {
+  // Handle blank subcontractor checkbox changes
+  blankSubEmailCheckbox.addEventListener("change", function () {
+    if (this.checked) {
+      blankSubEmailMessage.style.display = "block";
+      console.log("☑️ 'Send empty Subcontractor Email' checkbox checked — message shown.");
+
+      if (managementCheckbox.checked) {
+        managementCheckbox.checked = false;
+        console.log("🔁 'Send Management Email' was unchecked due to empty subcontractor email setting.");
+      }
+    } else {
+      blankSubEmailMessage.style.display = "none";
+      console.log("⬜ 'Send empty Subcontractor Email' checkbox unchecked — message hidden.");
+    }
+  });
+
+  // Handle subcontractor checkbox changes
+  managementCheckbox.addEventListener("change", function () {
+    if (!this.checked) {
+      blankSubEmailCheckbox.checked = true;
+      blankSubEmailMessage.style.display = "block";
+      console.log("🔄 'Send Subcontractor Email' unchecked — 'Send empty Subcontractor Email' auto-checked.");
+    }
+  });
+
+} else {
+  console.warn("⚠️ Required checkbox or message container not found.");
+}
+
+
+
+
+    </script>
 </body>
 
 </html>

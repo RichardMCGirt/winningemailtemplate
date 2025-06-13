@@ -1165,10 +1165,18 @@ async function sendEmailData() {
     const gmEmail = document.querySelector('.gmEmailContainer')?.textContent.trim() || '';
 
 
-    const subcontractorChunks = splitIntoChunks(
-        subcontractorSuggestions.map(sub => sub.email).filter(email => typeof email === "string" && email.includes('@')),
-        30
-    );
+let subcontractorEmailChunks = [];
+const filteredEmails = subcontractorSuggestions
+    .map(sub => sub.email)
+    .filter(email => typeof email === "string" && email.includes('@'));
+
+if (filteredEmails.length > 0) {
+    subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
+} else {
+    // At least create one empty chunk to allow generation
+    subcontractorEmailChunks = [[]];
+}
+
     
     // Then, create subcontractorGmailLinks
     const subcontractorGmailLinks = subcontractorChunks.map(chunk => {
@@ -1729,15 +1737,27 @@ const vendorGmailLink = vendorToEmail
         // Generate Gmail links for both Management and Subcontractor emails
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
        // 💥 Properly split into chunks
-const subcontractorEmailChunks = splitIntoChunks(
-    subcontractorSuggestions.map(sub => sub.email).filter(email => typeof email === "string" && email.includes('@')),
-    30 // 30 emails per chunk
-  );
+const sendBlankSubEmail = document.getElementById("optionSendBlankSubEmail")?.checked;
+const filteredEmails = subcontractorSuggestions
+    .map(sub => sub.email)
+    .filter(email => typeof email === "string" && email.includes('@'));
+
+let subcontractorEmailChunks = [];
+
+if (filteredEmails.length > 0) {
+    subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
+} else if (sendBlankSubEmail) {
+    subcontractorEmailChunks = [[]]; // allow 1 blank email to be generated
+}
+
   
   // 🔥 Now generate multiple subcontractor Gmail links
-  const subcontractorGmailLinks = subcontractorEmailChunks.map(chunk => {
-    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}&bcc=${encodeURIComponent(chunk.join(','))}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
-  });
+const subcontractorGmailLinks = subcontractorEmailChunks.map(chunk => {
+    const bccPart = chunk.length > 0 ? `&bcc=${encodeURIComponent(chunk.join(','))}` : '';
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}${bccPart}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
+});
+
+
   
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLinks);

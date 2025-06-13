@@ -285,6 +285,15 @@ input {
     border: 1px solid grey; /* ✅ Correct border syntax */
     color: white;
 }
+#labelManagement {
+  color: #222;
+}
+
+@media (prefers-color-scheme: dark) {
+  #labelManagement {
+    color: #eee;
+  }
+}
 
 
 a {
