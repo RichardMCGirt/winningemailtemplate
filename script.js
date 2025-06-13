@@ -1650,6 +1650,8 @@ Greetings from Vanir Installed Sales,
         - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
         - Number of Lots: ${numberOfLots}
         - Anticipated Start Date: ${anticipatedStartDate}
+        - Project Location: ${city}
+
         
         If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}.
         
@@ -1675,7 +1677,7 @@ Project Summary:
 - Material Type: ${materialType}
 - Expected Start Date: ${anticipatedStartDate}
 - Number of Lots: ${numberOfLots}
-- Address or city of project 
+- Project Location: ${city}
 
 We look forward to another successful project with you.
 
