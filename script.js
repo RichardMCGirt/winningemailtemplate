@@ -1375,8 +1375,8 @@ function normalizePurchasingEmail(email) {
 
       <p>
   If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
-  <strong><span class="gmNameContainer"></span></strong> at 
-<strong><span class="gmEmailContainer"></span></strong> and our area construction manager 
+  <span class="gmNameContainer"></span> at 
+<span class="gmEmailContainer"></span> and our area construction manager 
 <span class="acmNameContainer"></span> at <span class="acmEmailContainer"></span>.
 
 </p>
