@@ -1322,7 +1322,7 @@ function normalizePurchasingEmail(email) {
 
         <p><strong>Subject:</strong> Vendor Notification | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
         <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
-        <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> <strong><span class="branchContainer"></span></strong> has secured the bid for the <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
+        <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> <strong><span class="branchContainer"></span></strong> has secured the bid for <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
 
         <p><strong>Project Summary:</strong></p>
         <ul>
