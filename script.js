@@ -6,6 +6,8 @@ const subcontractorBaseName = 'applsSm4HgPspYfrg';
 const subcontractorTableName = 'tblX03hd5HX02rWQu';
 const VendorBaseName = 'appeNSp44fJ8QYeY5';
 const VendorTableName = 'tblLEYdDi0hfD9fT3';
+const gmLookupTable = 'tbl1vusOwDZQdXsWH';
+
 
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
@@ -20,6 +22,60 @@ let mailtoOpened = false;
 const MAX_PROGRESS = 100;
 
 let lastProgress = 0;
+
+
+let acmEmailGlobal = ''; // Store ACM email for later use
+
+// ✅ Fetch ACM Full Name and Email by matching Title and Vanir Office
+async function fetchACMName(branch) {
+    try {
+        const filterFormula = `AND({Title}='Area Construction Manager',{Vanir Office}='${branch}')`;
+        const url = `https://api.airtable.com/v0/${bidBaseName}/${gmLookupTable}?filterByFormula=${encodeURIComponent(filterFormula)}`;
+
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`,
+            },
+        });
+
+        if (!response.ok) {
+            console.error(`❌ Error fetching ACM data: ${response.statusText}`);
+            return;
+        }
+
+        const data = await response.json();
+        const record = data.records[0];
+
+       if (data.records.length > 0) {
+    const names = [];
+    const emails = [];
+
+    data.records.forEach(record => {
+        const name = record.fields['Full Name'];
+        const email = record.fields['Email'];
+
+        if (name) names.push(name);
+        if (email) emails.push(email);
+    });
+
+    const joinedNames = names.join(', ').replace(/, ([^,]*)$/, ' and $1');
+    const joinedEmails = emails.join(', ').replace(/, ([^,]*)$/, ' and $1');
+
+    console.log("✅ ACM Names:", joinedNames);
+    console.log("✅ ACM Emails:", joinedEmails);
+
+    acmEmailGlobal = joinedEmails;
+
+    document.querySelectorAll('.acmNameContainer').forEach(el => (el.textContent = joinedNames));
+    document.querySelectorAll('.acmEmailContainer').forEach(el => (el.textContent = joinedEmails));
+
+} else {
+            console.warn("⚠️ No matching ACM record found for branch:", branch);
+        }
+    } catch (error) {
+        console.error("❌ Error in fetchACMName:", error);
+    }
+}
 
 function updateLoadingProgress(percentage) {
     const safePercentage = Math.min(100, Math.max(lastProgress, percentage));
@@ -564,8 +620,7 @@ renderMatchingVendorsToDropdown(matchingVendors);
     AnticipatedDuration,
     gm,
     vendoremail,
-    acmEmail   
-          
+    acmEmail             
 );
 console.log("📤 branchEmailContainer content:", document.querySelector('.branchEmailContainer')?.textContent);
 console.log("📤 estimatesEmailContainer content:", document.querySelector('.estimatesEmailContainer')?.textContent);
@@ -878,8 +933,17 @@ function updateTemplateText(
     }
  
     if (gm) {
-      document.querySelectorAll('.gmNameContainer').forEach(el => (el.textContent = gm));
+        document.querySelectorAll('.gmNameContainer').forEach(el => (el.textContent = gm));
     }
+    document.querySelectorAll('.gmEmailContainer').forEach(el => {
+        el.textContent = gmEmail || '';
+    });
+
+    // 🔁 Fetch and populate ACM name if branch is valid
+    if (branch) {
+        fetchACMName(branch);
+    }
+
   
     if (builder) {
       document.querySelectorAll('.builderContainer').forEach(el => (el.textContent = builder));
@@ -1267,7 +1331,7 @@ function normalizePurchasingEmail(email) {
 <span class="managementEmailContainer">
   maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
   rick.jinkins@vanirinstalledsales.com, josh@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
- <span class="branchEmailContainer-label"> </span><span class="branchEmailContainer"></span>
+ <span class="branchEmailContainer-label"> </span><span class="branchEmailContainer"></span> <span class="acmEmailContainer"></span>
   <span class="estimatesEmailContainer-label"> </span><span class="estimatesEmailContainer"></span>
         </h2>
         <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
@@ -1311,7 +1375,10 @@ function normalizePurchasingEmail(email) {
 
       <p>
   If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
-  <strong><span class="gmNameContainer"></span></strong> at <strong><span class="gmEmailContainer"></span></strong>.
+  <strong><span class="gmNameContainer"></span></strong> at 
+<strong><span class="gmEmailContainer"></span></strong> and our area construction manager 
+<span class="acmNameContainer"></span> at <span class="acmEmailContainer"></span>.
+
 </p>
         <hr>
 
@@ -1577,7 +1644,6 @@ if (vendorEmailWrapper) {
 
         // Management Email
         const managementSubject = `Another WIN for Vanir - ${branch} - ${subdivision} - ${builder}`;
-        const gmName = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
 
         const managementBody = `
         Go !! ${branch},
@@ -1672,18 +1738,22 @@ const rawPurchasingEmail = `purchasing.${selectedBranch}@vanirinstalledsales.com
 const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
 const estimatesEmail = `estimates.${selectedBranch}@vanirinstalledsales.com`;
 
-const teamEmails = [
-  "maggie@vanirinstalledsales.com",
-  "jason.smith@vanirinstalledsales.com",
-  "hunter@vanirinstalledsales.com",
-  "rick.jinkins@vanirinstalledsales.com",
-  "josh@vanirinstalledsales.com",
-  "dallas.hudson@vanirinstalledsales.com",
-  "mike.raszmann@vanirinstalledsales.com",
-  "ethen.wilson@vanirinstalledsales.com",
-  purchasingEmail,
-  estimatesEmail
-].join(", ");
+  const teamEmails = [
+      "maggie@vanirinstalledsales.com",
+      "jason.smith@vanirinstalledsales.com",
+      "hunter@vanirinstalledsales.com",
+      "rick.jinkins@vanirinstalledsales.com",
+      "josh@vanirinstalledsales.com",
+      "dallas.hudson@vanirinstalledsales.com",
+      "mike.raszmann@vanirinstalledsales.com",
+      "ethen.wilson@vanirinstalledsales.com",
+      acmEmailGlobal, // dynamically included ACM email
+      purchasingEmail,
+      estimatesEmail
+    ].filter(Boolean).join(", ");
+
+    console.log("📤 Full teamEmails:", teamEmails);
+
 
 // Combine vendor + purchasing
 const vendorToEmail = [vendorEmail, purchasingEmail]
