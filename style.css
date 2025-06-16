@@ -285,6 +285,13 @@ input {
     border: 1px solid grey; /* ✅ Correct border syntax */
     color: white;
 }
+
+.autocomplete-option.selected {
+    background-color: #007BFF;
+    color: white;
+}
+
+
 #labelManagement {
   color: #222;
 }

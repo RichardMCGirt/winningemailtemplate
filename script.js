@@ -8,7 +8,6 @@ const VendorBaseName = 'appeNSp44fJ8QYeY5';
 const VendorTableName = 'tblLEYdDi0hfD9fT3';
 const gmLookupTable = 'tbl1vusOwDZQdXsWH';
 
-
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 let city = [];
@@ -124,34 +123,28 @@ function showLoadingAnimation() {
 async function fetchAndUpdateAutocomplete() {
     showLoadingAnimation(); // 🎯 Start loading
 
-    let progress = 0;
-    updateLoadingProgress(progress);
-
-    // Fetch bid names (40%)
+    // Fetch bid names and show loading progress
+    updateLoadingProgress(0);
     await fetchBidNameSuggestions();
-    progress = 40;
-    updateLoadingProgress(progress);
+    updateLoadingProgress(100);
+    hideLoadingAnimation(); // 🎯 End loading after bid names
 
-    // Fetch vendor data (80%)
-    await fetchAllVendorData();
-    progress = 80;
-    updateLoadingProgress(progress);
+    // Proceed to run other tasks in the background (no loading bar)
+    setTimeout(async () => {
+        await fetchAllVendorData();             // No progress update
+        createVendorAutocompleteInput();
 
-    // Render inputs and finish (100%)
-    createVendorAutocompleteInput();
-
-    const emailContainer = await waitForElement('#emailTemplate');
-    const bidAutocompleteInput = createAutocompleteInput(
-        "Enter Bid Name",
-        bidNameSuggestions,
-        "bid",
-        fetchDetailsByBidName
-    );
-    emailContainer.prepend(bidAutocompleteInput);
-
-    progress = 100;
-    updateLoadingProgress(progress);
+        const emailContainer = await waitForElement('#emailTemplate');
+        const bidAutocompleteInput = createAutocompleteInput(
+            "Enter Bid Name",
+            bidNameSuggestions,
+            "bid",
+            fetchDetailsByBidName
+        );
+        emailContainer.prepend(bidAutocompleteInput);
+    }, 0); // Run in background without blocking UI
 }
+
 
 function autoProgressLoading(stopConditionCallback) {
     let currentProgress = 0;
@@ -191,7 +184,7 @@ waitForBidInput(() => updateLoadingProgress(100));
 // Call this to start the random progress
 document.addEventListener('DOMContentLoaded', () => {
     autoProgressLoading(isBidInputVisible); // start fake loading
-        renderBidInputImmediately(); // show UI fast
+    renderBidInputImmediately(); // show UI fast
     displayEmailContent();
     monitorSubdivisionChanges();
     setupCopySubEmailsButton(); // 👈 setup click listener
@@ -802,94 +795,96 @@ function setupCopySubEmailsButton() {
 
 // Unified function to create an autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback) {
-    // Validate the `type` parameter
-    if (typeof type !== "string" || !type.trim()) {
-        console.error("Invalid type provided for createAutocompleteInput:", type);
-        return null;
-    }
-
     const wrapper = document.createElement("div");
     wrapper.classList.add(`${type}-autocomplete-wrapper`, "autocomplete-wrapper");
 
     const input = document.createElement("input");
-input.type = "text";
-input.placeholder = placeholder;
-input.classList.add(`${type}-autocomplete-input`, "autocomplete-input");
-input.dataset.type = type;
+    input.type = "text";
+    input.placeholder = placeholder;
+    input.classList.add(`${type}-autocomplete-input`, "autocomplete-input");
+    input.dataset.type = type;
 
-input.addEventListener("input", () => {
-    if (input.value.trim() === "") {
-      input.classList.add("marching-ants");
-      console.log("🟡 Input is empty — marching ants added");
-    } else {
-      input.classList.remove("marching-ants");
-      console.log("✅ Input has value — marching ants removed");
-    }
-  });
-  
-  if (input.value.trim() === "") {
-    input.classList.add("marching-ants");
-    console.log("⚠️ Initially empty — marching ants added");
-  }
-  
     const dropdown = document.createElement("div");
     dropdown.classList.add(`${type}-autocomplete-dropdown`, "autocomplete-dropdown");
 
+    let currentFocusIndex = -1; // Tracks arrow key focus
+    let currentOptions = [];    // Cache for clickable options
+
     input.addEventListener("input", async function () {
         const inputValue = input.value.toLowerCase();
-        dropdown.innerHTML = ''; // Clear previous suggestions
+        dropdown.innerHTML = '';
+        currentFocusIndex = -1;
+        currentOptions = [];
 
-        // Filter suggestions if a suggestion list is provided
         if (suggestions && Array.isArray(suggestions)) {
             const filteredSuggestions = suggestions.filter(item => {
                 const text = typeof item === 'string' ? item : item.companyName;
                 return text.toLowerCase().includes(inputValue);
             });
 
-            // Populate the dropdown with filtered suggestions
-            filteredSuggestions.forEach(suggestion => {
+            filteredSuggestions.forEach((suggestion, index) => {
                 const text = typeof suggestion === 'string' ? suggestion : suggestion.companyName;
                 const option = document.createElement("div");
                 option.classList.add(`${type}-autocomplete-option`, "autocomplete-option");
                 option.textContent = text;
 
-                option.onclick = () => {
+                option.addEventListener("click", () => {
                     input.value = text;
                     dropdown.innerHTML = '';
-                    if (fetchDetailsCallback) {
-                        fetchDetailsCallback(suggestion).then(details => {
-                            if (details && details.city) {
-                                const citySpan = document.querySelector(".city");
-                                if (citySpan) {
-                                    citySpan.innerText = details.city; // Update city span
-                                }
-                            }
-                        });
-                    }
-                };
+                    fetchDetailsCallback?.(suggestion);
+                });
 
                 dropdown.appendChild(option);
+                currentOptions.push(option);
             });
 
             dropdown.style.display = filteredSuggestions.length > 0 ? 'block' : 'none';
         }
 
-        // Fetch additional details dynamically
         if (fetchDetailsCallback && inputValue.length > 0) {
             const details = await fetchDetailsCallback(inputValue);
-            if (details && details.city) {
+            if (details?.city) {
                 const citySpan = document.querySelector(".city");
-                if (citySpan) {
-                    citySpan.innerText = details.city; // Update city span
-                }
+                if (citySpan) citySpan.innerText = details.city;
             }
         }
     });
+
+    input.addEventListener("keydown", (e) => {
+        if (!currentOptions.length) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            currentFocusIndex = (currentFocusIndex + 1) % currentOptions.length;
+            highlightOption(currentFocusIndex);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            currentFocusIndex = (currentFocusIndex - 1 + currentOptions.length) % currentOptions.length;
+            highlightOption(currentFocusIndex);
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (currentFocusIndex >= 0) {
+                currentOptions[currentFocusIndex].click();
+            }
+        }
+    });
+
+    function highlightOption(index) {
+        currentOptions.forEach((option, i) => {
+            if (i === index) {
+                option.classList.add("selected");
+                option.scrollIntoView({ block: 'nearest' });
+            } else {
+                option.classList.remove("selected");
+            }
+        });
+    }
 
     wrapper.appendChild(input);
     wrapper.appendChild(dropdown);
     return wrapper;
 }
+
 
 // Select suggestion to update email field
 function selectSuggestion(suggestion, input, dropdown) {
@@ -1575,7 +1570,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function validateAndExportBidDetails(bidName) {
-    await fetchAllVendorData(); // ⬅️ ensures vendorData is ready
     const bidDetails = await fetchDetailsByBidName(bidName);
     console.log('Validated bid details for export:', bidDetails);
     exportData(bidDetails);
