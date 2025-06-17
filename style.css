@@ -281,8 +281,8 @@ input.city {
 input {
     font-size: 24px;
     padding: 3px;
-    background-color: transparent; /* Allow marching-ants to show */
-    border: 1px solid grey; /* ✅ Correct border syntax */
+    background-color: transparent; 
+    border: 1px solid grey; 
     color: white;
 }
 
@@ -495,9 +495,6 @@ button:hover {
     transition: width 0.3s ease;
 }
 
-  
-  
-
 .textarea-row {
     display: flex;
     justify-content: space-between;
@@ -515,6 +512,55 @@ textarea {
     resize: vertical;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+#bidNameInput,
+#emailTemplate .bid-autocomplete-input {
+  display: block;
+  margin: 20px auto;
+  padding: 10px 14px;
+  font-size: 16px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 900px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+
+
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.bid-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 999;
+  border-radius: 0 0 6px 6px;
+}
+
+.autocomplete-option {
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.autocomplete-option:hover,
+.autocomplete-option.selected {
+  background-color: #eee;
+}
+
+
 
 /* Spinner for Loading Animation */
 .spinner {
