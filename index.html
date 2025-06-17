@@ -19,109 +19,8 @@
         <span id="toggleLabel">Dark Mode</span>
     </div>
 
-
-
     <!-- Email Template Container -->
-     <div id="emailTemplate">
-  <div class="autocomplete-wrapper">
-    <input
-      id="bidNameInput"
-      class="bid-autocomplete-input"
-      type="text"
-      placeholder="Enter Bid Name"
-    />
-    <div class="bid-autocomplete-dropdown autocomplete-dropdown"></div>
-  </div>
-             <h2>
-      To: 
-<span class="managementEmailContainer">
-  maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
-  rick.jinkins@vanirinstalledsales.com, josh@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
- <span class="branchEmailContainer-label"> </span><span class="branchEmailContainer"></span> <span class="acmEmailContainer"></span>
-  <span class="estimatesEmailContainer-label"> </span><span class="estimatesEmailContainer"></span>
-        </h2>
-        <p><strong>CC:</strong> <span class="cc-email-container"></span></p>
-
-        <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-        <p>Go !! <strong><span class="branchContainer"></span></strong>,</p>
-
-        <h4>Major Win with <strong> <span class="builderContainer"></span></strong></h4>
-   
-        <h2>Here's the breakdown:</h2>
-        <span class="subdivisionContainer"></span> :
-        <p><strong>Field Contact:</strong> <input class="cname" placeholder="Enter contact name" /></p>
-        <p><strong>Product Being Built:</strong> <span class="briqProjectTypeContainer"></span></p>
-<p><strong>Expected Pace:</strong> <input class="epace" type="number" placeholder="" /> days</p>
-        <p><strong>Expected Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
-        <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
-
-        <p><strong>Do they have special pricing?</strong></p>
-        <label><input type="radio" name="sprice" value="Yes" class="sprice" /> Yes</label>
-        <label><input type="radio" name="sprice" value="No" class="sprice" /> No</label>
-
-        <p><strong>PO Customer?</strong></p>
-        <label><input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes</label>
-        <label><input type="radio" name="poCustomer" value="No" class="pcustomer" /> No</label>
-
-        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
-
-        <hr>
-
-        <!-- Subcontractor Email -->
-<div id="subcontractorCompanyContainer"></div>
-<button id="clearSubcontractorBtn" style="margin-top: 8px;">Clear Subcontractors</button>
-        <button id="copySubEmailsBtn" style="margin-top: 10px;">Copy All <strong><span class="branchContainer"></span></strong> Subcontractors Emails</button>
-
-        <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
-
-        <p>Greetings from Vanir Installed Sales,</p>
-            <p>Vanir has officially secured the <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
-        <input class="city" placeholder="Enter city" /></p>. We’re eager to get started and ensure excellence throughout the build.
-
-        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
-
-      <p>
-  If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
-  <span class="gmNameContainer"></span> at 
-<span class="gmEmailContainer"></span> and our area construction manager 
-<span class="acmNameContainer"></span> at <span class="acmEmailContainer"></span>.
-
-</p>
-        <hr>
-
-        <!-- ✅ Vendor Email Section -->
-<div id="vendorEmailContainer" style="margin-top: 10px; position: relative;"></div>
-
-<h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
-
-        <p><strong>Subject:</strong> Vendor Notification | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
-        <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
-        <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> <strong><span class="branchContainer"></span></strong> has secured the bid for <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
-
-        <p><strong>Project Summary:</strong></p>
-        <ul>
-            <li>Project Type: <span class="briqProjectTypeContainer"></span></li>
-            <li>Material Type: <span class="materialTypeContainer"></span></li>
-            <li>Expected Start Date: <span class="anticipatedStartDateContainer"></span></li>
-            <li>Number of Lots: <span class="numberOfLotsContainer"></span></li>
-            <li>Location: <input class="city" placeholder="Enter city" /></li>
-        </ul>
-<p>We look forward to another successful project with you.</p>
-        <p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong> LLC</p>
-
-        <div class="signature-container">
-            <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
-            <div class="signature-content">
-<p>
-  <input type="text" id="inputUserName" placeholder="Your Name" />
-</p>
-
-                <p>Phone: <input type="text" id="inputUserPhone" placeholder=""></p>
-                <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
-                <p><strong>Better Look. Better Service. Best Choice.</strong></p>
-            </div>
-        </div>
-    </div>
+    <div id="emailTemplate"></div>
 <!-- Hidden buttons -->
 
 <button id="sendVendorEmailButton" style="display: none;"></button>
@@ -144,6 +43,7 @@
   <button id="sendSelectedEmails">Send Selected Emails</button>
 </div>
 
+<button id="clearCacheBtn">Clear Cached Data</button>
 
     <!-- Send Email Button -->
 
@@ -158,12 +58,8 @@
     
 
     <!-- Dynamic Content Container -->
-    <div id="dynamicContainer" style="display: none;" ></div>
-<div id="recentBidsAlert" style="display: none; color: green; font-weight: bold; margin-top: 10px;"></div>
+    <div id="dynamicContainer"></div>
 
-<button id="refreshBids">Refresh Winning Bids</button>
-<button onclick="clearVendorCache()">Refresh Vendor Data</button>
-<button onclick="clearBidSuggestionsCache()">Refresh Bid Suggestions</button>
 
 
     <!-- Google APIs -->

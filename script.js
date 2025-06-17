@@ -1,3 +1,4 @@
+
 // Required constants and helper functions
 const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
 const bidBaseName = 'appK9gZS77OmsIK50';
@@ -17,38 +18,13 @@ let currentBidName = "";
 let bidLoadingProgress = 0;
 let totalLoadingProgress = 0;
 let mailtoOpened = false;
-let gmEmail = ''; // Declare at top
 
 const MAX_PROGRESS = 100;
 
 let lastProgress = 0;
 
+
 let acmEmailGlobal = ''; // Store ACM email for later use
-
-let ccObserver = null;
-
-function observeCCContainer() {
-    const ccEmailContainer = document.querySelector('.cc-email-container');
-
-    if (!ccEmailContainer) {
-        console.error('CC email container not found.');
-        return;
-    }
-
-    // Disconnect existing observer if any
-    if (ccObserver) {
-        ccObserver.disconnect();
-    }
-
-    // Create a new observer
-    ccObserver = new MutationObserver(() => {
-        console.log("CC Email Container Updated:", ccEmailContainer.textContent);
-        const ccEmails = ccEmailContainer.textContent.trim().split(',').filter(Boolean);
-        console.log("Updated CC Emails:", ccEmails);
-    });
-
-    ccObserver.observe(ccEmailContainer, { childList: true, characterData: true, subtree: true });
-}
 
 // ✅ Fetch ACM Full Name and Email by matching Title and Vanir Office
 async function fetchACMName(branch) {
@@ -146,62 +122,29 @@ function showLoadingAnimation() {
 
 // Update Loading Progress
 async function fetchAndUpdateAutocomplete() {
-    console.log("🚀 Starting fetchAndUpdateAutocomplete...");
     showLoadingAnimation(); // 🎯 Start loading
-    await new Promise(resolve => setTimeout(resolve, 50));
 
-    let progress = 0;
-    updateLoadingProgress(progress);
-
-    // 📥 Step 1: Fetch bid name suggestions (use localStorage if available)
-    const bidCacheKey = 'bidNameSuggestionsCache';
-    const bidCache = localStorage.getItem(bidCacheKey);
-
-    if (bidCache) {
-        bidNameSuggestions = JSON.parse(bidCache);
-        console.log(`✅ Loaded ${bidNameSuggestions.length} bid names from localStorage.`);
-    } else {
-        console.log("📥 Fetching bid name suggestions from Airtable...");
-        await fetchBidNameSuggestions(); // this now sets the cache inside
-    }
-
-    progress = 40;
-    updateLoadingProgress(progress);
-
-    // 📦 Step 2: Fetch vendor data (use localStorage if available)
-    const vendorCacheKey = 'vendorDataCache';
-    const vendorCache = localStorage.getItem(vendorCacheKey);
-
-    if (vendorCache) {
-        vendorData = JSON.parse(vendorCache);
-        console.log(`✅ Loaded ${vendorData.length} vendors from localStorage.`);
-    } else {
-        console.log("📦 Fetching vendor data from Airtable...");
-        await fetchAllVendorData(); // this now sets the cache inside
-    }
-
-    progress = 80;
-    updateLoadingProgress(progress);
-
-    // 🧩 Step 3: Render inputs
-    createVendorAutocompleteInput();
-
-    const bidInputEl = document.getElementById("bidNameInput");
-    const dropdownEl = document.querySelector(".bid-autocomplete-dropdown");
-
-    if (bidInputEl && dropdownEl) {
-        enhanceAutocompleteInput(bidInputEl, dropdownEl, bidNameSuggestions, fetchDetailsByBidName);
-    } else {
-        console.warn("❌ Static bid input or dropdown not found.");
-    }
-
-    // ✅ Step 4: Finalize
+    // Fetch bid names and show loading progress
+    updateLoadingProgress(0);
+    await fetchBidNameSuggestions();
     updateLoadingProgress(100);
-    hideLoadingAnimation();
-    console.log("🎉 fetchAndUpdateAutocomplete complete!");
+    hideLoadingAnimation(); // 🎯 End loading after bid names
+
+    // Proceed to run other tasks in the background (no loading bar)
+    setTimeout(async () => {
+        await fetchAllVendorData();             // No progress update
+        createVendorAutocompleteInput();
+
+        const emailContainer = await waitForElement('#emailTemplate');
+        const bidAutocompleteInput = createAutocompleteInput(
+            "Enter Bid Name",
+            bidNameSuggestions,
+            "bid",
+            fetchDetailsByBidName
+        );
+        emailContainer.prepend(bidAutocompleteInput);
+    }, 0); // Run in background without blocking UI
 }
-
-
 
 
 function autoProgressLoading(stopConditionCallback) {
@@ -242,6 +185,8 @@ waitForBidInput(() => updateLoadingProgress(100));
 // Call this to start the random progress
 document.addEventListener('DOMContentLoaded', () => {
     autoProgressLoading(isBidInputVisible); // start fake loading
+    renderBidInputImmediately(); // show UI fast
+    displayEmailContent();
     monitorSubdivisionChanges();
     setupCopySubEmailsButton(); // 👈 setup click listener
     
@@ -286,16 +231,23 @@ function addCitySpan() {
 }
 
 async function fetchAllVendorData() {
+    const cacheKey = 'cachedVendors';
+    const cacheTimestampKey = 'cachedVendorsTimestamp';
+    const cacheTTL = 1000 * 60 * 30; // 30 minutes
+
+    const cachedData = localStorage.getItem(cacheKey);
+    const cachedTime = localStorage.getItem(cacheTimestampKey);
+
+    const isValidCache = cachedData && cachedTime && (Date.now() - parseInt(cachedTime)) < cacheTTL;
+
+    if (isValidCache) {
+        vendorData = JSON.parse(cachedData);
+        console.log(`📦 Loaded ${vendorData.length} vendors from cache.`);
+        return;
+    }
+
     try {
-        const cached = localStorage.getItem('vendorDataCache');
-        if (cached) {
-            vendorData = JSON.parse(cached);
-            console.log("✅ Loaded vendor data from localStorage:", vendorData.length);
-            return;
-        }
-
-        console.log("📦 Fetching all vendor data from Airtable...");
-
+        console.log("📦 Fetching vendor data from Airtable...");
         let allRecords = [];
         let offset = null;
 
@@ -327,18 +279,21 @@ async function fetchAllVendorData() {
 
         vendorData.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
-        // ✅ Store to localStorage
-        localStorage.setItem('vendorDataCache', JSON.stringify(vendorData));
+        localStorage.setItem(cacheKey, JSON.stringify(vendorData));
+        localStorage.setItem(cacheTimestampKey, Date.now().toString());
 
-        console.log(`✅ Vendor data fetched and cached (${vendorData.length} records).`);
+        console.log(`✅ Fetched and cached ${vendorData.length} vendors.`);
     } catch (error) {
         console.error("❌ Error fetching vendor data:", error);
     }
 }
-function clearVendorCache() {
-    localStorage.removeItem('vendorDataCache');
-    console.log("🔄 Vendor cache cleared.");
-}
+document.getElementById("clearCacheBtn")?.addEventListener("click", () => {
+    localStorage.removeItem("cachedBidNames");
+    localStorage.removeItem("cachedBidNamesTimestamp");
+    localStorage.removeItem("cachedVendors");
+    localStorage.removeItem("cachedVendorsTimestamp");
+    alert("📭 Cache cleared. Refresh to fetch fresh data.");
+});
 
 
 async function ensureDynamicContainerExists() {
@@ -482,36 +437,30 @@ function appendEmailsForSelectedBid(selectedBid) {
     }
 }
 
-function clearBidSuggestionsCache() {
-    localStorage.removeItem('bidNameSuggestionsCache');
-    console.log("🗑️ Bid suggestions cache cleared.");
-}
-
-
 // Fetch "Bid Name" suggestions
 async function fetchBidNameSuggestions() {
-    const cacheKey = 'bidNameSuggestionsCache';
+    const cacheKey = 'cachedBidNames';
+    const cacheTimestampKey = 'cachedBidNamesTimestamp';
+    const cacheTTL = 1000 * 60 * 30; // 30 minutes
 
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-        bidNameSuggestions = JSON.parse(cached);
-        console.log("✅ Loaded bid name suggestions from localStorage:", bidNameSuggestions.length);
+    const cachedData = localStorage.getItem(cacheKey);
+    const cachedTime = localStorage.getItem(cacheTimestampKey);
+
+    const isValidCache = cachedData && cachedTime && (Date.now() - parseInt(cachedTime)) < cacheTTL;
+
+    if (isValidCache) {
+        bidNameSuggestions = JSON.parse(cachedData);
+        console.log(`📦 Loaded ${bidNameSuggestions.length} bid names from cache.`);
         return;
     }
 
-    const records = await fetchAirtableData(
-        bidBaseName,
-        bidTableName,
-        'Bid Name',
-        "{Outcome}='Win'"
-    );
-
-    bidNameSuggestions = records
-        .map(record => record.fields['Bid Name'])
-        .filter(Boolean);
+    const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
+    bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
 
     localStorage.setItem(cacheKey, JSON.stringify(bidNameSuggestions));
-    console.log("📦 Fetched and cached bid name suggestions:", bidNameSuggestions.length);
+    localStorage.setItem(cacheTimestampKey, Date.now().toString());
+
+    console.log(`✅ Fetched and cached ${bidNameSuggestions.length} bid names.`);
 }
 
 
@@ -1129,17 +1078,14 @@ function monitorSubdivisionChanges() {
 document.addEventListener("DOMContentLoaded", async () => {
   try {
    // autoProgressLoading(isBidInputVisible);
+    renderBidInputImmediately();
+    displayEmailContent();
     monitorSubdivisionChanges();
     setupCopySubEmailsButton();
     observeCCContainer();
     ensureDynamicContainerExists();
     initializeBidAutocomplete();
-if (!localStorage.getItem('vendorDataCache')) {
     await fetchAllVendorData();
-} else {
-    vendorData = JSON.parse(localStorage.getItem('vendorDataCache'));
-    console.log("✅ Loaded vendor data from localStorage");
-}
     fetchAndUpdateAutocomplete();
 
     const observer = new MutationObserver(mutationsList => {
@@ -1418,7 +1364,96 @@ function normalizePurchasingEmail(email) {
     return email;
 }
 
- 
+   function displayEmailContent() {
+    const emailContent = `
+        <h2>
+      To: 
+<span class="managementEmailContainer">
+  maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
+  rick.jinkins@vanirinstalledsales.com, josh@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
+ <span class="branchEmailContainer-label"> </span><span class="branchEmailContainer"></span> <span class="acmEmailContainer"></span>
+  <span class="estimatesEmailContainer-label"> </span><span class="estimatesEmailContainer"></span>
+        </h2>
+
+        <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
+        <p>Go !! <strong><span class="branchContainer"></span></strong>,</p>
+
+        <h4>Major Win with <strong> <span class="builderContainer"></span></strong></h4>
+   
+        <h2>Here's the breakdown:</h2>
+        <span class="subdivisionContainer"></span> 
+        <p><strong>Field Contact:</strong> <input class="cname" placeholder="Enter contact name" /></p>
+        <p><strong>Product Being Built:</strong> <span class="briqProjectTypeContainer"></span></p>
+<p><strong>Expected Pace:</strong> <input class="epace" type="number" placeholder="" /> days</p>
+        <p><strong>Expected Start Date:</strong> <span class="anticipatedStartDateContainer"></span></p>
+        <p><strong>Number of Lots:</strong> <span class="numberOfLotsContainer"></span></p>
+
+        <p><strong>Do they have special pricing?</strong></p>
+        <label><input type="radio" name="sprice" value="Yes" class="sprice" /> Yes</label>
+        <label><input type="radio" name="sprice" value="No" class="sprice" /> No</label>
+
+        <p><strong>PO Customer?</strong></p>
+        <label><input type="radio" name="poCustomer" value="Yes" class="pcustomer" /> Yes</label>
+        <label><input type="radio" name="poCustomer" value="No" class="pcustomer" /> No</label>
+
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
+
+        <hr>
+
+        <!-- Subcontractor Email -->
+        <div id="subcontractorCompanyContainer"></div>
+        <button id="copySubEmailsBtn" style="margin-top: 10px;">Copy All <strong><span class="branchContainer"></span></strong> Subcontractors Emails</button>
+
+        <p><strong>Subject:</strong> Vanir | New Opportunity | <span class="subdivisionContainer"></span></p>
+
+        <p>Greetings from Vanir Installed Sales,</p>
+            <p>Vanir has officially secured the <strong><span class="subdivisionContainer"></span></strong> with <strong><span class="builderContainer"></span></strong> in 
+        <input class="city" placeholder="Enter city" /></p>. We’re eager to get started and ensure excellence throughout the build.
+
+        <p>This will be a <strong><span class="briqProjectTypeContainer"></span></strong> project requiring <strong><span class="materialTypeContainer"></span></strong> installation.</p>
+
+      <p>
+  If you're interested in working with us on this exciting opportunity, please reach out to our general manager 
+  <span class="gmNameContainer"></span> at 
+<span class="gmEmailContainer"></span> and our area construction manager 
+<span class="acmNameContainer"></span> at <span class="acmEmailContainer"></span>.
+
+</p>
+        <hr>
+
+        <!-- ✅ Vendor Email Section -->
+<div id="vendorEmailContainer" style="margin-top: 10px; position: relative;"></div>
+
+<h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
+
+        <p><strong>Subject:</strong> Vendor Notification | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
+        <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
+        <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> <strong><span class="branchContainer"></span></strong> has secured the bid for <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
+
+        <p><strong>Project Summary:</strong></p>
+        <ul>
+            <li>Project Type: <span class="briqProjectTypeContainer"></span></li>
+            <li>Material Type: <span class="materialTypeContainer"></span></li>
+            <li>Expected Start Date: <span class="anticipatedStartDateContainer"></span></li>
+            <li>Number of Lots: <span class="numberOfLotsContainer"></span></li>
+            <li>Location: <input class="city" placeholder="Enter city" /></li>
+        </ul>
+<p>We look forward to another successful project with you.</p>
+        <p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong>LLC</p>
+
+        <div class="signature-container">
+            <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
+            <div class="signature-content">
+<p>
+  <input type="text" id="inputUserName" placeholder="Your Name" />
+</p>
+
+                <p>Phone: <input type="text" id="inputUserPhone" placeholder=""></p>
+                <p><a href="https://www.vanirinstalledsales.com">www.vanirinstalledsales.com</a></p>
+                <p><strong>Better Look. Better Service. Best Choice.</strong></p>
+            </div>
+        </div>
+    `;
 
     document.addEventListener('DOMContentLoaded', () => {
         const cityObserver = new MutationObserver(() => { 
@@ -1437,6 +1472,7 @@ function normalizePurchasingEmail(email) {
     
     const emailContainer = document.getElementById('emailTemplate');
     if (emailContainer) {
+emailContainer.innerHTML = emailContent;
 
 const chooseVendorBtn = document.getElementById('chooseVendorBtn');
 if (chooseVendorBtn) {
@@ -1517,7 +1553,7 @@ if (chooseVendorBtn) {
     } else {
         console.error("Email template container not found in the DOM.");
     }
-
+}
 
 // Sync city inputs once both are loaded and observed
 function syncCityInputs() {
@@ -1577,44 +1613,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-  const blankCheckbox = document.getElementById("optionSendBlankSubEmail");
-
-  if (!blankCheckbox) {
-    console.warn("⚠️ #optionSendBlankSubEmail checkbox not found.");
-    return;
-  }
-
-  blankCheckbox.addEventListener("change", () => {
-    console.log("📥 Checkbox toggled:", blankCheckbox.checked ? "✅ Checked" : "❌ Unchecked");
-    generateSubcontractorGmailLinks(); // Re-run logic when checkbox is toggled
-  });
-
-  generateSubcontractorGmailLinks(); // Run once on page load
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const clearButton = document.getElementById("clearSubcontractorBtn");
-  const container = document.getElementById("subcontractorCompanyContainer");
-
-  if (clearButton && container) {
-  clearButton.addEventListener("click", () => {
-  container.innerHTML = '';
-  subcontractorSuggestions = []; // 🧹 Clear data
-
-  // ✅ Defer to next event loop tick to ensure array is cleared before use
-  setTimeout(() => {
-    generateSubcontractorGmailLinks(); // ⏳ Now safe to run
-    console.log("🧹 Subcontractor container and data cleared.");
-  }, 0);
-});
-
-
-  } else {
-    console.warn("⚠️ Clear button or container not found.");
-  }
-});
-
 async function validateAndExportBidDetails(bidName) {
     const bidDetails = await fetchDetailsByBidName(bidName);
     console.log('Validated bid details for export:', bidDetails);
@@ -1637,30 +1635,21 @@ async function generateMailtoLinks() {
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
         const cityEl = document.querySelector('.city');
-        const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
-        const cnameEl = document.querySelector('.cname');
-        const cname = cnameEl && cnameEl.value ? cnameEl.value.trim() : 'Unknown Customer Name';
-        const whatbuildEl = document.querySelector('.whatbuild');
-        const whatbuild = whatbuildEl && whatbuildEl.value ? whatbuildEl.value.trim() : 'Unknown Product';
-        const epaceEl = document.querySelector('.epace');
-        const epace = epaceEl && epaceEl.value ? epaceEl.value.trim() : 'Unknown Pace';
+const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
+const cnameEl = document.querySelector('.cname');
+const cname = cnameEl && cnameEl.value ? cnameEl.value.trim() : 'Unknown Customer Name';
+const epaceEl = document.querySelector('.epace');
+const epace = epaceEl && epaceEl.value ? epaceEl.value.trim() : 'Unknown Pace';
+const acmName = document.querySelector('.acmNameContainer')?.textContent.trim() || 'Unknown ACM';
+
         const sprice = document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified';
         const poCustomer = document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified';
+
+        // Fetch GM Email
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
         const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
         const vendorEmail = window.currentVendorEmail || 'Not Specified';
-        const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
-
-const acmName = document.querySelector('.acmNameContainer')?.textContent?.trim();
-const acmEmail = document.querySelector('.acmEmailContainer')?.textContent?.trim();
-
-let contactLine = `If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}.`;
-
-if (acmName && acmEmail && acmEmail.includes('@')) {
-  contactLine = `If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}, and our Area Construction Manager, ${acmName} at ${acmEmail}.`;
-}
-
 
 const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
 if (vendorEmailWrapper) {
@@ -1697,24 +1686,27 @@ if (vendorEmailWrapper) {
         
         Here's the breakdown:
 
-        Community Name: ${subdivision}
+        Community Name: 
         - Field Contact: ${cname}
-        - Product Being Built: ${projectType}
+
+
+        - ${projectType}
         - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
         - Expected Start Date: ${anticipatedStartDate}
         - Number of Lots: ${numberOfLots}
         - Special Pricing: ${sprice}
         - PO Customer: ${poCustomer}
         - Material Type: ${materialType}
-        
             
-        Kind regards,  ${userName}  
+        Kind regards,  
+        ${userName}  
         Vanir Installed Sales ${branch || 'LLC'}
         Phone: ${userPhone}  
         https://www.vanirinstalledsales.com  
         Better Look. Better Service. Best Choice.
         `.trim();
         
+        const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
 Greetings from Vanir Installed Sales,
         
@@ -1722,15 +1714,16 @@ Greetings from Vanir Installed Sales,
         This will be a ${projectType} project, requiring ${materialType} installation.
         
         Project Details:
+        
         - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
         - Number of Lots: ${numberOfLots}
         - Anticipated Start Date: ${anticipatedStartDate}
         - Project Location: ${city}
 
         
-        ${contactLine}
+If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}, or our Area Construction Manager, ${acmName} at ${acmEmailGlobal}.
         
-        Best regards, ${userName}  
+        Best regards,   ${userName}  
         Vanir Installed Sales ${branch || 'LLC'}
         Phone: ${userPhone}  
         https://www.vanirinstalledsales.com  
@@ -1803,48 +1796,23 @@ const vendorGmailLink = vendorToEmail
         const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&cc=${encodeURIComponent(ccEmailsString)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
        // 💥 Properly split into chunks
 const sendBlankSubEmail = document.getElementById("optionSendBlankSubEmail")?.checked;
-console.log("📦 Checkbox - Send Blank Sub Email:", sendBlankSubEmail);
-
 const filteredEmails = subcontractorSuggestions
-  .map(sub => sub.email)
-  .filter(email => typeof email === "string" && email.includes('@'));
-
-console.log("📬 Valid subcontractor emails:", filteredEmails);
+    .map(sub => sub.email)
+    .filter(email => typeof email === "string" && email.includes('@'));
 
 let subcontractorEmailChunks = [];
 
 if (filteredEmails.length > 0) {
-  subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
-  console.log(`📦 Sub emails split into ${subcontractorEmailChunks.length} chunk(s):`, subcontractorEmailChunks);
+    subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
 } else if (sendBlankSubEmail) {
-  subcontractorEmailChunks = [[]]; // Allow one blank email
-  console.log("⚠️ No subcontractor emails, but 'Send Blank' checked — generating blank email.");
-} else {
-  console.log("🚫 No subcontractor emails and 'Send Blank' is unchecked — no email will be sent.");
+    subcontractorEmailChunks = [[]]; // allow 1 blank email to be generated
 }
 
-const subcontractorGmailLinks = subcontractorEmailChunks.map((chunk, index) => {
-  const useBlankTo = chunk.length === 0 && sendBlankSubEmail;
-
-  const toParam = useBlankTo ? '' : `to=${encodeURIComponent(gmEmail)}`;
-  const bccParam = chunk.length > 0 ? `bcc=${encodeURIComponent(chunk.join(','))}` : '';
-
-  const baseUrl = `https://mail.google.com/mail/?view=cm&fs=1`;
-  const params = [
-    toParam,
-    bccParam,
-    `su=${encodeURIComponent(subcontractorSubject)}`,
-    `body=${encodeURIComponent(subcontractorBody)}`
-  ].filter(Boolean).join('&');
-
-  const fullUrl = `${baseUrl}&${params}`;
-
-  console.log(`📧 Gmail link for chunk #${index + 1}:`, fullUrl);
-  return fullUrl;
+  // 🔥 Now generate multiple subcontractor Gmail links
+const subcontractorGmailLinks = subcontractorEmailChunks.map(chunk => {
+    const bccPart = chunk.length > 0 ? `&bcc=${encodeURIComponent(chunk.join(','))}` : '';
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}${bccPart}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
 });
-
-
-
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLinks);
@@ -1868,7 +1836,30 @@ const subcontractorGmailLinks = subcontractorEmailChunks.map((chunk, index) => {
     }
 }
 
+let ccObserver = null;
 
+function observeCCContainer() {
+    const ccEmailContainer = document.querySelector('.cc-email-container');
+
+    if (!ccEmailContainer) {
+        console.error('CC email container not found.');
+        return;
+    }
+
+    // Disconnect existing observer if any
+    if (ccObserver) {
+        ccObserver.disconnect();
+    }
+
+    // Create a new observer
+    ccObserver = new MutationObserver(() => {
+        console.log("CC Email Container Updated:", ccEmailContainer.textContent);
+        const ccEmails = ccEmailContainer.textContent.trim().split(',').filter(Boolean);
+        console.log("Updated CC Emails:", ccEmails);
+    });
+
+    ccObserver.observe(ccEmailContainer, { childList: true, characterData: true, subtree: true });
+}
  
 // Function to show the redirect animation
 function showRedirectAnimation() {
@@ -1926,90 +1917,51 @@ function getSubcontractorsByBranch(subcontractors, branch) {
         .join(', ');  // Join emails by commas to pass in the URL
 }
 
-function enhanceAutocompleteInput(inputEl, dropdownEl, suggestions, fetchDetailsCallback) {
-  let currentFocusIndex = -1;
-  let currentOptions = [];
+// Fetch all bid names on page load, but subcontractors only after a bid is chosen
+async function fetchAndUpdateAutocomplete() {
+    console.log("🚀 Starting fetchAndUpdateAutocomplete...");
+    showLoadingAnimation(); // 🎯 Start loading
+    await new Promise(resolve => setTimeout(resolve, 50));
+    let progress = 0;
+    updateLoadingProgress(progress);
+    console.log(`📊 Progress: ${progress}% - Loading started`);
 
-  inputEl.addEventListener("input", async function () {
-    const inputValue = inputEl.value.toLowerCase();
-    dropdownEl.innerHTML = '';
-    currentFocusIndex = -1;
-    currentOptions = [];
+    // Fetch bid names (40%)
+    console.log("📥 Fetching bid name suggestions...");
+    await fetchBidNameSuggestions();
+    progress = 40;
+    updateLoadingProgress(progress);
+    console.log(`📊 Progress: ${progress}% - Bid names fetched (${bidNameSuggestions.length})`);
 
-    const filtered = suggestions.filter(item => item.toLowerCase().includes(inputValue));
-    filtered.forEach(suggestion => {
-      const option = document.createElement("div");
-      option.classList.add("autocomplete-option");
-      option.textContent = suggestion;
+    // Fetch vendor data (80%)
+    console.log("📥 Fetching vendor data...");
+    await fetchAllVendorData();
+    progress = 80;
+    updateLoadingProgress(progress);
+    console.log(`📊 Progress: ${progress}% - Vendor data fetched (${vendorData.length})`);
 
-      option.addEventListener("click", () => {
-        inputEl.value = suggestion;
-        dropdownEl.innerHTML = '';
-        fetchDetailsCallback?.(suggestion);
-      });
+    // Render inputs
+    console.log("🧩 Rendering vendor autocomplete input...");
+    createVendorAutocompleteInput();
 
-      dropdownEl.appendChild(option);
-      currentOptions.push(option);
-    });
+    console.log("⏳ Waiting for #emailTemplate to exist...");
+    const emailContainer = await waitForElement('#emailTemplate');
 
-    dropdownEl.style.display = filtered.length > 0 ? 'block' : 'none';
-  });
+    console.log("🧩 Rendering bid name input...");
+    const bidAutocompleteInput = createAutocompleteInput(
+        "Enter Bid Name",
+        bidNameSuggestions,
+        "bid",
+        fetchDetailsByBidName
+    );
+    emailContainer.prepend(bidAutocompleteInput);
+
+    progress = 100;
+    updateLoadingProgress(progress);
+    console.log(`✅ Progress: ${progress}% - All UI elements ready`);
+
+    console.log("🎉 fetchAndUpdateAutocomplete complete!");
 }
-
-function generateSubcontractorGmailLinks() {
-  const sendBlankSubEmail = document.getElementById("optionSendBlankSubEmail")?.checked;
-  console.log("📦 Checkbox - Send Blank Sub Email:", sendBlankSubEmail);
-
-  const filteredEmails = subcontractorSuggestions
-    .map(sub => sub.email)
-    .filter(email => typeof email === "string" && email.includes('@'));
-
-  console.log("📬 Valid subcontractor emails:", filteredEmails);
-
-  let subcontractorEmailChunks = [];
-
-  if (filteredEmails.length > 0) {
-    subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
-    console.log(`📦 Sub emails split into ${subcontractorEmailChunks.length} chunk(s):`, subcontractorEmailChunks);
-  } else if (sendBlankSubEmail) {
-    subcontractorEmailChunks = [[]]; // Allow one blank email
-    console.log("⚠️ No subcontractor emails, but 'Send Blank' checked — generating blank email.");
-  } else {
-    console.log("🚫 No subcontractor emails and 'Send Blank' is unchecked — no email will be sent.");
-    return;
-  }
-
-        const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
-  const subcontractorBody = "Greetings from Vanir Installed Sales,.";
-  
-  const subcontractorGmailLinks = subcontractorEmailChunks.map((chunk, index) => {
-    const gmEmail = chunk.join(','); // Can be "" for blank
-    const useBlankTo = chunk.length === 0 && sendBlankSubEmail;
-
-    const toParam = useBlankTo ? '' : `to=${encodeURIComponent(gmEmail)}`;
-    const bccParam = chunk.length > 0 ? `bcc=${encodeURIComponent(gmEmail)}` : '';
-
-    const baseUrl = `https://mail.google.com/mail/?view=cm&fs=1`;
-    const params = [
-      toParam,
-      bccParam,
-      `su=${encodeURIComponent(subcontractorSubject)}`,
-      `body=${encodeURIComponent(subcontractorBody)}`
-    ].filter(Boolean).join('&');
-
-    const fullUrl = `${baseUrl}&${params}`;
-    console.log(`📧 Gmail link for chunk #${index + 1}:`, fullUrl);
-    return fullUrl;
-  });
-
-  // 🧪 Example: Open the first link (optional)
-  if (subcontractorGmailLinks.length > 0) {
-    console.log("🚀 Opening first Gmail link...");
-    window.open(subcontractorGmailLinks[0], '_blank');
-  }
-}
-
-
 
 function createVendorAutocompleteInput() {
     const container = document.getElementById("vendorEmailContainer");
@@ -2079,6 +2031,20 @@ function createVendorAutocompleteInput() {
     wrapper.appendChild(input);
     wrapper.appendChild(dropdown);
     container.appendChild(wrapper);
+}
+
+function renderBidInputImmediately() {
+    const emailContainer = document.getElementById('emailTemplate');
+    if (!emailContainer) return;
+
+    const bidAutocompleteInput = createAutocompleteInput(
+        "Enter Bid Name",
+        [], // Initially empty suggestions
+        "bid",
+        fetchDetailsByBidName
+    );
+
+    emailContainer.prepend(bidAutocompleteInput);
 }
 
 let offset = null; // Offset for Airtable pagination
