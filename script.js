@@ -802,33 +802,24 @@ function renderMatchingVendorsToDropdown(matchingVendors) {
 }
 
 function setupCopySubEmailsButton() {
-    const button = document.getElementById("copySubEmailsBtn");
-    if (!button) {
-        console.warn("Copy Sub Emails button not found.");
-        return;
+  const button = document.getElementById("copySubEmailsBtn");
+  if (!button) return;
+
+  button.addEventListener("click", () => {
+    const emails = subcontractorSuggestions.map(sub => sub.email).filter(Boolean);
+    const emailList = emails.join(', ');
+    if (!emails.length) {
+      alert("No subcontractor emails loaded yet.");
+      return;
     }
 
-    button.addEventListener("click", () => {
-        const emails = subcontractorSuggestions.map(sub => sub.email).filter(Boolean);
-        const emailList = emails.join(', ');
-    
-        console.log("🔍 Subcontractor emails to copy:", emails); // <-- ADD THIS
-    
-
-        if (!emails.length) {
-            alert("No subcontractor emails loaded yet.");
-            return;
-        }
-
-        navigator.clipboard.writeText(emailList)
-            .then(() => {
-                alert("Subcontractor emails copied to clipboard!");
-            })
-            .catch(err => {
-                console.error("Failed to copy emails:", err);
-                alert("Failed to copy emails. Please try again.");
-            });
-    });
+    navigator.clipboard.writeText(emailList)
+      .then(() => alert("Subcontractor emails copied to clipboard!"))
+      .catch(err => {
+        console.error("Failed to copy emails:", err);
+        alert("Failed to copy emails. Please try again.");
+      });
+  });
 }
 
 // Unified function to create an autocomplete input
@@ -1070,7 +1061,6 @@ function monitorSubdivisionChanges() {
 // ✅ All DOMContentLoaded logic consolidated
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-   // autoProgressLoading(isBidInputVisible);
     renderBidInputImmediately();
     displayEmailContent();
     monitorSubdivisionChanges();
@@ -1080,14 +1070,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     await fetchAllVendorData();
     fetchAndUpdateAutocomplete();
 
+    // Auto resize for dynamic textareas
     const observer = new MutationObserver(mutationsList => {
       for (const mutation of mutationsList) {
         if (mutation.type === "childList") {
           Array.from(mutation.addedNodes).forEach(node => {
             if (
               node.tagName === "TEXTAREA" &&
-              (node.id === "additionalInfoInput" ||
-                node.id === "additionalInfoInputSub")
+              (node.id === "additionalInfoInput" || node.id === "additionalInfoInputSub")
             ) {
               node.addEventListener("input", function () {
                 this.style.height = "auto";
@@ -1101,16 +1091,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-const userNameInput = document.getElementById("inputUserName");
-const preview = document.getElementById("userNamePreview");
+    // Username preview binding
+    const userNameInput = document.getElementById("inputUserName");
+    const preview = document.getElementById("userNamePreview");
+    if (userNameInput && preview) {
+      userNameInput.addEventListener("input", () => {
+        const name = userNameInput.value.trim() || "Your Name";
+        preview.textContent = name;
+      });
+    }
 
-if (userNameInput && preview) {
-  userNameInput.addEventListener("input", () => {
-    const name = userNameInput.value.trim() || "Your Name";
-    preview.textContent = name;
-  });
-}
-
+    // 📤 Full Email Launch: All Emails
     const sendManagementEmailButton = document.getElementById("sendManagementEmailButton");
     if (sendManagementEmailButton) {
       sendManagementEmailButton.addEventListener("click", async () => {
@@ -1125,6 +1116,7 @@ if (userNameInput && preview) {
           subcontractorWindows.push(window.open("about:blank", "_blank"));
         }
 
+        const links = await generateMailtoLinks();
 
         if (links) {
           const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
@@ -1148,6 +1140,7 @@ if (userNameInput && preview) {
       });
     }
 
+    // 🎯 Selectively Send Emails
     const sendSelectedEmailsBtn = document.getElementById("sendSelectedEmails");
     if (sendSelectedEmailsBtn) {
       sendSelectedEmailsBtn.addEventListener("click", async () => {
@@ -1161,12 +1154,15 @@ if (userNameInput && preview) {
         const managementWindow = sendManagement ? window.open("about:blank", "_blank") : null;
         const subcontractorWindows = [];
 
-        const chunkCount = sendSubcontractor ? Math.ceil(subcontractorSuggestions.length / 30) : 0;
+        const links = await generateMailtoLinks();
+
+        const chunkCount = sendSubcontractor && links?.subcontractorGmailLinks
+          ? links.subcontractorGmailLinks.length
+          : 0;
+
         for (let i = 0; i < chunkCount; i++) {
           subcontractorWindows.push(window.open("about:blank", "_blank"));
         }
-
-        const links = await generateMailtoLinks();
 
         if (links) {
           const { managementGmailLink, subcontractorGmailLinks, vendorGmailLink } = links;
@@ -1204,6 +1200,7 @@ if (userNameInput && preview) {
   }
 });
 
+
 async function exportTextareaToEmail() {
     const textarea = document.getElementById('additionalInfoInput');
     const additionalDetails = textarea.value.trim();
@@ -1230,74 +1227,7 @@ function splitIntoChunks(array, chunkSize = 30) {
     return chunks;
 }
 
-async function sendEmailData() {
-    const apiUrl = "https://script.googleapis.com/v1/scripts/AKfycbz0XLL8bTtFPiRPRz9HNgHD1KknnMwtgbUUonbH0_OWfSg9_SH3u6SmFErHL4SHbwsBBA:run"; 
-    const vendorEmail = window.currentVendorEmail || ""; 
-    const gmEmail = document.querySelector('.gmEmailContainer')?.textContent.trim() || '';
 
-let subcontractorEmailChunks = [];
-const filteredEmails = subcontractorSuggestions
-    .map(sub => sub.email)
-    .filter(email => typeof email === "string" && email.includes('@'));
-
-if (filteredEmails.length > 0) {
-    subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
-} else {
-    // At least create one empty chunk to allow generation
-    subcontractorEmailChunks = [[]];
-}
-
-    // Then, create subcontractorGmailLinks
-for (const chunk of subcontractorEmailChunks) {
-  const bccPart = chunk.length > 0 ? `&bcc=${encodeURIComponent(chunk.join(','))}` : '';
-  const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}${bccPart}&su=${encodeURIComponent(subcontractorSubject)}&body=${encodeURIComponent(subcontractorBody)}`;
-  subcontractorGmailLinks.push(mailtoLink);
-}
-      console.log("🧾 Final subcontractor links:", subcontractorGmailLinks);
-
-    
-    const data = {
-        branch,
-        subdivision,
-        builder,
-        projectType: document.querySelector('.briqProjectTypeContainer')?.textContent.trim(),
-        materialType: document.querySelector('.materialTypeContainer')?.textContent.trim(),
-        anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim(),
-        numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim(),
-        managementEmails: [
-"maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, rick.jinkins@vanirinstalledsales.com, josh@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com",
-        ].filter(email => typeof email === "string" && email.includes('@')),
-        vendorEmails: vendorEmail && vendorEmail.includes('@') ? [vendorEmail] : [],
-        subcontractorGmailLinks 
-    };
-    
-      console.log("Prepared data for POST request:", data);
-    
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        });
-    
-        console.log("Response from server:", response);
-    
-        const result = await response.json();
-        console.log("Parsed response from server:", result);
-    
-        if (result.success) {
-          alert("Emails sent successfully!");
-        } else {
-          console.error("Error response from server:", result.message);
-          alert("Error sending emails: " + result.message);
-        }
-      } catch (error) {
-        console.error("Error in fetch request:", error);
-        alert("An error occurred while sending the data.");
-      }
-    }
 
 document.getElementById('clearVendorBtn')?.addEventListener('click', () => {
     document.querySelectorAll('.vendorNameContainer').forEach(el => el.textContent = '');
@@ -1607,55 +1537,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-document.getElementById("bidSelect").addEventListener("change", async (e) => {
-  const selectedBid = e.target.value;
-  if (!selectedBid) return;
 
-  const bid = allBidRecords.find(b => b.fields["Bid Name"] === selectedBid);
-  if (!bid) return;
-
-  const {
-    Branch: branch = "",
-    Builder: builder = "",
-    Subdivision: subdivision = "",
-    "Project Type": projectType = "",
-    "Material Type": materialType = "",
-    "Expected Pace": epace = "",
-    "Number of Lots": numberOfLots = "",
-    "Anticipated Start Date": anticipatedStartDate = "",
-    City: city = "",
-    "General Manager": gm = "",
-    "GM Email": gmEmail = "",
-    AC: acmName = "",
-    "AC’s Email": acmEmailGlobal = ""
-  } = bid.fields;
-
-  const userName = "Your Name";     // or pull dynamically
-  const userPhone = "Your Phone";   // or pull dynamically
-
-  const emailBody = buildSubcontractorBody([], {
-    branch,
-    builder,
-    subdivision,
-    projectType,
-    materialType,
-    epace,
-    numberOfLots,
-    anticipatedStartDate,
-    city,
-    gm,
-    gmEmail,
-    acmName,
-    acmEmailGlobal,
-    userName,
-    userPhone
-  });
-
-  // Update preview + Gmail link
-  document.getElementById("subcontractorEmailPreview").textContent = emailBody;
-  document.getElementById("subEmailLink").href =
-    `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${encodeURIComponent("New Subcontractor Opportunity")}&body=${encodeURIComponent(emailBody)}`;
-});
 
 function buildSubcontractorBody(subEmails = [], {
   branch,
@@ -1867,7 +1749,6 @@ Better Look. Better Service. Best Choice.
 
         // Combine emails for the "To" and "CC" sections
 const selectedBranch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase().replace(/\s+/g, '');
-
 const rawPurchasingEmail = `purchasing.${selectedBranch}@vanirinstalledsales.com`;
 const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
 const estimatesEmail = `estimates.${selectedBranch}@vanirinstalledsales.com`;
@@ -1888,7 +1769,6 @@ const estimatesEmail = `estimates.${selectedBranch}@vanirinstalledsales.com`;
 
     console.log("📤 Full teamEmails:", teamEmails);
 
-
 // Combine vendor + purchasing
 const vendorToEmail = [vendorEmail, purchasingEmail]
   .filter(email => typeof email === "string" && email.includes('@'))
@@ -1906,7 +1786,8 @@ const vendorGmailLink = vendorToEmail
 const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(teamEmails)}&su=${encodeURIComponent(managementSubject)}&body=${encodeURIComponent(managementBody)}`;
        // 💥 Properly split into chunks
 const sendBlankSubEmail = document.getElementById("optionSendBlankSubEmail")?.checked;
-const sendSubEmail = document.getElementById("optionSendSubEmail")?.checked;
+const sendSubEmail = document.getElementById("optionSubcontractor")?.checked;
+
 
 const filteredEmails = subcontractorSuggestions
     .map(sub => sub.email)
@@ -1921,9 +1802,10 @@ if (filteredEmails.length > 0) {
 }
 let subcontractorGmailLinks = [];
 
+let emailBody = ''; // Declare outside
+
 if (sendBlankSubEmail) {
-  // ✅ Create one blank email with empty "to="
-  const emailBody = buildSubcontractorBody([], {
+  emailBody = buildSubcontractorBody([], {
     branch,
     builder,
     subdivision,
@@ -1941,18 +1823,15 @@ if (sendBlankSubEmail) {
     userPhone
   });
 
-  const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${encodeURIComponent("New Subcontractor Opportunity")}&body=${encodeURIComponent(emailBody)}`;
+  const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${encodeURIComponent(`Vanir Project Opportunity: ${branch} - ${builder}`)}&body=${encodeURIComponent(emailBody)}`;
   subcontractorGmailLinks.push(mailtoLink);
-
-  // ✅ Open it in a new tab immediately
   window.open(mailtoLink, '_blank');
 
 } else if (sendSubEmail && filteredEmails.length > 0) {
-  // ✅ Normal subcontractor email chunks
   const chunks = splitIntoChunks(filteredEmails, 30);
 
   for (const chunk of chunks) {
-    const emailBody = buildSubcontractorBody(chunk, {
+    emailBody = buildSubcontractorBody(chunk, {
       branch,
       builder,
       subdivision,
@@ -1971,23 +1850,23 @@ if (sendBlankSubEmail) {
     });
 
     const bccPart = chunk.length > 0 ? `&bcc=${encodeURIComponent(chunk.join(','))}` : '';
-    const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}${bccPart}&su=${encodeURIComponent("New Subcontractor Opportunity")}&body=${encodeURIComponent(emailBody)}`;
+    const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(gmEmail)}${bccPart}&su=${encodeURIComponent(`Vanir Project Opportunity: ${branch} - ${builder}`)}&body=${encodeURIComponent(emailBody)}`;
     subcontractorGmailLinks.push(mailtoLink);
   }
 }
 
-
+console.log("📬 Subcontractor Email Body:", emailBody);
 
 
   // 🔥 Now generate multiple subcontractor Gmail links
-
 
         console.log("Management Gmail Link:", managementGmailLink);
         console.log("Subcontractor Gmail Link:", subcontractorGmailLinks);
 
       
-          console.log("Using vendorToEmail:", vendorToEmail);
-          console.log("Fallback gmEmail (if needed):", gmEmail);
+        console.log("📬 Subcontractor Email Body:", emailBody);
+console.log("🔗 Subcontractor Gmail Link(s):", subcontractorGmailLinks);
+
           
     
         console.log("Vendor Email:", vendorEmail);
