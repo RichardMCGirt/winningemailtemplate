@@ -1607,7 +1607,57 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-function buildSubcontractorBody(chunk, {
+document.getElementById("bidSelect").addEventListener("change", async (e) => {
+  const selectedBid = e.target.value;
+  if (!selectedBid) return;
+
+  const bid = allBidRecords.find(b => b.fields["Bid Name"] === selectedBid);
+  if (!bid) return;
+
+  const {
+    Branch: branch = "",
+    Builder: builder = "",
+    Subdivision: subdivision = "",
+    "Project Type": projectType = "",
+    "Material Type": materialType = "",
+    "Expected Pace": epace = "",
+    "Number of Lots": numberOfLots = "",
+    "Anticipated Start Date": anticipatedStartDate = "",
+    City: city = "",
+    "General Manager": gm = "",
+    "GM Email": gmEmail = "",
+    AC: acmName = "",
+    "AC’s Email": acmEmailGlobal = ""
+  } = bid.fields;
+
+  const userName = "Your Name";     // or pull dynamically
+  const userPhone = "Your Phone";   // or pull dynamically
+
+  const emailBody = buildSubcontractorBody([], {
+    branch,
+    builder,
+    subdivision,
+    projectType,
+    materialType,
+    epace,
+    numberOfLots,
+    anticipatedStartDate,
+    city,
+    gm,
+    gmEmail,
+    acmName,
+    acmEmailGlobal,
+    userName,
+    userPhone
+  });
+
+  // Update preview + Gmail link
+  document.getElementById("subcontractorEmailPreview").textContent = emailBody;
+  document.getElementById("subEmailLink").href =
+    `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${encodeURIComponent("New Subcontractor Opportunity")}&body=${encodeURIComponent(emailBody)}`;
+});
+
+function buildSubcontractorBody(subEmails = [], {
   branch,
   builder,
   subdivision,
@@ -1624,29 +1674,44 @@ function buildSubcontractorBody(chunk, {
   userName,
   userPhone
 }) {
+  let acmSentence = '';
+
+  if (acmName && acmEmailGlobal) {
+    const acmNames = acmName.split(',').map(n => n.trim());
+    const acmEmails = acmEmailGlobal.split(',').map(e => e.trim());
+
+    const pairs = acmNames.map((name, i) => `${name} at ${acmEmails[i] || ''}`);
+    const formatted = pairs.length === 1
+      ? pairs[0]
+      : pairs.slice(0, -1).join(', ') + ', and ' + pairs[pairs.length - 1];
+
+    acmSentence = `, or our Area Construction Manager${pairs.length > 1 ? 's' : ''}, ${formatted}`;
+  }
+
   return `
 Greetings from Vanir Installed Sales,
-        
+
 Vanir ${branch} secured the ${subdivision} with ${builder}. We’re eager to get started and ensure excellence throughout the build.
 This will be a ${projectType} project, requiring ${materialType} installation.
 
 Project Details:
-
 - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
 - Number of Lots: ${numberOfLots}
 - Anticipated Start Date: ${anticipatedStartDate}
 - Project Location: ${city}
 
-If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}, or our Area Construction Manager, ${acmName} at ${acmEmailGlobal}.
+If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}${acmSentence}.
 
-Best regards,  
-${userName}  
+Best regards,  ${userName}  
 Vanir Installed Sales ${branch || 'LLC'}  
 Phone: ${userPhone}  
 https://www.vanirinstalledsales.com  
 Better Look. Better Service. Best Choice.
 `.trim();
 }
+
+
+
 
 
 async function validateAndExportBidDetails(bidName) {
@@ -1735,30 +1800,45 @@ if (vendorEmailWrapper) {
         https://www.vanirinstalledsales.com  
         Better Look. Better Service. Best Choice.
         `.trim();
-        
+      let acmSentence = '';
+
+if (acmName && acmEmailGlobal) {
+  const acmNames = acmName.split(',').map(n => n.trim());
+  const acmEmails = acmEmailGlobal.split(',').map(e => e.trim());
+
+  const pairs = acmNames.map((name, i) => `${name} at ${acmEmails[i] || ''}`);
+
+  const formatted = pairs.length === 1
+    ? pairs[0]
+    : pairs.slice(0, -1).join(', ') + ', and ' + pairs[pairs.length - 1];
+
+  const plural = pairs.length > 1 ? 's' : '';
+  acmSentence = `, or our Area Construction Manager${plural}, ${formatted}`;
+}
+
+
         const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
 Greetings from Vanir Installed Sales,
-        
-       Vanir ${branch} secured the ${subdivision} with ${builder}. We’re eager to get started and ensure excellence throughout the build.
-        This will be a ${projectType} project, requiring ${materialType} installation.
-        
-        Project Details:
-        
-        - Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
-        - Number of Lots: ${numberOfLots}
-        - Anticipated Start Date: ${anticipatedStartDate}
-        - Project Location: ${city}
 
-        
-If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}, or our Area Construction Manager, ${acmName} at ${acmEmailGlobal}.
-        
-        Best regards,   ${userName}  
-        Vanir Installed Sales ${branch || 'LLC'}
-        Phone: ${userPhone}  
-        https://www.vanirinstalledsales.com  
-        Better Look. Better Service. Best Choice.
-        `.trim();
+Vanir ${branch} secured the ${subdivision} with ${builder}. We’re eager to get started and ensure excellence throughout the build.
+This will be a ${projectType} project, requiring ${materialType} installation.
+
+Project Details:
+
+- Expected Pace: ${epace} ${epace > 1 ? 'days' : 'day'}
+- Number of Lots: ${numberOfLots}
+- Anticipated Start Date: ${anticipatedStartDate}
+- Project Location: ${city}
+
+If you're interested in partnering with us on this opportunity, please contact our General Manager, ${gm} at ${gmEmail}${acmSentence}.
+
+Best regards, ${userName}  
+Vanir Installed Sales ${branch || 'LLC'}  
+Phone: ${userPhone}  
+https://www.vanirinstalledsales.com  
+Better Look. Better Service. Best Choice.
+`.trim();
         
         console.log("📨 Vendor email to send to:", vendorEmail);
 
