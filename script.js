@@ -1351,7 +1351,7 @@ function normalizePurchasingEmail(email) {
 
 <h2>To: <span class="vendorNameContainer"></span> <span class="vendorEmailWrapper"></span></h2>
 
-        <p><strong>Subject:</strong> Vendor Notification | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
+<p><strong>Subject:</strong> Project Awarded – <span class="builderContainer"></span> | <span class="subdivisionContainer"></span></p>
         <p>Hello <strong><span class="vendorNameContainer"></span></strong>,</p>
         <p>We wanted to notify you that <strong>Vanir Installed Sales</strong> <strong><span class="branchContainer"></span></strong> has secured the bid for <strong><span class="subdivisionContainer"></span></strong> project with <strong><span class="builderContainer"></span></strong> in <strong><span class="branchContainer"></span></strong>.</p>
 
@@ -1368,7 +1368,7 @@ function normalizePurchasingEmail(email) {
 
         <div class="signature-container">
             <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
-            <div class="signature-content">
+            <div class="signature-content"> 
 <p>
   <input type="text" id="inputUserName" placeholder="Your Name" />
 </p>
@@ -1725,7 +1725,7 @@ Better Look. Better Service. Best Choice.
         console.log("📨 Vendor email to send to:", vendorEmail);
 
       // Define these before you use them
-const vendorSubject = `Vendor Notification | ${subdivision} | ${builder}`;
+const vendorSubject = `Project Awarded | ${subdivision} | ${builder}`;
 const vendorBody = `
 Hello,
 
@@ -1795,11 +1795,12 @@ const filteredEmails = subcontractorSuggestions
 
 let subcontractorEmailChunks = [];
 
-if (filteredEmails.length > 0) {
-    subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
-} else if (sendBlankSubEmail) {
-    subcontractorEmailChunks = [[]]; // allow 1 blank email to be generated
+if (sendBlankSubEmail) {
+  subcontractorEmailChunks = [[]];
+} else if (filteredEmails.length > 0) {
+  subcontractorEmailChunks = splitIntoChunks(filteredEmails, 30);
 }
+
 let subcontractorGmailLinks = [];
 
 let emailBody = ''; // Declare outside
