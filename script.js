@@ -508,26 +508,6 @@ async function fetchSubcontractorSuggestions(branch) {
         console.error("❌ Error fetching subcontractor suggestions:", error);
     }
 }
-
-async function waitForElement(selector, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-        const interval = 100;
-        let elapsed = 0;
-
-        const intervalId = setInterval(() => {
-            const element = document.querySelector(selector);
-            if (element) {
-                clearInterval(intervalId);
-                resolve(element);
-            }
-            elapsed += interval;
-            if (elapsed >= timeout) {
-                clearInterval(intervalId);
-                reject(new Error(`Element "${selector}" not found within ${timeout}ms`));
-            }
-        }, interval);
-    });
-}
      
 document.addEventListener("DOMContentLoaded", () => {
     const dynamicContainer = document.querySelector("#dynamicContainer");
@@ -551,26 +531,7 @@ async function fetchPlaceDetails(query) {
     }
 }
 
-async function waitForElement(selector, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-        const interval = 50;
-        const maxTries = timeout / interval;
-        let tries = 0;
 
-        const check = () => {
-            const elements = document.querySelectorAll(selector);
-            if (elements.length > 0) {
-                resolve(elements);
-            } else if (++tries >= maxTries) {
-                reject(new Error(`Timeout waiting for ${selector}`));
-            } else {
-                setTimeout(check, interval);
-            }
-        };
-
-        check();
-    });
-}
 
 function clearAllDynamicSpans() {
     const selectors = [
@@ -1840,7 +1801,6 @@ const managementGmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${enc
 const sendBlankSubEmail = document.getElementById("optionSendBlankSubEmail")?.checked;
 const sendSubEmail = document.getElementById("optionSubcontractor")?.checked;
 
-
 const filteredEmails = subcontractorSuggestions
     .map(sub => sub.email)
     .filter(email => typeof email === "string" && email.includes('@'));
@@ -1920,8 +1880,6 @@ console.log("📬 Subcontractor Email Body:", emailBody);
         console.log("📬 Subcontractor Email Body:", emailBody);
 console.log("🔗 Subcontractor Gmail Link(s):", subcontractorGmailLinks);
 
-          
-    
         console.log("Vendor Email:", vendorEmail);
         console.log("Vendor Gmail Link:", vendorGmailLink);
         
@@ -1991,8 +1949,6 @@ function getSubcontractorsByBranch(subcontractors, branch) {
         .map(sub => sub.fields.email)  // Map to get just the emails
         .join(', ');  // Join emails by commas to pass in the URL
 }
-
-
 
 function createVendorAutocompleteInput() {
     const container = document.getElementById("vendorEmailContainer");
@@ -2189,7 +2145,6 @@ console.log(`📥 Fetching details for bid: "${suggestion}"...`);
 fetchDetailsByBidName(suggestion).then(() => {
   console.log("✅ Bid details fetched, now monitoring span population...");
 
-
 const spanSelectors = [
   '.gmNameContainer',
   '.gmEmailContainer',
@@ -2216,7 +2171,6 @@ const checkSpansReady = () => {
 };
 
 checkSpansReady();
-
 
 }).catch(err => {
   clearTimeout(timeout);
