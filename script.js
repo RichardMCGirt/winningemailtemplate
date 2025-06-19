@@ -1538,7 +1538,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
 function buildSubcontractorBody(subEmails = [], {
   branch,
   builder,
@@ -1592,10 +1591,6 @@ Better Look. Better Service. Best Choice.
 `.trim();
 }
 
-
-
-
-
 async function validateAndExportBidDetails(bidName) {
     const bidDetails = await fetchDetailsByBidName(bidName);
     console.log('Validated bid details for export:', bidDetails);
@@ -1617,23 +1612,20 @@ async function generateMailtoLinks() {
         const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
         const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
         const cityEl = document.querySelector('.city');
-const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
-const cnameEl = document.querySelector('.cname');
-const cname = cnameEl && cnameEl.value ? cnameEl.value.trim() : 'Unknown Customer Name';
-const epaceEl = document.querySelector('.epace');
-const epace = epaceEl && epaceEl.value ? epaceEl.value.trim() : 'Unknown Pace';
-const acmName = document.querySelector('.acmNameContainer')?.textContent.trim() || 'Unknown ACM';
-
+        const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
+        const cnameEl = document.querySelector('.cname');
+        const cname = cnameEl && cnameEl.value ? cnameEl.value.trim() : 'Unknown Customer Name';
+        const epaceEl = document.querySelector('.epace');
+        const epace = epaceEl && epaceEl.value ? epaceEl.value.trim() : 'Unknown Pace';
+        const acmName = document.querySelector('.acmNameContainer')?.textContent.trim() || 'Unknown ACM';
         const sprice = document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified';
         const poCustomer = document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified';
-
-        // Fetch GM Email
         const gmEmailElement = document.querySelector('.gmEmailContainer');
         const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
         const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
         const vendorEmail = window.currentVendorEmail || 'Not Specified';
+        const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
 
-const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
 if (vendorEmailWrapper) {
     if (vendorEmail !== 'Not Specified' && vendorEmail.includes('@')) {
         vendorEmailWrapper.textContent = ` <${vendorEmail}>`;
@@ -1650,8 +1642,6 @@ if (vendorEmailWrapper) {
 
         console.log('GM Email Value:', gmEmail);
         console.log('User Info:', { userName, userPhone });
-
-      
 
         // Management Email
         const managementSubject = `Another WIN for Vanir - ${branch} - ${subdivision} - ${builder}`;
@@ -1697,8 +1687,6 @@ if (acmName && acmEmailGlobal) {
   const plural = pairs.length > 1 ? 's' : '';
   acmSentence = `, or our Area Construction Manager${plural}, ${formatted}`;
 }
-
-
         const subcontractorSubject = `Vanir Project Opportunity: ${branch} - ${builder}`;
         const subcontractorBody = `
 Greetings from Vanir Installed Sales,
@@ -2161,7 +2149,64 @@ function initializeBidAutocomplete() {
                     bidInput.value = suggestion;
                     currentBidName = suggestion;
                     dropdown.innerHTML = "";
-                    fetchDetailsByBidName(suggestion); // ✅ only triggers after click
+const overlay = document.getElementById('spanLoadingOverlay');
+if (overlay) {
+  console.log("⏳ Loading overlay triggered before span population...");
+  overlay.style.display = 'flex';
+}
+
+let spanTimeoutTriggered = false;
+
+const timeout = setTimeout(() => {
+  spanTimeoutTriggered = true;
+  console.warn("⏰ Span population is taking longer than 3 seconds...");
+  if (overlay) overlay.style.display = 'flex';
+}, 3000);
+
+// Start fetching bid details
+console.log(`📥 Fetching details for bid: "${suggestion}"...`);
+
+fetchDetailsByBidName(suggestion).then(() => {
+  console.log("✅ Bid details fetched, now monitoring span population...");
+
+  const checkSpansReady = () => {
+    const spanSelectors = [
+      '.gmNameContainer',
+      '.gmEmailContainer',
+      '.vendorNameContainer',
+      '.vendorEmailWrapper',
+      '.acmEmailContainer'
+    ];
+
+    const results = spanSelectors.map(selector => {
+      const el = document.querySelector(selector);
+      const ready = el && el.textContent.trim() !== '';
+      console.log(`🔍 Span "${selector}" populated:`, ready, '→', el?.textContent?.trim());
+      return ready;
+    });
+
+    const allPopulated = results.every(Boolean);
+
+    if (allPopulated) {
+      clearTimeout(timeout);
+      if (spanTimeoutTriggered) {
+        console.log("✅ All spans are now populated after delay. Hiding overlay.");
+      } else {
+        console.log("✅ All spans populated within 3 seconds. Hiding overlay.");
+      }
+      if (overlay) overlay.style.display = 'none';
+    } else {
+      setTimeout(checkSpansReady, 200); // Check again soon
+    }
+  };
+
+  checkSpansReady();
+}).catch(err => {
+  clearTimeout(timeout);
+  console.error("❌ Error fetching bid details:", err);
+  if (overlay) overlay.style.display = 'none';
+});
+
                 });
                 
                 dropdown.appendChild(option);
@@ -2189,7 +2234,64 @@ function initializeBidAutocomplete() {
                         bidInput.value = suggestion;
                         currentBidName = suggestion;
                         dropdown.innerHTML = "";
-                        fetchDetailsByBidName(suggestion); // ✅ only triggers after click
+const overlay = document.getElementById('spanLoadingOverlay');
+if (overlay) {
+  console.log("⏳ Loading overlay triggered before span population...");
+  overlay.style.display = 'flex';
+}
+
+let spanTimeoutTriggered = false;
+
+const timeout = setTimeout(() => {
+  spanTimeoutTriggered = true;
+  console.warn("⏰ Span population is taking longer than 3 seconds...");
+  if (overlay) overlay.style.display = 'flex';
+}, 3000);
+
+// Start fetching bid details
+console.log(`📥 Fetching details for bid: "${suggestion}"...`);
+
+fetchDetailsByBidName(suggestion).then(() => {
+  console.log("✅ Bid details fetched, now monitoring span population...");
+
+  const checkSpansReady = () => {
+    const spanSelectors = [
+      '.gmNameContainer',
+      '.gmEmailContainer',
+      '.vendorNameContainer',
+      '.vendorEmailWrapper',
+      '.acmEmailContainer'
+    ];
+
+    const results = spanSelectors.map(selector => {
+      const el = document.querySelector(selector);
+      const ready = el && el.textContent.trim() !== '';
+      console.log(`🔍 Span "${selector}" populated:`, ready, '→', el?.textContent?.trim());
+      return ready;
+    });
+
+    const allPopulated = results.every(Boolean);
+
+    if (allPopulated) {
+      clearTimeout(timeout);
+      if (spanTimeoutTriggered) {
+        console.log("✅ All spans are now populated after delay. Hiding overlay.");
+      } else {
+        console.log("✅ All spans populated within 3 seconds. Hiding overlay.");
+      }
+      if (overlay) overlay.style.display = 'none';
+    } else {
+      setTimeout(checkSpansReady, 200); // Check again soon
+    }
+  };
+
+  checkSpansReady();
+}).catch(err => {
+  clearTimeout(timeout);
+  console.error("❌ Error fetching bid details:", err);
+  if (overlay) overlay.style.display = 'none';
+});
+
                     });
                     
                     dropdown.appendChild(option);
