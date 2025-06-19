@@ -974,15 +974,11 @@ if (branch) {
 const branchSlug = branch.toLowerCase().replace(/\s+/g, '');
 const rawPurchasingEmail = `purchasing.${branchSlug}@vanirinstalledsales.com`;
 const purchasingEmail = normalizePurchasingEmail(rawPurchasingEmail);
-console.log("✅ Normalized purchasing email:", purchasingEmail);
-
-    const estimatesEmail = `estimates.${branchSlug}@vanirinstalledsales.com`;
+const estimatesEmail = `estimates.${branchSlug}@vanirinstalledsales.com`;
 
     document.querySelectorAll('.branchEmailContainer').forEach(el => {
         el.textContent = purchasingEmail ? `, ${purchasingEmail}` : '';
     });
-    console.log("🧩 Populated branchEmailContainer:", purchasingEmail);
-console.log("🧩 Populated estimatesEmailContainer:", estimatesEmail);
 
     document.querySelectorAll('.estimatesEmailContainer').forEach(el => {
         el.textContent = estimatesEmail ? `, ${estimatesEmail}` : '';
@@ -1056,7 +1052,6 @@ function waitForOrCreateBidInputContainer(maxWait = 3000) {
     function check() {
       const container = document.getElementById("bidInputContainer");
       if (container) {
-        console.log("✅ #bidInputContainer found");
         resolve(container);
         return;
       }
@@ -1067,7 +1062,6 @@ function waitForOrCreateBidInputContainer(maxWait = 3000) {
 const emailTemplateContainer = document.getElementById("emailTemplate");
 if (emailTemplateContainer) {
   emailTemplateContainer.prepend(fallbackContainer);
-  console.log("📦 Placed #bidInputContainer inside #emailTemplate");
 } else {
   // fallback fallback 🤯
   document.body.prepend(fallbackContainer);
@@ -1315,8 +1309,6 @@ function enableAutoResizeInput(selector) {
         const newWidth = span.offsetWidth + 10;
         input.style.width = `${newWidth}px`;
 
-        console.log(`[autoResize] Resizing input to fit content: "${value}"`);
-        console.log(`[autoResize] Calculated width: ${span.offsetWidth}px, Applied width: ${newWidth}px`);
     };
 
     input.addEventListener('input', resize);
@@ -2048,8 +2040,6 @@ if (query) url += `&filterByFormula=AND(SEARCH("${query}", {Bid Name}), {Outcome
 
         offset = data.offset || null;
 
-        console.log("Fetched suggestions:", newSuggestions);
-
         return newSuggestions; // ✅ Return only new bid names as strings
     } catch (error) {
         console.error("Error during lazy loading of bid suggestions:", error);
@@ -2093,13 +2083,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const bidContainer = await waitForElement("#bidInputContainer");
     if (window.__autocompleteInitialized) {
-      console.log("⚠️ Autocomplete already initialized — skipping");
       return;
     }
 
     initializeBidAutocomplete();
     window.__autocompleteInitialized = true;
-    console.log("✅ #bidInputContainer found and autocomplete initialized");
   } catch (err) {
     console.warn(err);
   }
@@ -2149,8 +2137,6 @@ if (!bidContainer.querySelector(".autocomplete-wrapper")) {
   // ✅ Only add listener once
   if (!bidInput.dataset.listenerAttached) {
     bidInput.addEventListener("input", debounce(async function () {
-      console.log(`✏️ User typed: ${bidInput.value}`);
-
       const query = bidInput.value.toLowerCase();
       dropdown.innerHTML = "";
 
@@ -2163,8 +2149,6 @@ if (!bidContainer.querySelector(".autocomplete-wrapper")) {
         .filter(s => s.toLowerCase().includes(query))
         .sort((a, b) => a.toLowerCase().indexOf(query) - b.toLowerCase().indexOf(query))
         .slice(0, 20);
-
-      console.log("🔍 Sorted Suggestions for query:", query, filtered);
 
       filtered.forEach(suggestion => {
         const option = document.createElement("div");
