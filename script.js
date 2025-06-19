@@ -8,6 +8,7 @@ const subcontractorTableName = 'tblX03hd5HX02rWQu';
 const VendorBaseName = 'appeNSp44fJ8QYeY5';
 const VendorTableName = 'tblLEYdDi0hfD9fT3';
 const gmLookupTable = 'tbl1vusOwDZQdXsWH';
+const MAX_PROGRESS = 100;
 
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
@@ -16,13 +17,31 @@ let vendorData = [];
 let currentBidName = "";
 let subcontractorGmailLinks = [];
 let vendoremail = '';
-
-const MAX_PROGRESS = 100;
-
 let lastProgress = 0;
-
-
 let acmEmailGlobal = ''; // Store ACM email for later use
+
+function getSharedFieldValues() {
+    return {
+        branch: document.querySelector('.branchContainer')?.textContent.trim() || 'Unknown Branch',
+        subdivision: document.querySelector('.subdivisionContainer')?.textContent.trim() || 'Unknown Subdivision',
+        builder: document.querySelector('.builderContainer')?.textContent.trim() || 'Unknown Builder',
+        projectType: document.querySelector('.briqProjectTypeContainer')?.textContent.trim() || 'Default Project Type',
+        materialType: document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials',
+        anticipatedStartDate: document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date',
+        numberOfLots: document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots',
+        city: document.querySelector('.city')?.value?.trim() || '',
+        cname: document.querySelector('.cname')?.value?.trim() || 'Unknown Customer Name',
+        epace: document.querySelector('.epace')?.value?.trim() || 'Unknown Pace',
+        acmName: document.querySelector('.acmNameContainer')?.textContent.trim() || 'Unknown ACM',
+        sprice: document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified',
+        poCustomer: document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified',
+        gmEmail: document.querySelector('.gmEmailContainer')?.value || document.querySelector('.gmEmailContainer')?.textContent || 'Not Specified',
+        gm: document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM',
+        vendorEmail: window.currentVendorEmail || 'Not Specified',
+        vendorEmailWrapper: document.querySelector('.vendorEmailWrapper')
+    };
+}
+
 
 // ✅ Fetch ACM Full Name and Email by matching Title and Vanir Office
 async function fetchACMName(branch) {
@@ -236,7 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
     displayEmailContent();
     monitorSubdivisionChanges();
     setupCopySubEmailsButton(); 
-    displayEmailContent();
 });
 function updateAutocompleteOptions(type, newSuggestions = []) {
     const input = document.querySelector(`.${type}-autocomplete-input`);
@@ -1178,7 +1196,7 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
         const links = await generateMailtoLinks();
 
         const subcontractorWindows = Array.from(
-          { length: sendSubEmail && links?.subcontractorGmailLinks?.length || 0 },
+{ length: sendSubcontractor && links?.subcontractorGmailLinks?.length || 0 },
           () => window.open("about:blank", "_blank")
         );
 
@@ -1439,7 +1457,6 @@ if (chooseVendorBtn) {
       console.warn("⚠️ Vendor data is not loaded.");
       return;
     }
-
     showVendorSelectionDropdown(vendorData);
   });
 }
@@ -1632,27 +1649,26 @@ const additionalDetails = textarea ? textarea.value.trim() : null;
 async function generateMailtoLinks() {
     try {
 
-        const branch = document.querySelector('.branchContainer')?.textContent.trim() || 'Unknown Branch';
-        const subdivision = document.querySelector('.subdivisionContainer')?.textContent.trim() || 'Unknown Subdivision';
-        const builder = document.querySelector('.builderContainer')?.textContent.trim() || 'Unknown Builder';
-        const projectType = document.querySelector('.briqProjectTypeContainer')?.textContent.trim() || 'Default Project Type';
-        const materialType = document.querySelector('.materialTypeContainer')?.textContent.trim() || 'General Materials';
-        const anticipatedStartDate = document.querySelector('.anticipatedStartDateContainer')?.textContent.trim() || 'Unknown Start Date';
-        const numberOfLots = document.querySelector('.numberOfLotsContainer')?.textContent.trim() || 'Unknown Number of Lots';
-        const cityEl = document.querySelector('.city');
-        const city = cityEl && cityEl.value ? cityEl.value.trim() : '';
-        const cnameEl = document.querySelector('.cname');
-        const cname = cnameEl && cnameEl.value ? cnameEl.value.trim() : 'Unknown Customer Name';
-        const epaceEl = document.querySelector('.epace');
-        const epace = epaceEl && epaceEl.value ? epaceEl.value.trim() : 'Unknown Pace';
-        const acmName = document.querySelector('.acmNameContainer')?.textContent.trim() || 'Unknown ACM';
-        const sprice = document.querySelector('input[name="sprice"]:checked')?.value || 'Not Specified';
-        const poCustomer = document.querySelector('input[name="poCustomer"]:checked')?.value || 'Not Specified';
-        const gmEmailElement = document.querySelector('.gmEmailContainer');
-        const gmEmail = gmEmailElement ? (gmEmailElement.value || gmEmailElement.textContent || 'Not Specified') : 'Not Specified';
-        const gm = document.querySelector('.gmNameContainer')?.textContent.trim() || 'Unknown GM';
-        const vendorEmail = window.currentVendorEmail || 'Not Specified';
-        const vendorEmailWrapper = document.querySelector('.vendorEmailWrapper');
+      const {
+    branch,
+    subdivision,
+    builder,
+    projectType,
+    materialType,
+    anticipatedStartDate,
+    numberOfLots,
+    city,
+    cname,
+    epace,
+    acmName,
+    sprice,
+    poCustomer,
+    gmEmail,
+    gm,
+    vendorEmail,
+    vendorEmailWrapper
+} = getSharedFieldValues();
+
 
 if (vendorEmailWrapper) {
     if (vendorEmail !== 'Not Specified' && vendorEmail.includes('@')) {
@@ -1771,7 +1787,7 @@ const estimatesEmail = `estimates.${selectedBranch}@vanirinstalledsales.com`;
       "dallas.hudson@vanirinstalledsales.com",
       "mike.raszmann@vanirinstalledsales.com",
       "ethen.wilson@vanirinstalledsales.com",
-      acmEmailGlobal, // dynamically included ACM email
+      acmEmailGlobal, 
       purchasingEmail,
       estimatesEmail
     ].filter(Boolean).join(", ");
@@ -2093,7 +2109,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-
 function initializeBidAutocomplete() {
   const bidContainer = document.getElementById("bidInputContainer");
 if (window.__autocompleteInitialized) {
@@ -2133,7 +2148,6 @@ if (!bidContainer.querySelector(".autocomplete-wrapper")) {
   bidContainer.appendChild(autocompleteWrapper);
 }
 
-
   // ✅ Only add listener once
   if (!bidInput.dataset.listenerAttached) {
     bidInput.addEventListener("input", debounce(async function () {
@@ -2171,10 +2185,6 @@ if (!bidContainer.querySelector(".autocomplete-wrapper")) {
     bidInput.dataset.listenerAttached = "true"; // Prevent re-attaching
   }
 window.__autocompleteInitialized = true;
-
-
-
-
 
     // ✅ Add scroll listener INSIDE where `dropdown` is defined
     dropdown.addEventListener("scroll", async function () {
@@ -2235,9 +2245,6 @@ window.__autocompleteInitialized = true;
     });
 }
 
-    
-
-
 // Function to wait for the cc-email-container to exist in the DOM
 async function waitForElement(selector, timeout = 5000) {
     return new Promise((resolve, reject) => {
@@ -2255,7 +2262,6 @@ async function waitForElement(selector, timeout = 5000) {
                 setTimeout(check, interval);
             }
         };
-
         check();
     });
 }
