@@ -1344,11 +1344,22 @@ function normalizePurchasingEmail(email) {
     const emailContent = `
         <h2>
       To: 
-<span class="managementEmailContainer">
-  maggie@vanirinstalledsales.com, jason.smith@vanirinstalledsales.com, hunter@vanirinstalledsales.com, 
-  rick.jinkins@vanirinstalledsales.com, josh@vanirinstalledsales.com, ethen.wilson@vanirinstalledsales.com, dallas.hudson@vanirinstalledsales.com, mike.raszmann@vanirinstalledsales.com
- <span class="branchEmailContainer-label"> </span><span class="branchEmailContainer"></span> <span class="acmEmailContainer"></span>
-  <span class="estimatesEmailContainer-label"> </span><span class="estimatesEmailContainer"></span>
+<span class="managementEmailContainer" title="
+maggie@vanirinstalledsales.com, 
+jason.smith@vanirinstalledsales.com, 
+hunter@vanirinstalledsales.com, 
+rick.jinkins@vanirinstalledsales.com, 
+josh@vanirinstalledsales.com, 
+ethen.wilson@vanirinstalledsales.com, 
+dallas.hudson@vanirinstalledsales.com, 
+mike.raszmann@vanirinstalledsales.com
+">
+  Management
+</span>
+<span class="branchEmailContainer-label"> </span><span class="branchEmailContainer"></span>
+<span class="acmEmailContainer"></span>
+<span class="estimatesEmailContainer-label"> </span><span class="estimatesEmailContainer"></span>
+
         </h2>
 
         <p><strong>Subject:</strong> WINNING! | <span class="subdivisionContainer"></span> | <span class="builderContainer"></span></p>
@@ -1447,8 +1458,26 @@ function normalizePurchasingEmail(email) {
     });
     
     const emailContainer = document.getElementById('emailTemplate');
-    if (emailContainer) {
-emailContainer.innerHTML = emailContent;
+   if (emailContainer) {
+  emailContainer.innerHTML = emailContent;
+
+  // ✅ ADD THIS HERE
+  const managementEmails = [
+    "maggie@vanirinstalledsales.com",
+    "jason.smith@vanirinstalledsales.com",
+    "hunter@vanirinstalledsales.com",
+    "rick.jinkins@vanirinstalledsales.com",
+    "josh@vanirinstalledsales.com",
+    "ethen.wilson@vanirinstalledsales.com",
+    "dallas.hudson@vanirinstalledsales.com",
+    "mike.raszmann@vanirinstalledsales.com"
+  ];
+
+  const managementSpan = document.querySelector('.managementEmailContainer');
+  if (managementSpan) {
+    managementSpan.textContent = 'Management';
+    managementSpan.title = managementEmails.join(',\n');
+  }
 
 const chooseVendorBtn = document.getElementById('chooseVendorBtn');
 if (chooseVendorBtn) {
