@@ -389,6 +389,9 @@ input:checked + .slider:before {
     transition: color 0.3s;
 }
 
+#bidInputContainer {
+  margin-top: 10px;
+}
 
 body.dark-mode #toggleLabel {
     color: #f4f4f9;
