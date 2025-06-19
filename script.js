@@ -614,6 +614,7 @@ const filterFormula = `AND(FIND(LOWER("${bidName}"), LOWER({Bid Name})), {Outcom
        if (matchingVendors.length === 1) {
     const matched = matchingVendors[0];
     window.currentVendorEmail = matched.email;
+updateMultipleSpans('.bidNameContainer', bidName);
 
     updateMultipleSpans('.vendorNameContainer', matched.name);
     updateMultipleSpans('.vendorEmailWrapper', ` <${matched.email}>`);
@@ -1087,6 +1088,9 @@ if (emailTemplateContainer) {
 document.addEventListener("DOMContentLoaded", async () => {
   const bidContainer = await waitForOrCreateBidInputContainer();
   initializeBidAutocomplete(); // now safe to call
+});
+document.querySelectorAll('.bidNameContainer').forEach(el => {
+  el.textContent = selectedBidName;
 });
 
 
