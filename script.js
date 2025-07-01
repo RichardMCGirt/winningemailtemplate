@@ -599,7 +599,8 @@ const filterFormula = `AND(FIND(LOWER("${bidName}"), LOWER({Bid Name})), {Outcom
         const numberOfLots = fields['Number of Lots'] || '';
         const anticipatedStartDate = fields['Anticipated Start Date'] || '';
         const AnticipatedDuration = fields['Anticipated Duration'];
-        
+        const materialsNeeded = fields['Materials Needed'] || '';
+
         if (branch) {
             await fetchSubcontractorSuggestions(branch);
         } else {
