@@ -13,8 +13,11 @@ const MAX_PROGRESS = 100;
 let bidNameSuggestions = [];
 let subcontractorSuggestions = []; // Stores { companyName, email } for mapping
 let subcontractors = []; // Initialize an empty array for subcontractors
-let vendorData = [];
-let currentBidName = "";
+const session = {
+  vendorData: [],
+  currentVendorEmail: '',
+};
+
 let subcontractorGmailLinks = [];
 let vendoremail = '';
 let lastProgress = 0;
@@ -328,8 +331,9 @@ async function fetchAllVendorData() {
     const cacheTimestampKey = 'cachedVendorsTimestamp';
     const cacheTTL = 1000 * 60 * 30; // 30 minutes
 
-    const cachedData = localStorage.getItem(cacheKey);
-    const cachedTime = localStorage.getItem(cacheTimestampKey);
+   const cachedData = sessionStorage.getItem(cacheKey);
+const cachedTime = sessionStorage.getItem(cacheTimestampKey);
+
 
     const isValidCache = cachedData && cachedTime && (Date.now() - parseInt(cachedTime)) < cacheTTL;
 
@@ -378,12 +382,13 @@ async function fetchAllVendorData() {
     }
 }
 document.getElementById("clearCacheBtn")?.addEventListener("click", () => {
-    localStorage.removeItem("cachedBidNames");
-    localStorage.removeItem("cachedBidNamesTimestamp");
-    localStorage.removeItem("cachedVendors");
-    localStorage.removeItem("cachedVendorsTimestamp");
-    alert("📭 Cache cleared. Refresh to fetch fresh data.");
+    sessionStorage.removeItem("cachedBidNames");
+    sessionStorage.removeItem("cachedBidNamesTimestamp");
+    sessionStorage.removeItem("cachedVendors");
+    sessionStorage.removeItem("cachedVendorsTimestamp");
+    alert("📭 Session cache cleared. Refresh to fetch fresh data.");
 });
+
 
 function updateMultipleSpans(selector, value) {
     document.querySelectorAll(selector).forEach(el => {
@@ -518,8 +523,9 @@ async function fetchBidNameSuggestions() {
     const records = await fetchAirtableData(bidBaseName, bidTableName, 'Bid Name', "{Outcome}='Win'");
     bidNameSuggestions = records.map(record => record.fields['Bid Name']).filter(Boolean);
 
-    localStorage.setItem(cacheKey, JSON.stringify(bidNameSuggestions));
-    localStorage.setItem(cacheTimestampKey, Date.now().toString());
+ sessionStorage.setItem(cacheKey, JSON.stringify(bidNameSuggestions));
+sessionStorage.setItem(cacheTimestampKey, Date.now().toString());
+
 }
 
 
@@ -1109,37 +1115,45 @@ document.querySelectorAll('.bidNameContainer').forEach(el => {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
+    // 1️⃣ Initialize your static template content
     displayEmailContent();
     ensureDynamicContainerExists();
     setupCopySubEmailsButton();
     monitorSubdivisionChanges();
 
-    // 🔁 Wait for vendor and bid data
+    // 2️⃣ Always fetch vendor and bid data first — BEFORE initializing UI
     await fetchAllVendorData();
-    await fetchAndUpdateAutocomplete(); // ✅ this will fetch bidNameSuggestions internally
+    await fetchBidNameSuggestions(); // 🚩 Ensure bidNameSuggestions[] is ready!
 
-    // ✅ NOW safe to initialize autocomplete UI
-waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(console.error);
+    // 3️⃣ Create bid input container if missing
+    const bidContainer = await waitForOrCreateBidInputContainer();
 
+    // 4️⃣ Now initialize Bid Input Autocomplete — data is ready
+    initializeBidAutocomplete();
+
+    // 5️⃣ Create Vendor Autocomplete
+    createVendorAutocompleteInput();
+
+    // 6️⃣ Start progress animation
     autoProgressLoading(isBidInputVisible);
 
-    // 4️⃣ Resize Dynamic Textareas
+    // 7️⃣ Dynamic textarea auto-resize
     const textareaObserver = new MutationObserver(mutations => {
-      for (const mutation of mutations) {
+      mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
-          if (node.tagName === "TEXTAREA" && 
-              (node.id === "additionalInfoInput" || node.id === "additionalInfoInputSub")) {
+          if (node.tagName === "TEXTAREA" &&
+            (node.id === "additionalInfoInput" || node.id === "additionalInfoInputSub")) {
             node.addEventListener("input", function () {
               this.style.height = "auto";
               this.style.height = `${this.scrollHeight}px`;
             });
           }
         });
-      }
+      });
     });
     textareaObserver.observe(document.body, { childList: true, subtree: true });
 
-    // 5️⃣ Username preview sync
+    // 8️⃣ Username preview sync
     const userNameInput = document.getElementById("inputUserName");
     const preview = document.getElementById("userNamePreview");
     if (userNameInput && preview) {
@@ -1148,7 +1162,7 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
       });
     }
 
-    // 6️⃣ Email Buttons: Send All
+    // 9️⃣ Management Email Button: Send All
     const sendManagementEmailButton = document.getElementById("sendManagementEmailButton");
     if (sendManagementEmailButton) {
       sendManagementEmailButton.addEventListener("click", async () => {
@@ -1182,7 +1196,7 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
       });
     }
 
-    // 7️⃣ Email Buttons: Send Selected
+    // 🔟 Selected Email Options
     const sendSelectedEmailsBtn = document.getElementById("sendSelectedEmails");
     if (sendSelectedEmailsBtn) {
       sendSelectedEmailsBtn.addEventListener("click", async () => {
@@ -1194,10 +1208,10 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
 
         const vendorWindow = sendVendor ? window.open("about:blank", "_blank") : null;
         const managementWindow = sendManagement ? window.open("about:blank", "_blank") : null;
-        const links = await generateMailtoLinks();
 
+        const links = await generateMailtoLinks();
         const subcontractorWindows = Array.from(
-{ length: sendSubcontractor && links?.subcontractorGmailLinks?.length || 0 },
+          { length: sendSubcontractor && links?.subcontractorGmailLinks?.length || 0 },
           () => window.open("about:blank", "_blank")
         );
 
@@ -1225,10 +1239,10 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
       });
     }
 
-    // 8️⃣ Vendor Change Button
-    const changeVendorBtn = document.getElementById('changeVendorBtn');
+    // 1️⃣1️⃣ Vendor Change Button
+    const changeVendorBtn = document.getElementById("changeVendorBtn");
     if (changeVendorBtn) {
-      changeVendorBtn.addEventListener('click', () => {
+      changeVendorBtn.addEventListener("click", () => {
         const vendorNameRaw = document.querySelector('.vendorNameContainer')?.textContent.trim().toLowerCase();
         const branch = document.querySelector('.branchContainer')?.textContent.trim().toLowerCase();
 
@@ -1256,7 +1270,7 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
       });
     }
 
-    // 9️⃣ Sync City Inputs
+    // 1️⃣2️⃣ Sync City Inputs
     const cityObserver = new MutationObserver(() => {
       const cityInputs = document.querySelectorAll('input.city');
       if (cityInputs.length >= 2) {
@@ -1266,7 +1280,7 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
     });
     cityObserver.observe(document.body, { childList: true, subtree: true });
 
-    // 🔟 Clear Vendor Button
+    // 1️⃣3️⃣ Clear Vendor
     const clearBtn = document.getElementById('clearVendorBtn');
     if (clearBtn) {
       clearBtn.addEventListener('click', () => {
@@ -1277,9 +1291,10 @@ waitForElement("#bidInputContainer").then(initializeBidAutocomplete).catch(conso
     }
 
   } catch (error) {
-    console.error("❌ Error in consolidated DOMContentLoaded handler:", error);
+    console.error("❌ Error in DOMContentLoaded handler:", error);
   }
 });
+
 
 function splitIntoChunks(array, chunkSize = 30) {
     const chunks = [];
@@ -2141,30 +2156,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function initializeBidAutocomplete() {
   const bidContainer = document.getElementById("bidInputContainer");
-if (window.__autocompleteInitialized) {
-  return;
-}
-
+  if (window.__autocompleteInitialized) return;
   if (!bidContainer) {
     console.warn("⚠️ #bidInputContainer not found");
     return;
   }
 
-  // 🔍 Try to find an existing input from anywhere
   let bidInput = document.querySelector("input.bid-autocomplete-input");
-
   if (!bidInput) {
-    // If it doesn’t exist, create one
     bidInput = document.createElement("input");
     bidInput.type = "text";
     bidInput.placeholder = "Enter Bid Name";
     bidInput.classList.add("autocomplete-input", "bid-autocomplete-input");
-    console.log("➕ Created new bid input");
-  } else {
-    console.log("♻️ Reusing existing bid input");
   }
 
-  // 🔁 Move input into #bidInputContainer (wrapped if needed)
   const autocompleteWrapper = document.createElement("div");
   autocompleteWrapper.classList.add("autocomplete-wrapper");
 
@@ -2173,14 +2178,13 @@ if (window.__autocompleteInitialized) {
 
   autocompleteWrapper.appendChild(bidInput);
   autocompleteWrapper.appendChild(dropdown);
- // ✅ Only add autocompleteWrapper if it’s not already added
-if (!bidContainer.querySelector(".autocomplete-wrapper")) {
-  bidContainer.appendChild(autocompleteWrapper);
-}
 
-  // ✅ Only add listener once
+  if (!bidContainer.querySelector(".autocomplete-wrapper")) {
+    bidContainer.appendChild(autocompleteWrapper);
+  }
+
   if (!bidInput.dataset.listenerAttached) {
-    bidInput.addEventListener("input", debounce(async function () {
+    bidInput.addEventListener("input", debounce(function () {
       const query = bidInput.value.toLowerCase();
       dropdown.innerHTML = "";
 
@@ -2212,9 +2216,11 @@ if (!bidContainer.querySelector(".autocomplete-wrapper")) {
       dropdown.style.display = filtered.length > 0 ? "block" : "none";
     }, 300));
 
-    bidInput.dataset.listenerAttached = "true"; // Prevent re-attaching
+    bidInput.dataset.listenerAttached = "true";
   }
-window.__autocompleteInitialized = true;
+
+  window.__autocompleteInitialized = true;
+
 
     // ✅ Add scroll listener INSIDE where `dropdown` is defined
     dropdown.addEventListener("scroll", async function () {
