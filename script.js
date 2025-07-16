@@ -1442,7 +1442,7 @@ mike.raszmann@vanirinstalledsales.com
             <li>Location: <input class="city" placeholder="Enter city" /></li>
         </ul>
 <p>We look forward to another successful project with you.</p>
-        <p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong>LLC</p>
+        <p>Best regards,<br><strong>Vanir Installed Sales <span class="branchContainer"></span></strong> LLC</p>
 
         <div class="signature-container">
             <img src="VANIR-transparent.png" alt="Vanir Logo" class="signature-logo"> 
