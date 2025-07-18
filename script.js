@@ -856,7 +856,8 @@ function setupCopySubEmailsButton() {
 }
 
 // Unified function to create an autocomplete input
-function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback) {
+// Unified function to create an autocomplete input
+function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback, disabled = false) {
     const wrapper = document.createElement("div");
     wrapper.classList.add(`${type}-autocomplete-wrapper`, "autocomplete-wrapper");
 
@@ -865,6 +866,20 @@ function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCal
     input.placeholder = placeholder;
     input.classList.add(`${type}-autocomplete-input`, "autocomplete-input");
     input.dataset.type = type;
+
+    // --- Spinner / loading UI ---
+    const loadingSpinner = document.createElement("div");
+    loadingSpinner.className = "autocomplete-loading";
+    loadingSpinner.innerHTML = `<span style="color:#888;font-size:14px;">Loading bids...</span>`;
+    loadingSpinner.style.display = disabled ? "block" : "none";
+
+    // Optionally disable input
+    if (disabled) {
+        input.disabled = true;
+        input.style.background = "#f5f5f5";
+        input.style.color = "#bbb";
+        input.style.cursor = "not-allowed";
+    }
 
     const dropdown = document.createElement("div");
     dropdown.classList.add(`${type}-autocomplete-dropdown`, "autocomplete-dropdown");
@@ -930,6 +945,34 @@ function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCal
             }
         }
     });
+
+    function highlightOption(index) {
+        currentOptions.forEach((option, i) => {
+            if (i === index) {
+                option.classList.add("selected");
+                option.scrollIntoView({ block: 'nearest' });
+            } else {
+                option.classList.remove("selected");
+            }
+        });
+    }
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(loadingSpinner);
+    wrapper.appendChild(dropdown);
+
+    // --- Add helper method to enable input and hide spinner ---
+    wrapper.enableInput = function () {
+        input.disabled = false;
+        input.style.background = "";
+        input.style.color = "";
+        input.style.cursor = "";
+        loadingSpinner.style.display = "none";
+        input.focus();
+    };
+
+    return wrapper;
+
 
     function highlightOption(index) {
         currentOptions.forEach((option, i) => {
@@ -1121,15 +1164,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupCopySubEmailsButton();
     monitorSubdivisionChanges();
 
-    // 2️⃣ Always fetch vendor and bid data first — BEFORE initializing UI
+    // 1.5️⃣ Render bid input immediately as disabled/loading
+    renderBidInputImmediately(); // <--- this renders the input DISABLED with spinner
+
+    // 2️⃣ Always fetch vendor and bid data first — BEFORE initializing autocomplete logic
     await fetchAllVendorData();
     await fetchBidNameSuggestions(); // 🚩 Ensure bidNameSuggestions[] is ready!
 
-    // 3️⃣ Create bid input container if missing
-    const bidContainer = await waitForOrCreateBidInputContainer();
+    // 2.5️⃣ Enable the input and hide spinner
+    if (window.bidAutocompleteInputWrapper && window.bidAutocompleteInputWrapper.enableInput) {
+      window.bidAutocompleteInputWrapper.enableInput();
+    }
 
-    // 4️⃣ Now initialize Bid Input Autocomplete — data is ready
-    initializeBidAutocomplete();
+    // 2.6️⃣ Update the autocomplete input with suggestions, if needed
+    // If your input needs to be hydrated with options, do it here:
+    updateAutocompleteOptions("bid", bidNameSuggestions);
+
+    // 3️⃣ Create bid input container if missing (optional, if not handled elsewhere)
+    // const bidContainer = await waitForOrCreateBidInputContainer();
+
+    // 4️⃣ (OPTIONAL) Now initialize Bid Input Autocomplete if you have logic for re-attaching handlers
+    // initializeBidAutocomplete();
 
     // 5️⃣ Create Vendor Autocomplete
     createVendorAutocompleteInput();
@@ -2056,15 +2111,21 @@ function renderBidInputImmediately() {
     const emailContainer = document.getElementById('emailTemplate');
     if (!emailContainer) return;
 
+    // Create as disabled/loading initially
     const bidAutocompleteInput = createAutocompleteInput(
         "Enter Bid Name",
         [], // Initially empty suggestions
         "bid",
-        fetchDetailsByBidName
+        fetchDetailsByBidName,
+        true  // <-- disabled!
     );
+
+    // Save a reference so you can enable it later after loading
+    window.bidAutocompleteInputWrapper = bidAutocompleteInput;
 
     emailContainer.prepend(bidAutocompleteInput);
 }
+
 
 let offset = null; // Offset for Airtable pagination
 const PAGE_SIZE = 20; // Adjust as needed

@@ -2,104 +2,115 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Template</title>
-    <link rel="stylesheet" href="style.css">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://www.gstatic.com https://apis.google.com https://accounts.google.com 'unsafe-inline' 'unsafe-eval';">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Template</title>
+  <link rel="stylesheet" href="style.css">
+  <meta http-equiv="Content-Security-Policy"
+        content="script-src 'self' https://www.gstatic.com https://apis.google.com https://accounts.google.com 'unsafe-inline' 'unsafe-eval';">
 </head>
 
 <body>
-    <!-- Dark Mode Toggle -->
-    <div class="dark-mode-toggle">
-        <label class="switch">
-            <input type="checkbox" id="toggleDarkMode">
-            <span class="slider"></span>
-        </label>
-        <span id="toggleLabel">Dark Mode</span>
+  <!-- ========== DARK MODE TOGGLE ========== -->
+  <div class="dark-mode-toggle">
+    <label class="switch">
+      <input type="checkbox" id="toggleDarkMode">
+      <span class="slider"></span>
+    </label>
+    <span id="toggleLabel">Dark Mode</span>
+  </div>
+
+  <!-- ========== EMAIL TEMPLATE OUTPUT ========== -->
+  <div id="emailTemplate"></div>
+
+  <!-- ========== HIDDEN ACTION BUTTONS ========== -->
+  <button id="sendVendorEmailButton" style="display:none;"></button>
+  <button id="sendManagementEmailButtonReal" style="display:none;"></button>
+  <button id="sendSubcontractorEmailButton" style="display:none;"></button>
+
+  <!-- ========== EMAIL OPTIONS PANEL ========== -->
+  <section id="emailOptions" style="margin: 20px 0;">
+    <label>
+      <input type="checkbox" id="optionManagement" checked />
+      Send Management Email
+    </label>
+    <br>
+    <label>
+      <input type="checkbox" id="optionSubcontractor" checked />
+      Send Subcontractor Email(s)
+    </label>
+    <br>
+    <label>
+      <input type="checkbox" id="optionSendBlankSubEmail" />
+      Send empty Subcontractor Email
+    </label>
+    <br>
+    <div id="blankSubEmailMessage" style="display:none; color: lightgray; font-size: 14px; margin-top: 5px;">
+      ⚠️ You will need to manually copy and paste subcontractor emails to avoid launching multiple batches of 30.
     </div>
+    <div id="spanLoadingOverlay"
+         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center; color:white; font-size:24px;">
+      <div>⏳ Populating template...</div>
+    </div>
+    <label>
+      <input type="checkbox" id="optionVendor" checked />
+      Send Vendor Email
+    </label>
+    <br>
+    <button id="sendSelectedEmails">Send Selected Emails</button>
+  </section>
 
-    <!-- Email Template Container -->
-    <div id="emailTemplate"></div>
-<!-- Hidden buttons -->
+  <!-- ========== UTILITY CONTROLS ========== -->
+  <button id="clearCacheBtn">Clear Cached Data</button>
 
-<button id="sendVendorEmailButton" style="display: none;"></button>
-<button id="sendManagementEmailButtonReal" style="display: none;"></button>
-<button id="sendSubcontractorEmailButton" style="display: none;"></button>
-<div id="emailOptions" style="margin: 20px 0;">
-      <label><input type="checkbox" id="optionManagement" checked /> Send Management Email</label><br>
-  <label><input type="checkbox" id="optionSubcontractor" checked /> Send Subcontractor Email(s)</label><br>
-<label>
-  <input type="checkbox" id="optionSendBlankSubEmail" />
-  Send empty Subcontractor Email
-</label><br>
-<div id="blankSubEmailMessage" style="display: none; color: lightgray; font-size: 14px; margin-top: 5px;">
-  ⚠️ You will need to manually copy and paste subcontractor emails to avoid launching multiple batches of 30.
-</div>
-<div id="spanLoadingOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:9999;justify-content:center;align-items:center;color:white;font-size:24px;">
-  <div>⏳ Populating template...</div>
-</div>
+  <!-- ========== DYNAMIC CONTENT ========== -->
+  <div id="dynamicContainer"></div>
 
-  <label><input type="checkbox" id="optionVendor" checked /> Send Vendor Email</label><br>
-  <button id="sendSelectedEmails">Send Selected Emails</button>
-</div>
+  <!-- ========== GOOGLE APIs (EXTERNAL) ========== -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
 
-<button id="clearCacheBtn">Clear Cached Data</button>
+  <!-- ========== APP SCRIPTS ========== -->
+  <script src="script.js"></script>
+  <!-- <script src="translate.js"></script> -->
+  <script src="darkmode.js"></script>
+  <script src="password.js"></script>
 
-    <!-- Dynamic Content Container -->
-    <div id="dynamicContainer"></div>
+  <!-- ========== INLINE SCRIPTS (PREFERABLY EXTERNAL) ========== -->
+  <script>
+    // Checkbox dependency logic for blank subcontractor email
+    const blankSubEmailCheckbox = document.getElementById("optionSendBlankSubEmail");
+    const blankSubEmailMessage = document.getElementById("blankSubEmailMessage");
+    const subCheckbox = document.getElementById("optionSubcontractor");
 
+    if (blankSubEmailCheckbox && blankSubEmailMessage && subCheckbox) {
+      blankSubEmailCheckbox.addEventListener("change", function () {
+        if (this.checked) {
+          blankSubEmailMessage.style.display = "block";
+          console.log("☑️ 'Send empty Subcontractor Email' checkbox checked — message shown.");
 
+          if (subCheckbox.checked) {
+            subCheckbox.checked = false;
+            console.log("🔁 'Send Subcontractor Email' was unchecked due to empty subcontractor email setting.");
+          }
+        } else {
+          blankSubEmailMessage.style.display = "none";
+          console.log("⬜ 'Send empty Subcontractor Email' checkbox unchecked — message hidden.");
+        }
+      });
 
-    <!-- Google APIs -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js"></script>
+      subCheckbox.addEventListener("change", function () {
+        if (!this.checked) {
+          blankSubEmailCheckbox.checked = true;
+          blankSubEmailMessage.style.display = "block";
+          console.log("🔄 'Send Subcontractor Email' unchecked — 'Send empty Subcontractor Email' auto-checked.");
+        }
+      });
 
-    <!-- Custom Scripts -->
-    <script src="script.js"></script>
-    <!-- <script src="translate.js"></script> -->
-    <script src="darkmode.js"></script>
-        <script src="password.js"></script>
-
-    <script>
-const blankSubEmailCheckbox = document.getElementById("optionSendBlankSubEmail");
-const blankSubEmailMessage = document.getElementById("blankSubEmailMessage");
-const managementCheckbox = document.getElementById("optionSubcontractor");
-
-if (blankSubEmailCheckbox && blankSubEmailMessage && managementCheckbox) {
-  // Handle blank subcontractor checkbox changes
-  blankSubEmailCheckbox.addEventListener("change", function () {
-    if (this.checked) {
-      blankSubEmailMessage.style.display = "block";
-      console.log("☑️ 'Send empty Subcontractor Email' checkbox checked — message shown.");
-
-      if (managementCheckbox.checked) {
-        managementCheckbox.checked = false;
-        console.log("🔁 'Send Management Email' was unchecked due to empty subcontractor email setting.");
-      }
     } else {
-      blankSubEmailMessage.style.display = "none";
-      console.log("⬜ 'Send empty Subcontractor Email' checkbox unchecked — message hidden.");
+      console.warn("⚠️ Required checkbox or message container not found.");
     }
-  });
-
-  // Handle subcontractor checkbox changes
-  managementCheckbox.addEventListener("change", function () {
-    if (!this.checked) {
-      blankSubEmailCheckbox.checked = true;
-      blankSubEmailMessage.style.display = "block";
-      console.log("🔄 'Send Subcontractor Email' unchecked — 'Send empty Subcontractor Email' auto-checked.");
-    }
-  });
-
-} else {
-  console.warn("⚠️ Required checkbox or message container not found.");
-}
-
-
-
-
-    </script>
+  </script>
 </body>
 
 </html>
