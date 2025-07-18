@@ -496,3 +496,36 @@ body.dark-mode h4,
 body.dark-mode p {
     color: #ffffff; /* White for dark mode */
 }
+
+/* Spinner for autocomplete loading */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #ccc;
+  border-top: 3px solid #3a78e4;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* (Optional) style for disabled autocomplete input */
+.autocomplete-input[disabled] {
+  background: #f5f5f5;
+  color: #bbb;
+  cursor: not-allowed;
+}
+
+.autocomplete-loading {
+  margin: 8px 0 0 0;
+  color: #888;
+  font-size: 14px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}

@@ -856,7 +856,6 @@ function setupCopySubEmailsButton() {
 }
 
 // Unified function to create an autocomplete input
-// Unified function to create an autocomplete input
 function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCallback, disabled = false) {
     const wrapper = document.createElement("div");
     wrapper.classList.add(`${type}-autocomplete-wrapper`, "autocomplete-wrapper");
@@ -868,10 +867,15 @@ function createAutocompleteInput(placeholder, suggestions, type, fetchDetailsCal
     input.dataset.type = type;
 
     // --- Spinner / loading UI ---
-    const loadingSpinner = document.createElement("div");
-    loadingSpinner.className = "autocomplete-loading";
-    loadingSpinner.innerHTML = `<span style="color:#888;font-size:14px;">Loading bids...</span>`;
-    loadingSpinner.style.display = disabled ? "block" : "none";
+// --- Spinner / loading UI ---
+const loadingSpinner = document.createElement("div");
+loadingSpinner.className = "autocomplete-loading";
+loadingSpinner.innerHTML = `
+  <span class="spinner" style="display:inline-block;vertical-align:middle;margin-right:8px;"></span>
+  <span style="color:#888;font-size:14px;">Loading bids...</span>
+`;
+loadingSpinner.style.display = disabled ? "block" : "none";
+
 
     // Optionally disable input
     if (disabled) {
